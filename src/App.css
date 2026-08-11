@@ -1,0 +1,491 @@
+/* SNPSHOT // GLOBAL MODERN STYLING SYSTEM */
+
+.App {
+  background: linear-gradient(180deg, #010030 0%, #160078 50%, #010030 100%);
+  min-height: 100vh;
+  position: relative;
+  font-family: "Work Sans", sans-serif;
+}
+
+/* Page Background Wrapper with Gradient 4 Base & Subtle Overlay Grid */
+.paradise-background, .photo-preview, .photo-booth, .welcome-container, .contact-container, .background-gradient {
+  background: linear-gradient(180deg, #010030 0%, #160078 40%, #010030 100%) !important;
+  background-image: 
+    linear-gradient(rgba(240, 66, 255, 0.12) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(240, 66, 255, 0.12) 1.5px, transparent 1.5px) !important;
+  background-size: 50px 50px !important;
+  background-position: center top !important;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Dynamic radial gradient backing using Gradient 2 highlights */
+.paradise-background::before, .photo-preview::before, .photo-booth::before, .welcome-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 30%, rgba(240, 66, 255, 0.25) 0%, rgba(114, 38, 255, 0.15) 40%, transparent 75%) !important;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Glassmorphism Navbar Override */
+.y2k-navbar, .navbar {
+  width: calc(100% - 16px) !important;
+  max-width: 1200px;
+  padding: 10px 14px !important;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(1, 0, 48, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
+  border-radius: 999px !important;
+  margin: 12px auto !important;
+  box-shadow: 0 10px 30px rgba(1, 0, 48, 0.5) !important;
+  position: relative;
+  z-index: 100;
+}
+
+@media (min-width: 768px) {
+  .y2k-navbar, .navbar {
+    width: calc(100% - 32px) !important;
+    padding: 14px 28px !important;
+    margin: 24px auto !important;
+  }
+}
+
+.y2k-navbar-logo, .y2k-navbar-logo span {
+  font-family: "Fugaz One", cursive, sans-serif;
+  font-size: 1.5rem;
+  color: #ffffff !important;
+  text-shadow: none !important;
+  letter-spacing: -0.02em;
+}
+
+.y2k-navbar-links, .nav-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.y2k-navbar-links a:not(.web3-nav-link-active), .navbar a:not(.web3-nav-link-active) {
+  font-family: "Work Sans", sans-serif;
+  text-decoration: none;
+  color: #ffffff !important;
+  font-weight: 600;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  transition: all 0.25s ease;
+  font-size: 0.95rem;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.y2k-navbar-links a:hover, .navbar a:hover {
+  background-color: rgba(240, 66, 255, 0.2) !important;
+  color: #FFE5F1 !important;
+}
+
+/* Primary Contact Button using Gradient 2 */
+.y2k-navbar-contact, .navbar .y2k-navbar-contact {
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
+  color: #ffffff !important;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  font-family: "Fugaz One", cursive, sans-serif !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.4) !important;
+  text-transform: uppercase;
+}
+
+.y2k-navbar-contact:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.6) !important;
+}
+
+/* Typography Titles using Fugaz One */
+.y2k-title {
+  font-family: "Fugaz One", cursive, sans-serif;
+  text-transform: uppercase;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 10px 0;
+  line-height: 0.95;
+}
+
+.y2k-highlight {
+  font-family: "Fugaz One", cursive, sans-serif;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  margin: 10px 0;
+  letter-spacing: -0.02em;
+  filter: drop-shadow(0 0 12px rgba(240, 66, 255, 0.4));
+}
+
+.y2k-subtitle {
+  font-family: "Work Sans", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #FFE5F1 !important;
+  background: rgba(240, 66, 255, 0.2) !important;
+  border: 1px solid rgba(240, 66, 255, 0.4) !important;
+  padding: 6px 16px !important;
+  border-radius: 999px !important;
+  display: inline-block;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(240, 66, 255, 0.2) !important;
+}
+
+/* Frosted Glass Cards with Gradient 2 / 4 Accents */
+.paradise-card, .privacy-container, .contact-form, .creator-card, .cyber-glass {
+  background: rgba(22, 0, 120, 0.45) !important;
+  backdrop-filter: blur(25px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.25) !important;
+  border-radius: 28px !important;
+  box-shadow: 
+    0 20px 50px rgba(1, 0, 48, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  position: relative;
+  z-index: 10;
+}
+
+.paradise-card:hover, .creator-card:hover, .cyber-glass:hover {
+  transform: translateY(-6px) scale(1.015) !important;
+  border-color: #F042FF !important;
+  box-shadow: 
+    0 24px 60px rgba(240, 66, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+}
+
+.card-title {
+  font-family: "Fugaz One", cursive, sans-serif;
+  text-transform: uppercase;
+  color: #FFE5F1 !important;
+  border-bottom: 1.5px solid rgba(240, 66, 255, 0.25) !important;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  letter-spacing: 0.02em;
+}
+
+.card-content {
+  font-family: "Work Sans", sans-serif;
+  color: #f4f4f5 !important;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Primary Buttons with Gradient 2 */
+button:not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn), 
+.y2k-button, .paradise-button {
+  font-family: "Fugaz One", cursive, sans-serif !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  padding: 14px 36px !important;
+  font-size: 0.95rem !important;
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+/* Standard button backgrounds and borders */
+button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn), 
+.y2k-button, .paradise-button {
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 10px 30px rgba(240, 66, 255, 0.4) !important;
+}
+
+button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn):hover, 
+.y2k-button:hover, .paradise-button:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 15px 40px rgba(240, 66, 255, 0.6) !important;
+  border-color: #FFE5F1 !important;
+}
+
+button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn):active, 
+.y2k-button:active, .paradise-button:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.3) !important;
+}
+
+/* Compact Admin Dashboard Action & Icon Buttons */
+.admin-icon-btn {
+  padding: 6px 8px !important;
+  background: rgba(240, 66, 255, 0.1) !important;
+  border: 1px solid rgba(240, 66, 255, 0.3) !important;
+  border-radius: 8px !important;
+  color: #fbbf24 !important;
+  font-size: 12px !important;
+  min-width: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-icon-btn:hover {
+  background: rgba(251, 191, 36, 0.25) !important;
+  border-color: #fbbf24 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.admin-icon-btn-danger {
+  padding: 6px 8px !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  border-radius: 8px !important;
+  color: #f87171 !important;
+  font-size: 12px !important;
+  min-width: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.admin-icon-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.admin-close-btn {
+  background: transparent !important;
+  border: none !important;
+  color: #a1a1aa !important;
+  padding: 4px 8px !important;
+  font-size: 14px !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+.admin-close-btn:hover {
+  color: #ffffff !important;
+}
+
+/* Secondary Button Style */
+.secondary-btn, button.secondary {
+  background: rgba(22, 0, 120, 0.6) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.4) !important;
+}
+
+.secondary-btn:hover, button.secondary:hover {
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
+  color: #ffffff !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 30px rgba(240, 66, 255, 0.5) !important;
+}
+
+/* Setup / Count selection buttons */
+.count-button {
+  background: rgba(22, 0, 120, 0.4) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
+  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.3) !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  transition: all 0.25s ease !important;
+}
+
+.count-button.selected {
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #FFE5F1 !important;
+  box-shadow: 0 10px 30px rgba(240, 66, 255, 0.5) !important;
+}
+
+.count-button:hover:not(.selected) {
+  background: rgba(240, 66, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.35) !important;
+}
+
+/* Camera control / circular buttons */
+.camera-ctrl {
+  background: rgba(22, 0, 120, 0.8) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.4) !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.camera-ctrl:hover {
+  background: linear-gradient(135deg, #F042FF, #7226FF) !important;
+  color: #ffffff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 25px rgba(240, 66, 255, 0.5) !important;
+}
+
+/* Inputs with Glassmorphic Style */
+input, textarea, select {
+  background: rgba(1, 0, 48, 0.7) !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
+  border-radius: 12px !important;
+  color: #ffffff !important;
+  padding: 12px 16px !important;
+  font-family: "Work Sans", sans-serif !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #F042FF !important;
+  box-shadow: 0 0 20px rgba(240, 66, 255, 0.4) !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* Video Frame styles */
+.video-feed {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 16px !important;
+  border: 2px solid rgba(240, 66, 255, 0.3) !important;
+  background-color: #010030;
+  box-shadow: 0 15px 40px rgba(1, 0, 48, 0.6) !important;
+}
+
+.camera-container {
+  border-radius: 20px !important;
+  overflow: hidden;
+  border: 2px solid rgba(240, 66, 255, 0.3) !important;
+  box-shadow: 0 20px 50px rgba(1, 0, 48, 0.6) !important;
+}
+
+/* HUD Crosshairs & Markers */
+.hud-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: #F042FF !important;
+  border-style: solid;
+  pointer-events: none;
+}
+.hud-tl { top: 16px; left: 16px; border-width: 2px 0 0 2px !important; }
+.hud-tr { top: 16px; right: 16px; border-width: 2px 2px 0 0 !important; }
+.hud-bl { bottom: 16px; left: 16px; border-width: 0 0 2px 2px !important; }
+.hud-br { bottom: 16px; right: 16px; border-width: 0 2px 2px 0 !important; }
+
+/* Custom Shutter Pulse FAB Button */
+.shutter-outer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shutter-pulse-ring {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  border-radius: 50%;
+  border: 2px solid #F042FF;
+  animation: shutterPulseRing 2.2s infinite cubic-bezier(0.25, 0, 0, 1);
+  pointer-events: none;
+}
+
+/* Photobooth print styles */
+.photobooth-print-image {
+  border-radius: 8px !important;
+  border: 1px solid rgba(240, 66, 255, 0.25) !important;
+  transition: transform 0.3s ease;
+}
+
+/* Step list guides */
+.step {
+  background: rgba(22, 0, 120, 0.4) !important;
+  border-left: 4px solid #F042FF !important;
+  color: #ffffff !important;
+  border-radius: 12px !important;
+  padding: 12px 18px !important;
+  margin-bottom: 16px !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  border-top: 1px solid rgba(240, 66, 255, 0.2) !important;
+  border-bottom: 1px solid rgba(240, 66, 255, 0.2) !important;
+}
+
+/* Scrollbar Style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #010030;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #F042FF, #7226FF);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FFE5F1;
+}
+
+/* Footer overrides */
+footer, .paradise-footer {
+  margin-top: 0 !important;
+  background: #FAF6F9 !important;
+  border-top: 1px solid rgba(22, 0, 120, 0.12) !important;
+  color: #010030 !important;
+  padding: 48px 24px !important;
+}
+
+footer a, .paradise-footer a {
+  color: #FFE5F1 !important;
+  background: rgba(22, 0, 120, 0.6) !important;
+  border: 1px solid rgba(240, 66, 255, 0.3) !important;
+  padding: 10px 20px !important;
+  border-radius: 999px !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  transition: all 0.2s ease !important;
+}
+
+footer a:hover, .paradise-footer a:hover {
+  background: linear-gradient(135deg, #F042FF, #7226FF) !important;
+  color: #ffffff !important;
+  border-color: #F042FF !important;
+}
+
