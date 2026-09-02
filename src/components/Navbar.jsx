@@ -12,8 +12,6 @@ export default function Navbar({ onLogout }) {
   const navRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  const isCreatorRoute = location.pathname === "/creator" || location.pathname === "/admin";
-
   // Get the main content element to push down
   const getContentElement = () => {
     return (
@@ -29,8 +27,9 @@ export default function Navbar({ onLogout }) {
   // Reset GSAP positions on route change
   useEffect(() => {
     const contentEl = getContentElement();
-    if (contentEl) {
-      gsap.set([dropdownRef.current, navRef.current, contentEl], { y: 0 });
+    const targets = [dropdownRef.current, navRef.current, contentEl].filter(Boolean);
+    if (targets.length > 0) {
+      gsap.set(targets, { y: 0 });
     }
     setIsOpen(false);
     isAnimatingRef.current = false;
@@ -219,17 +218,6 @@ export default function Navbar({ onLogout }) {
             </span>
 
             <span 
-              onClick={() => handleNavClick("/creator")}
-              className={`dropdown__button font-display font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-wider cursor-pointer transition-colors ${
-                isCreatorRoute 
-                  ? "text-[#F042FF] underline decoration-2 underline-offset-8" 
-                  : "text-white/80 hover:text-white"
-              }`}
-            >
-              CREATOR
-            </span>
-
-            <span 
               onClick={() => handleNavClick("/privacy-policy")}
               className={`dropdown__button font-display font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-wider cursor-pointer transition-colors ${
                 location.pathname === "/privacy-policy" 
@@ -250,18 +238,6 @@ export default function Navbar({ onLogout }) {
             >
               CONTACT
             </span>
-
-            {isCreatorRoute && onLogout && (
-              <span 
-                onClick={() => {
-                  if (isOpen) toggleMenu();
-                  onLogout();
-                }}
-                className="dropdown__button font-display font-bold text-sm sm:text-base uppercase tracking-wider text-red-400 hover:text-red-300 transition-colors cursor-pointer flex items-center gap-1.5 ml-auto"
-              >
-                <LogOut className="w-4 h-4" /> LOG OUT
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -270,7 +246,7 @@ export default function Navbar({ onLogout }) {
       <nav 
         ref={navRef} 
         id="navigation" 
-        className="navigation fixed top-0 left-0 right-0 w-full z-[100] px-4 sm:px-8 py-3.5 bg-[#010030]/90 backdrop-blur-xl border-b border-[#160078]/25 shadow-lg"
+        className="navigation fixed top-0 left-0 right-0 w-full z-[100] px-4 sm:px-8 py-3.5 bg-[#010030] border-b border-[#160078]/40 shadow-lg"
       >
         <div className="navigation__container max-w-7xl mx-auto flex items-center justify-between">
           

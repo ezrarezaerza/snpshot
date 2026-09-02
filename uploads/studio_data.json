@@ -1,0 +1,705 @@
+{
+  "artists": [],
+  "frames": [
+    {
+      "id": "classic-navy",
+      "name": "Classic Studio Navy",
+      "type": "color",
+      "layout": "all",
+      "bgColor": "#010030",
+      "bgGradient": "",
+      "borderColor": "#2e109d",
+      "imageSrc": "",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.601Z"
+    },
+    {
+      "id": "electric-magenta",
+      "name": "Electric Magenta Glow",
+      "type": "gradient",
+      "layout": "all",
+      "bgColor": "#010030",
+      "bgGradient": "linear-gradient(135deg, #F042FF 0%, #7226FF 100%)",
+      "borderColor": "#FFE5F1",
+      "imageSrc": "",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "retro-film-strip",
+      "name": "Retro Film Strip",
+      "type": "color",
+      "layout": "4-grid",
+      "bgColor": "#111111",
+      "bgGradient": "",
+      "borderColor": "#333333",
+      "imageSrc": "",
+      "padding": 20,
+      "innerGap": 10,
+      "borderRadius": 4,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "kpop-3grid-special",
+      "name": "3-Grid K-Pop Idol Special",
+      "type": "gradient",
+      "layout": "3-grid",
+      "bgColor": "#0e0048",
+      "bgGradient": "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
+      "borderColor": "#F042FF",
+      "imageSrc": "",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "pastel-2x2-grid",
+      "name": "2x2 Square Soft Pastel",
+      "type": "gradient",
+      "layout": "2x2",
+      "bgColor": "#18001e",
+      "bgGradient": "linear-gradient(135deg, #18001e 0%, #2e083c 100%)",
+      "borderColor": "#FF00FF",
+      "imageSrc": "",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "vintage-2x3-postcard",
+      "name": "2x3 Postcard Vintage Film",
+      "type": "color",
+      "layout": "2x3",
+      "bgColor": "#1a0f00",
+      "bgGradient": "",
+      "borderColor": "#F59E0B",
+      "imageSrc": "",
+      "padding": 20,
+      "innerGap": 14,
+      "borderRadius": 6,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "custom-baseline-frame",
+      "name": "Custom Studio Baseline Frame",
+      "type": "color",
+      "layout": "all",
+      "bgColor": "#2e109d",
+      "bgGradient": "",
+      "borderColor": "#F042FF",
+      "imageSrc": "",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T09:56:13.602Z"
+    },
+    {
+      "id": "frame-1786530214399",
+      "name": "Angry Frame 3-Grid",
+      "type": "png",
+      "layout": "3-grid",
+      "bgColor": "#ffffff",
+      "bgGradient": "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
+      "borderColor": "#e6e2f2",
+      "imageSrc": "/img/themes/theme-1786530214397-960268073.png",
+      "padding": 16,
+      "innerGap": 12,
+      "borderRadius": 8,
+      "active": true,
+      "createdAt": "2026-08-12T10:23:34.399Z"
+    }
+  ],
+  "stickers": [],
+  "galleryItems": [],
+  "showcaseThemes": [
+    {
+      "id": "classic-studio",
+      "name": "Classic Studio",
+      "color": "#F042FF",
+      "desc": "High-contrast photostrip frames with solid borders and nostalgic digital stamps.",
+      "bg": "linear-gradient(135deg, #020617, #0F3AE2)",
+      "badge": "CLASSIC_POP",
+      "image": "/img/poses/Wonyoung1.png",
+      "caption": "Studio Frame ✦",
+      "overlayFrameId": "classic-navy"
+    },
+    {
+      "id": "pastel-bloom",
+      "name": "Pastel Bloom",
+      "color": "#FF00FF",
+      "desc": "Soft flower power stamps with pastel gradients and refined hand-drawn borders.",
+      "bg": "linear-gradient(135deg, #18001e, #2e083c)",
+      "badge": "SOFT_PASTEL",
+      "image": "/img/poses/Wonyoung2.png",
+      "caption": "Soft Floral Frame",
+      "overlayFrameId": "pastel-2x2-grid"
+    },
+    {
+      "id": "cinematic-film",
+      "name": "Cinematic Film",
+      "color": "#F59E0B",
+      "desc": "Warm cinematic film grain with retro date stamps and nostalgic lighting.",
+      "bg": "linear-gradient(135deg, #1a0f00, #2b1800)",
+      "badge": "VINTAGE_FILM",
+      "image": "/img/poses/Wonyoung3.png",
+      "caption": "Warm Grain Filter",
+      "overlayFrameId": "vintage-2x3-postcard"
+    },
+    {
+      "id": "neon-cyber",
+      "name": "Neon Cyber",
+      "color": "#10B981",
+      "desc": "Vibrant neon reflections with custom digital overlays and star halo clusters.",
+      "bg": "linear-gradient(135deg, #022c22, #064e3b)",
+      "badge": "NEON_CYBER",
+      "image": "/img/poses/Wonyoung1.png",
+      "caption": "Electric Cyan",
+      "overlayFrameId": "electric-magenta"
+    },
+    {
+      "id": "custom-showcase-baseline",
+      "name": "Custom Showcase Baseline Theme",
+      "color": "#7226FF",
+      "desc": "Editable baseline showcase theme for seasonal studio campaigns.",
+      "bg": "linear-gradient(135deg, #010030, #2e109d)",
+      "badge": "FEATURED",
+      "image": "/img/poses/Wonyoung2.png",
+      "caption": "Custom Baseline ✦",
+      "overlayFrameId": "custom-baseline-frame"
+    }
+  ],
+  "heroConfig": {
+    "activeThemePreset": "snpshot-hero-default",
+    "headline": "DIGITAL PHOTO BOOTH",
+    "subheadline": "Capture studio-quality photo strips directly from your browser. Personalize your prints with flexible frame layouts, curated event themes, digital stamps, and high-resolution exports.",
+    "eyebrowBadge": "✦ DIGITAL SELF-PHOTO STUDIO ✦",
+    "ctaText": "START BOOTH",
+    "ctaLink": "/welcome",
+    "accentColor": "#F042FF",
+    "heroBg": "linear-gradient(135deg, #010030 0%, #0e0048 50%, #2e109d 100%)",
+    "doodleHeaderTag": "#PHOTOBOOTH",
+    "card1Handle": "@wonyoung",
+    "card1Subhandle": "★ IDOL EDITION",
+    "card1Tag": "KPOP_01",
+    "card3Title": "SNPSHOT STUDIO",
+    "card3Subtitle": "Official Partner",
+    "card3Stat": "98.4K DOWNLOADS",
+    "card3Theme": "THEME: PURPLE_NEON ★ PRESET",
+    "card3Prints": "✦ 15 STRIPS",
+    "circularBadgeText": "★ DIGITAL PHOTO STUDIO ★ K-POP FRAMES ★ DIGITAL DOWNLOADS ★ PREMIUM PRINTS ★",
+    "statusText": "ONLINE STUDIO ACTIVE",
+    "photosCountText": "244,195 PHOTOS TAKEN"
+  },
+  "filters": [
+    {
+      "id": "warm-grain",
+      "name": "Warm Grain",
+      "category": "Vintage",
+      "badge": "POPULAR",
+      "brightness": 105,
+      "contrast": 110,
+      "saturation": 115,
+      "sepia": 25,
+      "hueRotate": 0,
+      "grain": 15,
+      "blur": 0,
+      "desc": "Nostalgic analog film warmth with delicate organic grain and soft golden highlights.",
+      "active": true
+    },
+    {
+      "id": "pastel-glow",
+      "name": "Pastel Glow",
+      "category": "Soft Glow",
+      "badge": "FEATURED",
+      "brightness": 112,
+      "contrast": 95,
+      "saturation": 108,
+      "sepia": 10,
+      "hueRotate": -10,
+      "grain": 5,
+      "blur": 0.3,
+      "desc": "Dreamy K-pop idol complexion smoothing with soft violet and blush highlights.",
+      "active": true
+    },
+    {
+      "id": "cinematic-film",
+      "name": "Cinematic Film",
+      "category": "Vintage",
+      "badge": "NEW",
+      "brightness": 100,
+      "contrast": 120,
+      "saturation": 90,
+      "sepia": 35,
+      "hueRotate": 10,
+      "grain": 20,
+      "blur": 0,
+      "desc": "Rich moody contrast inspired by 35mm cinema film stock with deep shadow tone.",
+      "active": true
+    },
+    {
+      "id": "bw-high-contrast",
+      "name": "Monochrome Noir",
+      "category": "B&W",
+      "badge": "CLASSIC",
+      "brightness": 102,
+      "contrast": 135,
+      "saturation": 0,
+      "sepia": 0,
+      "hueRotate": 0,
+      "grain": 12,
+      "blur": 0,
+      "desc": "Timeless high-contrast black and white studio portrait processing.",
+      "active": true
+    },
+    {
+      "id": "cyberpunk-neon",
+      "name": "Cyberpunk Neon",
+      "category": "Cyber/Neon",
+      "badge": "SPECIAL",
+      "brightness": 108,
+      "contrast": 125,
+      "saturation": 145,
+      "sepia": 0,
+      "hueRotate": 45,
+      "grain": 8,
+      "blur": 0,
+      "desc": "Electric cyan and magenta pop saturation for nightlife and Y2K shoots.",
+      "active": true
+    }
+  ],
+  "canvasConfig": {
+    "borderWidth": 16,
+    "photoGap": 12,
+    "borderRadius": 8,
+    "shadowStrength": 20,
+    "outerPadding": 20,
+    "bgPattern": "solid",
+    "bgGradient": "linear-gradient(135deg, #010030 0%, #2e109d 100%)",
+    "dpiMultiplier": 2,
+    "layoutSpecs": {
+      "3-grid": {
+        "width": 1200,
+        "height": 1800,
+        "aspectRatio": "2:3",
+        "dpi": 300
+      },
+      "4-grid": {
+        "width": 1200,
+        "height": 1800,
+        "aspectRatio": "2:3",
+        "dpi": 300
+      },
+      "2x2": {
+        "width": 1200,
+        "height": 1200,
+        "aspectRatio": "1:1",
+        "dpi": 300
+      },
+      "2x3": {
+        "width": 1800,
+        "height": 1200,
+        "aspectRatio": "3:2",
+        "dpi": 300
+      }
+    }
+  },
+  "marqueeItems": [
+    {
+      "id": "marquee-1",
+      "badge": "✨ FEATURED",
+      "text": "NEW SEASONAL THEMES DROPPED • K-POP IDOL COLLAB FRAMES LIVE NOW",
+      "link": "/studio",
+      "active": true,
+      "speedSec": 18,
+      "bgColor": "#010030",
+      "textColor": "#F042FF"
+    },
+    {
+      "id": "marquee-2",
+      "badge": "📸 SPECIAL PROMO",
+      "text": "PRINT 2 PHOTOSTRIPS GET 1 FREE THIS WEEKEND • HIGH-RES 300 DPI EXPORT",
+      "link": "/studio",
+      "active": true,
+      "speedSec": 22,
+      "bgColor": "#2e109d",
+      "textColor": "#FFFFFF"
+    },
+    {
+      "id": "marquee-3",
+      "badge": "⚡ HIGH-RES PRINT",
+      "text": "STUDIO-GRADE COLOR FILTERS • DIGITAL STAMPS & CUSTOM WATERMARKS",
+      "link": "/studio",
+      "active": true,
+      "speedSec": 20,
+      "bgColor": "#0e0048",
+      "textColor": "#FFE5F1"
+    }
+  ],
+  "websiteContent": {
+    "brandName": "SNPSHOT Studio",
+    "tagline": "Digital Self-Photo Booth & High-Res Photostrip Studio",
+    "copyrightText": "© 2026 SNPSHOT Studio. All rights reserved. Built for photography enthusiasts.",
+    "contactEmail": "hello@snpshot.studio",
+    "socials": {
+      "instagram": "https://instagram.com/snpshot.studio",
+      "tiktok": "https://tiktok.com/@snpshot.studio",
+      "twitter": "https://twitter.com/snpshotstudio",
+      "youtube": "https://youtube.com/@snpshotstudio"
+    },
+    "pipelineSteps": [
+      {
+        "step": "01",
+        "title": "Select Layout",
+        "desc": "Choose 3-Grid Vertical, Classic 4-Strip, 2x2 Square Grid, or 2x3 Postcard format."
+      },
+      {
+        "step": "02",
+        "title": "Capture Photos",
+        "desc": "Use live camera shutter countdown and real-time pose guidance overlays."
+      },
+      {
+        "step": "03",
+        "title": "Customize & Decorate",
+        "desc": "Apply frame backgrounds, studio color filters, digital stamps, and text stickers."
+      },
+      {
+        "step": "04",
+        "title": "Download & Share",
+        "desc": "Render high-resolution 300 DPI composite canvas for instant digital download or print."
+      }
+    ],
+    "faqs": [
+      {
+        "id": "faq-1",
+        "question": "How high is the resolution of exported photostrips?",
+        "answer": "All photostrips export at 300 DPI high-resolution canvas print quality (up to 1800px) ideal for physical printing or social sharing."
+      },
+      {
+        "id": "faq-2",
+        "question": "Are my photos stored privately on the server?",
+        "answer": "Your captured photos stay entirely inside your browser session during customization. Server exports are created only when shared to the gallery."
+      },
+      {
+        "id": "faq-3",
+        "question": "Can I customize frame colors and digital stamps?",
+        "answer": "Yes! Choose from artist collaboration frames, solid studio border colors, gradient backgrounds, and aesthetic sticker stamps."
+      }
+    ]
+  },
+  "inquiries": [
+    {
+      "id": "inq-101",
+      "name": "Minji Kim",
+      "email": "minji.kim@kpopframe.co",
+      "subject": "Collaboration",
+      "message": "Hi SNPSHOT team! We represent an indie pop music collective and would love to design an exclusive 4-strip idol frame template for our upcoming album launch event.",
+      "status": "unread",
+      "createdAt": "2026-08-11T14:32:00.000Z",
+      "notes": [
+        {
+          "id": "note-1",
+          "author": "Studio Admin",
+          "text": "Reviewed portfolio. High alignment with our Gen-Z aesthetics.",
+          "createdAt": "2026-08-11T15:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "inq-102",
+      "name": "Marcus Vance",
+      "email": "marcus.vance@eventspro.com",
+      "subject": "Event Booking",
+      "message": "Hello! We are organizing a corporate tech summit next month and want to set up an interactive digital self-photo booth station for 300+ attendees. Can you provide custom branding package pricing?",
+      "status": "starred",
+      "createdAt": "2026-08-10T18:15:00.000Z",
+      "notes": [
+        {
+          "id": "note-2",
+          "author": "Studio Admin",
+          "text": "Sent corporate rate sheet v2. Awaiting attendee count confirmation.",
+          "createdAt": "2026-08-10T19:20:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "inq-103",
+      "name": "Sophia Chen",
+      "email": "sophia.c@gmail.com",
+      "subject": "Technical Issue",
+      "message": "Hi there! I took a 3-strip photo set earlier today, but the high-res PNG download button was stuck on generating image. Can you help retrieve my session strip?",
+      "status": "in_review",
+      "createdAt": "2026-08-09T09:45:00.000Z",
+      "notes": []
+    },
+    {
+      "id": "inq-104",
+      "name": "David Lee",
+      "email": "david@leestudio.design",
+      "subject": "General Inquiry",
+      "message": "Loving the new B&W High-Contrast studio filter! Are you accepting custom sticker submission designs from community artists?",
+      "status": "resolved",
+      "createdAt": "2026-08-08T11:20:00.000Z",
+      "notes": [
+        {
+          "id": "note-3",
+          "author": "Studio Admin",
+          "text": "Shared creator portal guidelines.",
+          "createdAt": "2026-08-08T14:10:00.000Z"
+        }
+      ]
+    }
+  ],
+  "subjectCategories": [
+    "General Inquiry",
+    "Event Booking",
+    "Collaboration",
+    "Technical Issue",
+    "Print & High-Res Export"
+  ],
+  "analytics": {
+    "kpis": {
+      "activeSessions": 142,
+      "photosCaptured": 1284,
+      "downloadsCompleted": 896,
+      "completionRate": 84.2,
+      "avgRenderLatencyMs": 245,
+      "exportSuccessRate": 99.4
+    },
+    "funnel": [
+      {
+        "step": "Step 01: Layout Select",
+        "count": 1250,
+        "conversion": 100
+      },
+      {
+        "step": "Step 02: Camera Capture",
+        "count": 1180,
+        "conversion": 94.4
+      },
+      {
+        "step": "Step 03: Customize & Decorate",
+        "count": 1050,
+        "conversion": 84
+      },
+      {
+        "step": "Step 04: High-Res Download",
+        "count": 896,
+        "conversion": 71.7
+      }
+    ],
+    "layouts": [
+      {
+        "id": "vertical-3",
+        "name": "Vertical 3-Strip",
+        "count": 482,
+        "percentage": 38.4,
+        "color": "#7226FF"
+      },
+      {
+        "id": "classic-4",
+        "name": "Classic 4-Strip",
+        "count": 395,
+        "percentage": 31.5,
+        "color": "#F042FF"
+      },
+      {
+        "id": "grid-2x2",
+        "name": "2x2 Square Grid",
+        "count": 241,
+        "percentage": 19.2,
+        "color": "#010030"
+      },
+      {
+        "id": "postcard-2x3",
+        "name": "2x3 Postcard",
+        "count": 132,
+        "percentage": 10.9,
+        "color": "#3B82F6"
+      }
+    ],
+    "filters": [
+      {
+        "id": "warm_grain",
+        "name": "Warm Grain",
+        "uses": 412,
+        "percentage": 32.8
+      },
+      {
+        "id": "pastel_glow",
+        "name": "Pastel Glow",
+        "uses": 328,
+        "percentage": 26.1
+      },
+      {
+        "id": "cinematic_film",
+        "name": "Cinematic Film",
+        "uses": 245,
+        "percentage": 19.5
+      },
+      {
+        "id": "bw_highcontrast",
+        "name": "B&W High-Contrast",
+        "uses": 156,
+        "percentage": 12.4
+      },
+      {
+        "id": "vintage_chrome",
+        "name": "Vintage Chrome",
+        "uses": 88,
+        "percentage": 7
+      },
+      {
+        "id": "standard_pure",
+        "name": "Standard Pure",
+        "uses": 27,
+        "percentage": 2.2
+      }
+    ],
+    "decorations": [
+      {
+        "id": "dec-1",
+        "type": "stamp",
+        "name": "Cherry Blossom Seal",
+        "count": 384
+      },
+      {
+        "id": "dec-2",
+        "type": "stamp",
+        "name": "Studio Star Stamp",
+        "count": 312
+      },
+      {
+        "id": "dec-3",
+        "type": "sticker",
+        "name": "Y2K Sparkle Hologram",
+        "count": 295
+      },
+      {
+        "id": "dec-4",
+        "type": "sticker",
+        "name": "Film Grain Watermark",
+        "count": 240
+      },
+      {
+        "id": "dec-5",
+        "type": "border",
+        "name": "Deep Indigo (#010030)",
+        "count": 520
+      },
+      {
+        "id": "dec-6",
+        "type": "border",
+        "name": "Electric Magenta (#F042FF)",
+        "count": 380
+      }
+    ],
+    "timeframeData": {
+      "today": {
+        "activeSessions": 142,
+        "photosCaptured": 1284,
+        "downloadsCompleted": 896,
+        "completionRate": 84.2
+      },
+      "last7d": {
+        "activeSessions": 940,
+        "photosCaptured": 8520,
+        "downloadsCompleted": 6140,
+        "completionRate": 82.5
+      },
+      "last30d": {
+        "activeSessions": 3850,
+        "photosCaptured": 34200,
+        "downloadsCompleted": 24800,
+        "completionRate": 81.8
+      },
+      "allTime": {
+        "activeSessions": 12450,
+        "photosCaptured": 112000,
+        "downloadsCompleted": 81200,
+        "completionRate": 83.1
+      }
+    },
+    "engineLogs": [
+      {
+        "id": "log-1",
+        "timestamp": "2026-08-11 19:48:12",
+        "status": "success",
+        "latencyMs": 232,
+        "resolution": "2400x7200 300DPI",
+        "format": "PNG"
+      },
+      {
+        "id": "log-2",
+        "timestamp": "2026-08-11 19:45:05",
+        "status": "success",
+        "latencyMs": 258,
+        "resolution": "2400x7200 300DPI",
+        "format": "PNG"
+      },
+      {
+        "id": "log-3",
+        "timestamp": "2026-08-11 19:41:22",
+        "status": "success",
+        "latencyMs": 210,
+        "resolution": "2400x7200 300DPI",
+        "format": "PNG"
+      },
+      {
+        "id": "log-4",
+        "timestamp": "2026-08-11 19:35:10",
+        "status": "success",
+        "latencyMs": 265,
+        "resolution": "2400x7200 300DPI",
+        "format": "PNG"
+      },
+      {
+        "id": "log-5",
+        "timestamp": "2026-08-11 19:28:44",
+        "status": "success",
+        "latencyMs": 240,
+        "resolution": "2400x7200 300DPI",
+        "format": "PNG"
+      }
+    ]
+  },
+  "settings": {
+    "camera": {
+      "defaultCountdown": 5,
+      "shutterSoundEnabled": true,
+      "audioVolume": 80,
+      "autoBurstInterval": 3,
+      "mirrorPreview": true,
+      "flashEffect": true
+    },
+    "export": {
+      "defaultDpi": "300",
+      "defaultFormat": "PNG",
+      "jpegQuality": 92,
+      "framePaddingPx": 20,
+      "photoGapPx": 12,
+      "borderCornerRadiusPx": 12,
+      "watermarkEnabled": true,
+      "watermarkText": "SNPSHOT STUDIO // HIGH-RES DIGITAL PRINT",
+      "includeDateStamp": true
+    },
+    "security": {
+      "passkey": "snpshot2026",
+      "sessionTimeoutMinutes": 60,
+      "requirePasskeyForExport": false,
+      "maintenanceMode": false
+    }
+  }
+}

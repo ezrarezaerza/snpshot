@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="grad-bfly" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F042FF" />
+      <stop offset="50%" stop-color="#7226FF" />
+      <stop offset="100%" stop-color="#00FFFF" />
+    </linearGradient>
+  </defs>
+  <!-- Left Wing -->
+  <path d="M56 60 C40 30 10 20 15 50 C18 70 45 68 56 64 C42 75 25 95 38 105 C50 110 55 85 58 70 Z" fill="url(#grad-bfly)" stroke="#FFFFFF" stroke-width="2" />
+  <!-- Right Wing -->
+  <path d="M64 60 C80 30 110 20 105 50 C102 70 75 68 64 64 C78 75 95 95 82 105 C70 110 65 85 62 70 Z" fill="url(#grad-bfly)" stroke="#FFFFFF" stroke-width="2" />
+  <!-- Body & Antenna -->
+  <ellipse cx="60" cy="65" rx="3.5" ry="20" fill="#010030" stroke="#FFFFFF" stroke-width="1.5" />
+  <circle cx="60" cy="42" r="4.5" fill="#F042FF" stroke="#FFFFFF" stroke-width="1" />
+  <path d="M58 40 Q50 25 45 28" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+  <path d="M62 40 Q70 25 75 28" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+</svg>

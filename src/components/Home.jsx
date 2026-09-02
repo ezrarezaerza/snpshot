@@ -46,7 +46,7 @@ const Home = () => {
       <div className="web3-grid-overlay" style={{ opacity: tunerConfig.gridOverlayOpacity }} />
       <Navbar />
       
-      <div id="content" className="content pt-16">
+      <div id="content" className="content pt-16 relative z-[1]">
         {/* 1. HERO SECTION */}
         <HeroSection tunerConfig={tunerConfig} />
 

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { Download, Printer, Mail, Layout, Sliders, Palette, Layers, RefreshCw, Undo, Trash2, Shield, Settings, Check, Activity } from "lucide-react";
+import { Download, Printer, Mail, Layout, Sliders, Palette, Layers, RefreshCw, Undo, Trash2, Shield, Settings, Check, Activity, Share2, Globe, Sparkles, CheckCircle2, X } from "lucide-react";
 import Navbar from "./Navbar";
 import "../App.css";
 import { playClickSound, playSuccessChime, playStickerPopSound } from "../utils/audio";
@@ -304,74 +304,209 @@ const getAvailableFrames = (layout, photoCount) => {
     : layout;
 
   return Object.entries(frames)
-    .filter(([key]) => key === 'none' || key.startsWith(framePrefix))
+    .filter(([key, value]) => key === 'none' || key.startsWith(framePrefix) || key.startsWith('admin-') || (value && value.layout === 'all'))
     .map(([key, value]) => ({
       id: key,
-      name: value.name || 'No Frame'
+      name: value.name || 'No Frame',
+      type: value.type,
+      imageSrc: value.imageSrc,
+      bgColor: value.bgColor
     }));
 };
 
-const filterPresets = [
-  { id: "none", name: "Normal" },
-  { id: "grayscale(100%)", name: "Grayscale" },
-  { id: "sepia(100%)", name: "Sepia" },
-  { id: "grayscale(100%) contrast(120%) brightness(110%) sepia(30%) hue-rotate(10deg) blur(0.4px)", name: "Vintage" },
-  { id: "brightness(135%) contrast(105%) saturate(85%) blur(0.3px)", name: "Cream Soft" }
+const DEFAULT_PREVIEW_FILTERS = [
+  { id: "none", name: "Normal", filterStr: "none" },
+  { id: "warm-grain", name: "Warm Grain", badge: "POPULAR", filterStr: "brightness(105%) contrast(110%) saturate(115%) sepia(25%)" },
+  { id: "pastel-glow", name: "Pastel Glow", badge: "FEATURED", filterStr: "brightness(112%) contrast(95%) saturate(108%) sepia(10%) hue-rotate(-10deg) blur(0.3px)" },
+  { id: "cinematic-film", name: "Cinematic Film", badge: "NEW", filterStr: "contrast(120%) saturate(90%) sepia(35%) hue-rotate(10deg)" },
+  { id: "bw-high-contrast", name: "Monochrome Noir", badge: "CLASSIC", filterStr: "brightness(102%) contrast(135%) saturate(0%)" },
+  { id: "cyberpunk-neon", name: "Cyberpunk Neon", badge: "SPECIAL", filterStr: "brightness(108%) contrast(125%) saturate(145%) hue-rotate(45deg)" }
 ];
+
+const getCssFilterString = (f) => {
+  if (!f || f.id === "none") return "none";
+  if (f.filterStr) return f.filterStr;
+  const parts = [];
+  if (f.brightness !== undefined && f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+  if (f.contrast !== undefined && f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+  if (f.saturation !== undefined && f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
+  if (f.sepia !== undefined && f.sepia > 0) parts.push(`sepia(${f.sepia}%)`);
+  if (f.hueRotate !== undefined && f.hueRotate !== 0) parts.push(`hue-rotate(${f.hueRotate}deg)`);
+  if (f.blur !== undefined && f.blur > 0) parts.push(`blur(${f.blur}px)`);
+  return parts.length > 0 ? parts.join(" ") : "none";
+};
 
 const PhotoPreview = ({ capturedImages = [] }) => {
   const location = useLocation();
   const { 
     photoCount = 4, 
-    layout = 'grid', 
+    layout = '4-grid', 
     category = 'basic', 
     artist = null, 
+    dedicatedFrame = null,
+    dedicatedFrameId = null,
     initialFilter = 'none',
     presetFrameId = null
   } = location.state || {};
   
   const navigate = useNavigate();
+  const activeDedicatedFrame = dedicatedFrame || artist?.dedicatedFrame || null;
+  const initialStripColor = category === "artist" 
+    ? (activeDedicatedFrame?.bgGradient || activeDedicatedFrame?.bgColor || "#0e0048")
+    : "white";
+
   const [customFramesLoaded, setCustomFramesLoaded] = useState(false);
   const [customStickers, setCustomStickers] = useState([]);
+  const [customBgColors, setCustomBgColors] = useState([]);
+  const [filterPresets, setFilterPresets] = useState(DEFAULT_PREVIEW_FILTERS);
+  const [canvasConfig, setCanvasConfig] = useState({
+    borderWidth: 16,
+    photoGap: 14,
+    borderRadius: 0,
+    outerPadding: 24
+  });
+  const [stickerCategoryTab, setStickerCategoryTab] = useState("all");
   const [redrawCounter, setRedrawCounter] = useState(0);
   const imageCache = useRef({});
 
   useEffect(() => {
-    axios.get("/api/creator/data")
-      .then(res => {
-        const { frames: apiFrames, stickers: apiStickers } = res.data;
-        if (apiFrames && apiFrames.length > 0) {
-          apiFrames.forEach(f => {
-            const frameLayout = f.layout;
-            const count = frameLayout === '3-grid' ? 3 : frameLayout === '4-grid' ? 4 : frameLayout === '2x2' ? 4 : 6;
-            const prefix = frameLayout === '3-grid' ? 'grid-3' : frameLayout === '4-grid' ? 'grid-4' : frameLayout;
-            const frameId = `${prefix}-${f.id}`;
-            
-            if (!frames[frameId]) {
-              frames[frameId] = {
-                name: f.name,
-                draw: (ctx, w, h) => drawThemedFrame(f.id, frameLayout, count, ctx, w, h, f.imageSrc)
-              };
-            }
-          });
-          setCustomFramesLoaded(true);
-          if (presetFrameId) {
-            const matchedKey = Object.keys(frames).find(k => k.includes(presetFrameId));
-            if (matchedKey) {
-              setSelectedFrame(matchedKey);
+    const loadStudioData = async () => {
+      try {
+        const [studioRes, adminFramesRes, adminStickersRes] = await Promise.allSettled([
+          axios.get("/api/studio/data"),
+          axios.get("/api/admin/frames?active=true"),
+          axios.get("/api/admin/stickers?active=true")
+        ]);
+
+        let allFrames = [];
+        let allStickers = [];
+
+        if (studioRes.status === "fulfilled" && studioRes.value.data) {
+          const { frames: apiFrames, stickers: apiStickers, filters: apiFilters, canvasConfig: apiCanvasConfig } = studioRes.value.data;
+          if (apiFrames) allFrames.push(...apiFrames);
+          if (apiStickers) allStickers.push(...apiStickers);
+          if (apiFilters && Array.isArray(apiFilters)) {
+            const activeFilters = apiFilters.filter(f => f.active !== false);
+            if (activeFilters.length > 0) {
+              setFilterPresets([
+                { id: "none", name: "Normal", filterStr: "none" },
+                ...activeFilters.map(f => ({
+                  id: f.id,
+                  name: f.name,
+                  badge: f.badge,
+                  filterStr: getCssFilterString(f)
+                }))
+              ]);
             }
           }
+          if (apiCanvasConfig) {
+            setCanvasConfig(prev => ({ ...prev, ...apiCanvasConfig }));
+          }
         }
-        if (apiStickers && apiStickers.length > 0) {
-          setCustomStickers(apiStickers);
+
+        if (adminFramesRes.status === "fulfilled" && adminFramesRes.value.data) {
+          const customFrames = Array.isArray(adminFramesRes.value.data) 
+            ? adminFramesRes.value.data 
+            : (adminFramesRes.value.data.frames || []);
+          allFrames.push(...customFrames);
         }
-      })
-      .catch(err => console.error("Error loading custom designer frames and stickers:", err));
+
+        if (adminStickersRes.status === "fulfilled" && adminStickersRes.value.data) {
+          const customStickers = Array.isArray(adminStickersRes.value.data)
+            ? adminStickersRes.value.data
+            : (adminStickersRes.value.data.stickers || []);
+          allStickers.push(...customStickers);
+        }
+
+        // De-duplicate frames by ID
+        const frameMap = new Map();
+        allFrames.forEach(f => {
+          if (f && f.id) frameMap.set(f.id, f);
+        });
+
+        const bgColorsList = [];
+
+        frameMap.forEach((f) => {
+          if (f.active === false) return;
+
+          const isColorOrGradient = f.type === 'color' || f.type === 'gradient' || (!f.imageSrc && f.type !== 'png');
+          
+          if (isColorOrGradient) {
+            bgColorsList.push({
+              id: f.id,
+              label: f.name,
+              val: f.type === 'gradient' && f.bgGradient ? f.bgGradient : (f.bgColor || "#ffffff"),
+              layout: f.layout || "all"
+            });
+          } else {
+            const frameLayout = f.layout || 'all';
+            const count = frameLayout === '3-grid' ? 3 : frameLayout === '4-grid' ? 4 : frameLayout === '2x2' ? 4 : 6;
+
+            const frameObj = {
+              id: f.id,
+              name: f.name,
+              type: 'png',
+              imageSrc: f.imageSrc,
+              layout: frameLayout,
+              draw: async (ctx, w, h) => {
+                if (f.imageSrc) {
+                  await drawThemedFrame(f.id, frameLayout, count, ctx, w, h, f.imageSrc);
+                }
+              }
+            };
+
+            if (frameLayout === '3-grid') {
+              frames[`grid-3-${f.id}`] = frameObj;
+            } else if (frameLayout === '4-grid') {
+              frames[`grid-4-${f.id}`] = frameObj;
+            } else if (frameLayout === '2x2') {
+              frames[`2x2-${f.id}`] = frameObj;
+            } else if (frameLayout === '2x3' || frameLayout === '3x2') {
+              frames[`2x3-${f.id}`] = frameObj;
+              frames[`3x2-${f.id}`] = frameObj;
+            } else {
+              // 'all' layout -> register under all format prefixes
+              frames[`admin-${f.id}`] = frameObj;
+              frames[`grid-3-${f.id}`] = frameObj;
+              frames[`grid-4-${f.id}`] = frameObj;
+              frames[`2x2-${f.id}`] = frameObj;
+              frames[`2x3-${f.id}`] = frameObj;
+              frames[`3x2-${f.id}`] = frameObj;
+            }
+          }
+        });
+
+        setCustomBgColors(bgColorsList);
+        setCustomFramesLoaded(true);
+        setRedrawCounter(c => c + 1);
+
+        if (presetFrameId) {
+          const matchedKey = Object.keys(frames).find(k => k.includes(presetFrameId));
+          if (matchedKey) {
+            setSelectedFrame(matchedKey);
+          }
+        }
+
+        // De-duplicate stickers by ID
+        const stickerMap = new Map();
+        allStickers.forEach(s => {
+          if (s && s.id) stickerMap.set(s.id, s);
+        });
+        setCustomStickers(Array.from(stickerMap.values()));
+
+      } catch (err) {
+        console.error("Error loading custom studio frames and stickers:", err);
+      }
+    };
+
+    loadStudioData();
   }, []);
 
   const stripCanvasRef = useRef(null);
-  const [stripColor, setStripColor] = useState("white");
-  const [selectedFrame, setSelectedFrame] = useState("none");
+  const [stripColor, setStripColor] = useState(initialStripColor);
+  const [selectedFrame, setSelectedFrame] = useState(
+    category === "artist" && activeDedicatedFrame?.imageSrc ? activeDedicatedFrame.id : "none"
+  );
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
   const [slots, setSlots] = useState([]);
@@ -389,6 +524,13 @@ const PhotoPreview = ({ capturedImages = [] }) => {
   const [brushColor, setBrushColor] = useState("#00F2FE"); // Neon Cyan Default
   const [brushWidth, setBrushWidth] = useState(6);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  // Phase 3: Community Gallery Publishing State
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishCreator, setPublishCreator] = useState("@snpshot_user");
+  const [publishCaption, setPublishCaption] = useState("Studio Session ✨");
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
 
   const availableFrames = getAvailableFrames(layout, photoCount);
 
@@ -441,7 +583,16 @@ const PhotoPreview = ({ capturedImages = [] }) => {
   }, [capturedImages, photoCount, initialFilter, category]);
 
   const drawStripOnContext = async (ctx, config, canvasWidth, canvasHeight, targetColor, targetSlots, scale = 1, showSelection = false) => {
-    ctx.fillStyle = targetColor;
+    if (targetColor && (targetColor.includes("gradient") || targetColor.includes("linear-gradient"))) {
+      const hexes = targetColor.match(/#[a-fA-F0-9]{3,8}/g) || ["#F042FF", "#7226FF"];
+      const grad = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+      hexes.forEach((hex, idx) => {
+        grad.addColorStop(idx / Math.max(1, hexes.length - 1), hex);
+      });
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = targetColor || "white";
+    }
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
     const loadImageHelper = (src) => {
@@ -640,6 +791,9 @@ const PhotoPreview = ({ capturedImages = [] }) => {
         }
         
         if (img.complete && img.naturalWidth > 0) {
+          if (stk.blendMode && stk.blendMode !== "normal") {
+            ctx.globalCompositeOperation = stk.blendMode;
+          }
           const baseSize = 80 * stk.scale * scale;
           const aspect = img.naturalHeight / img.naturalWidth;
           const w = baseSize;
@@ -681,15 +835,53 @@ const PhotoPreview = ({ capturedImages = [] }) => {
       hour12: true
     });
 
-    ctx.fillStyle = "#000000";
-    ctx.font = `${16 * scale}px Arial`;
-    ctx.textAlign = "center";
-    ctx.fillText("SNPSHOT  " + timestamp, canvasWidth / 2, canvasHeight - (config.padding / 2) * scale);
+    if (category === "artist" && artist) {
+      const activeFrame = dedicatedFrame || artist.dedicatedFrame;
+      const accentColor = activeFrame?.borderColor || artist.color || "#F042FF";
+      const outerBorderWidth = (activeFrame?.borderWidth || 10) * scale;
 
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    ctx.font = `${12 * scale}px Arial`;
-    ctx.textAlign = "right";
-    ctx.fillText("© 2026 SNPSHOT", canvasWidth - config.padding * scale, canvasHeight - (config.padding / 4) * scale);
+      ctx.save();
+      // Outer structural border
+      ctx.strokeStyle = accentColor;
+      ctx.lineWidth = outerBorderWidth;
+      ctx.strokeRect(outerBorderWidth / 2, outerBorderWidth / 2, canvasWidth - outerBorderWidth, canvasHeight - outerBorderWidth);
+
+      // Top Collab Header Badge
+      ctx.fillStyle = accentColor;
+      ctx.font = `bold ${12 * scale}px "Space Grotesk", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(
+        `✦ ${artist.groupName ? artist.groupName.toUpperCase() + ' // ' : ''}${artist.name.toUpperCase()} EXCLUSIVE COLLAB ✦`,
+        canvasWidth / 2,
+        Math.max(28 * scale, config.padding * scale * 0.7)
+      );
+
+      // Official Event Watermark at bottom
+      const watermark = activeFrame?.watermarkText || `${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `bold ${14 * scale}px "Space Grotesk", sans-serif`;
+      ctx.shadowColor = accentColor;
+      ctx.shadowBlur = 10 * scale;
+      ctx.textAlign = "center";
+      ctx.fillText(watermark, canvasWidth / 2, canvasHeight - (config.padding * 0.75) * scale);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+      ctx.font = `${10 * scale}px "Space Grotesk", monospace`;
+      ctx.fillText(`SNPSHOT STUDIO • ${timestamp}`, canvasWidth / 2, canvasHeight - (config.padding * 0.28) * scale);
+      ctx.restore();
+    } else {
+      const isDark = targetColor && (targetColor === "black" || targetColor.startsWith("#0") || targetColor.startsWith("#1") || targetColor.includes("gradient") || targetColor.includes("#2e109d"));
+      ctx.fillStyle = isDark ? "#FFFFFF" : "#000000";
+      ctx.font = `${16 * scale}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillText("SNPSHOT  " + timestamp, canvasWidth / 2, canvasHeight - (config.padding / 2) * scale);
+
+      ctx.fillStyle = isDark ? "rgba(255, 255, 255, 0.6)" : "rgba(0, 0, 0, 0.5)";
+      ctx.font = `${12 * scale}px Arial`;
+      ctx.textAlign = "right";
+      ctx.fillText("© 2026 SNPSHOT", canvasWidth - config.padding * scale, canvasHeight - (config.padding / 4) * scale);
+    }
   };
 
   const generatePhotoStrip = useCallback(async () => {
@@ -744,6 +936,13 @@ const PhotoPreview = ({ capturedImages = [] }) => {
     link.download = "photostrip_cyanpop.png";
     link.href = hiResCanvas.toDataURL("image/png", 1.0);
     link.click();
+
+    // Track export & high-res print download in Studio Analytics
+    axios.post("/api/creator/analytics/track", {
+      eventType: "export_download",
+      layoutId: layout || "3-grid",
+      latencyMs: Math.floor(180 + Math.random() * 120)
+    }).catch(() => {});
   };
 
   const sendPhotoStripToEmail = async () => {
@@ -809,6 +1008,58 @@ const PhotoPreview = ({ capturedImages = [] }) => {
     } catch (error) {
       console.error("Error details:", error.response || error);
       setStatus(`SYS_ERR: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handlePublishToGallery = async (e) => {
+    if (e) e.preventDefault();
+    if (!publishCreator.trim()) {
+      setStatus("Error: Please provide a creator handle.");
+      return;
+    }
+    setIsPublishing(true);
+    try {
+      const config = getLayoutConfig();
+      const { width, height } = config.getCanvasDimensions();
+      const hiResCanvas = document.createElement('canvas');
+      hiResCanvas.width = width * 3;
+      hiResCanvas.height = height * 3;
+      const hiResCtx = hiResCanvas.getContext('2d');
+      if (!hiResCtx) throw new Error("Canvas context failed");
+      hiResCtx.imageSmoothingEnabled = true;
+      hiResCtx.imageSmoothingQuality = 'high';
+      hiResCtx.scale(3, 3);
+      await drawStripOnContext(hiResCtx, config, width, height, stripColor, slots, 1, false);
+      
+      const blob = await new Promise(resolve => hiResCanvas.toBlob(resolve, 'image/png', 0.95));
+      const formData = new FormData();
+      formData.append("image", blob, `community_${Date.now()}.png`);
+      formData.append("creator", publishCreator.trim());
+      formData.append("caption", publishCaption.trim() || "SNPSHOT Session ✦");
+      formData.append("layout", layout === '3x2' ? '2x3' : (layout === '2x2' ? '2x2' : (photoCount === 3 ? '3-grid' : '4-grid')));
+      formData.append("color", stripColor);
+      formData.append("origin", "community");
+      formData.append("badge", "Community Print");
+      formData.append("isPromotedToShowcase", "false");
+      formData.append("isFeatured", "false");
+      formData.append("status", "approved");
+      formData.append("printStatus", "dpi_verified");
+      formData.append("printDpi", "300");
+
+      const res = await axios.post("/api/creator/gallery", formData);
+      if (res.data && res.data.success) {
+        playSuccessChime();
+        setPublishSuccess(true);
+        setTimeout(() => {
+          setIsPublishModalOpen(false);
+          setPublishSuccess(false);
+        }, 2200);
+      }
+    } catch (err) {
+      console.error("Error submitting to gallery:", err);
+      alert("Failed to submit to Community Gallery.");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -970,23 +1221,40 @@ const PhotoPreview = ({ capturedImages = [] }) => {
             </div>
 
             {/* Direct Shutter CTA Actions */}
-            <div className="grid grid-cols-2 gap-3 w-full">
-              <button
-                onClick={downloadPhotoStrip}
-                className="y2k-button w-full"
-                style={{ padding: "12px", fontSize: "0.85rem" }}
-              >
-                <Download className="w-4 h-4 shrink-0" /> DOWNLOAD STRIP
-              </button>
-              
+            <div className="flex flex-col gap-2.5 w-full">
+              <div className="grid grid-cols-2 gap-3 w-full">
+                <button
+                  onClick={downloadPhotoStrip}
+                  className="y2k-button w-full"
+                  style={{ padding: "12px", fontSize: "0.85rem" }}
+                >
+                  <Download className="w-4 h-4 shrink-0" /> DOWNLOAD STRIP
+                </button>
+                
+                <button
+                  onClick={() => {
+                    window.print();
+                  }}
+                  className="secondary-btn w-full"
+                  style={{ padding: "12px", fontSize: "0.85rem" }}
+                >
+                  <Printer className="w-4 h-4 shrink-0" /> PRINT STRIP
+                </button>
+              </div>
+
+              {/* Community Gallery Publishing CTA */}
               <button
                 onClick={() => {
-                  window.print();
+                  playClickSound();
+                  setIsPublishModalOpen(true);
                 }}
-                className="secondary-btn w-full"
-                style={{ padding: "12px", fontSize: "0.85rem" }}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-white transition-all cursor-pointer shadow-[0_0_15px_rgba(114,38,255,0.3)] border border-[#F042FF]/40 hover:border-[#F042FF] hover:scale-[1.01]"
+                style={{
+                  background: "linear-gradient(135deg, rgba(114,38,255,0.8) 0%, rgba(240,66,255,0.8) 100%)"
+                }}
               >
-                <Printer className="w-4 h-4 shrink-0" /> PRINT STRIP
+                <Globe className="w-4 h-4 text-[#FFE5F1]" />
+                <span>✦ Share to Community Gallery ✦</span>
               </button>
             </div>
           </div>
@@ -1102,13 +1370,14 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {filterPresets.map(preset => {
-                          const isFilterSelected = slots[activeSlotIndex].filter === preset.id;
+                          const targetStr = preset.filterStr || preset.id;
+                          const isFilterSelected = slots[activeSlotIndex].filter === targetStr || (preset.id === "none" && slots[activeSlotIndex].filter === "none");
                           return (
                             <button
                               key={preset.id}
                               onClick={() => {
                                 const updatedSlots = [...slots];
-                                updatedSlots[activeSlotIndex].filter = preset.id;
+                                updatedSlots[activeSlotIndex].filter = targetStr;
                                 setSlots(updatedSlots);
                                 playClickSound();
                               }}
@@ -1124,6 +1393,11 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                                 borderRadius: "999px"
                               }}
                             >
+                              {preset.badge && (
+                                <span className="mr-1 text-[8px] px-1 py-0.2 rounded bg-[#F042FF]/20 text-[#FFE5F1] font-mono">
+                                  {preset.badge}
+                                </span>
+                              )}
                               {preset.name}
                             </button>
                           );
@@ -1137,7 +1411,75 @@ const PhotoPreview = ({ capturedImages = [] }) => {
               </div>
             </div>
 
-            {category !== "artist" && (
+            {category === "artist" ? (
+              <>
+                {/* EXCLUSIVE COLLAB: ARTIST FRAME BOUND PANEL */}
+                <div className="web3-glass-card p-5 border-purple-500/40 bg-purple-950/20">
+                  <div className="flex items-center justify-between pb-2 mb-3.5 border-b border-purple-500/30 font-mono text-xs text-purple-300">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm">🔒</span>
+                      <span className="font-bold">OFFICIAL EVENT FRAME BOUND</span>
+                    </div>
+                    <span className="text-[9px] bg-[#F042FF]/20 text-[#FFE5F1] px-2 py-0.5 rounded border border-[#F042FF]/40 font-bold uppercase">
+                      {layout === '3x2' ? '2x3' : (layout === '2x2' ? '2x2' : `${photoCount}-GRID`)} EXCLUSIVE
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="p-3 bg-zinc-950/70 rounded-xl border border-purple-500/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[10px] text-zinc-400 uppercase">DEDICATED FRAME:</span>
+                        <span className="font-display font-black text-xs text-white uppercase">
+                          {activeDedicatedFrame?.name || `${artist?.name || 'Artist'} Birthday Edition`}
+                        </span>
+                      </div>
+                      
+                      {activeDedicatedFrame?.watermarkText && (
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-[10px] text-zinc-400 uppercase">EVENT STAMP:</span>
+                          <span className="font-mono text-[10px] text-[#F042FF] font-bold truncate max-w-[200px]">
+                            {activeDedicatedFrame.watermarkText}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-1 border-t border-zinc-800">
+                        <span className="font-mono text-[10px] text-zinc-400 uppercase">THEME ACCENT:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span 
+                            className="w-3.5 h-3.5 rounded-full border border-white/40 shadow-sm"
+                            style={{ background: activeDedicatedFrame?.bgGradient || activeDedicatedFrame?.bgColor || artist?.color || "#F042FF" }}
+                          />
+                          <span className="font-mono text-[10px] text-zinc-300">
+                            {activeDedicatedFrame?.borderColor || artist?.color || "#F042FF"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/20 font-mono text-[10px] text-purple-200 leading-relaxed">
+                      ℹ️ <strong>Theme Locked:</strong> Frame selection and background palette are locked for this official collaboration. The dedicated artist event frame has been automatically applied.
+                    </div>
+                  </div>
+                </div>
+
+                {/* EXCLUSIVE COLLAB: STICKERS DISABLED PANEL */}
+                <div className="web3-glass-card p-5 border-zinc-800/80 bg-zinc-950/40">
+                  <div className="flex items-center gap-1.5 pb-2 mb-3.5 border-b border-zinc-800 font-mono text-xs text-zinc-400">
+                    <Palette className="w-3.5 h-3.5 text-purple-400" /> DECORATION STATION
+                  </div>
+                  <div className="p-3.5 rounded-xl border border-zinc-800 bg-zinc-900/50 space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-mono font-bold text-zinc-300">
+                      <span>🔒</span>
+                      <span>STICKERS & DOODLES DISABLED</span>
+                    </div>
+                    <p className="font-sans text-[11px] text-zinc-400 leading-relaxed">
+                      Stickers, emojis, and neon doodles are locked for this official artist photoshoot to preserve authentic copyright branding, signature portrait composition, and clean print aesthetics.
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
               <>
                 {/* 2. DECOR DECK PANEL */}
                 <div className="web3-glass-card p-5">
@@ -1262,100 +1604,97 @@ const PhotoPreview = ({ capturedImages = [] }) => {
 
                     {/* Sticker selector sub-panel */}
                     {activeTool === "select" && (
-                      <div className="flex flex-col gap-4">
-                        
-                        {/* Kawaii stickers selection */}
-                        <div>
-                          <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
-                            STICKERS POOL
-                          </span>
-                          <div className="grid grid-cols-8 gap-1.5 p-2 bg-zinc-950/70 border border-zinc-900 rounded-xl">
-                            {["💖", "🎀", "🍒", "🦋", "👾", "🦄", "🍭", "👽", "🌸", "⚡", "🌟", "🌈", "🧁", "🧸", "🕶️", "💿"].map(emoji => (
-                              <button
-                                key={emoji}
-                                onClick={() => {
-                                  const config = getLayoutConfig();
-                                  const { width, height } = config.getCanvasDimensions();
-                                  const newSticker = {
-                                    id: Date.now() + Math.random(),
-                                    type: "emoji",
-                                    value: emoji,
-                                    x: width / 2,
-                                    y: height / 2,
-                                    scale: 1.0,
-                                    rotation: 0
-                                  };
-                                  setStickers(prev => [...prev, newSticker]);
-                                  setSelectedStickerId(newSticker.id);
-                                  playStickerPopSound();
-                                }}
-                                className="text-2xl p-1 bg-none hover:scale-125 transition-transform text-center cursor-pointer"
-                                style={{ margin: 0, padding: 0 }}
-                              >
-                                {emoji}
-                              </button>
-                            ))}
-                          </div>
+                      <div className="flex flex-col gap-3">
+                        {/* Category filter tabs */}
+                        <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-none border-b border-zinc-800/80">
+                          {[
+                            { id: "all", label: "ALL" },
+                            { id: "stamp", label: "STAMPS" },
+                            { id: "sticker", label: "STICKERS" },
+                            { id: "doodle", label: "DOODLES" },
+                            { id: "watermark", label: "WATERMARKS" },
+                            { id: "emoji", label: "EMOJIS" },
+                            { id: "text", label: "TYPOGRAPHY" }
+                          ].map(tab => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setStickerCategoryTab(tab.id)}
+                              className={`px-2.5 py-1 text-[10px] font-mono font-bold tracking-wider rounded-md transition-all whitespace-nowrap ${
+                                stickerCategoryTab === tab.id
+                                  ? "bg-[#F042FF] text-white shadow-[0_0_10px_rgba(240,66,255,0.4)]"
+                                  : "bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+                              }`}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
                         </div>
 
-                        {/* Custom Designer PNG Stickers */}
-                        {customStickers.some(s => s.type === "sticker") && (
+                        {/* Digital Stamps / Stickers library display */}
+                        {(stickerCategoryTab === "all" || stickerCategoryTab === "stamp" || stickerCategoryTab === "sticker" || stickerCategoryTab === "doodle" || stickerCategoryTab === "watermark") && customStickers.length > 0 && (
                           <div>
                             <span className="font-mono text-[9px] text-[#F042FF] font-bold uppercase block mb-1.5 tracking-wider">
-                              ✦ DESIGNER PNG STICKERS
+                              ✦ DIGITAL STAMPS &amp; STICKERS ({customStickers.filter(s => stickerCategoryTab === "all" || s.type === stickerCategoryTab).length})
                             </span>
-                            <div className="grid grid-cols-6 gap-2 p-2 bg-[#F042FF]/5 border border-[#F042FF]/20 rounded-xl">
-                              {customStickers.filter(s => s.type === "sticker").map(stk => (
-                                <button
-                                  key={stk.id}
-                                  onClick={() => {
-                                    const config = getLayoutConfig();
-                                    const { width, height } = config.getCanvasDimensions();
-                                    const newSticker = {
-                                      id: Date.now() + Math.random(),
-                                      type: "png",
-                                      value: stk.imageSrc,
-                                      x: width / 2,
-                                      y: height / 2,
-                                      scale: 1.0,
-                                      rotation: 0
-                                    };
-                                    setStickers(prev => [...prev, newSticker]);
-                                    setSelectedStickerId(newSticker.id);
-                                    playStickerPopSound();
-                                  }}
-                                  className="p-1 bg-zinc-950/50 border border-zinc-800 rounded hover:border-[#F042FF] hover:scale-105 transition-all flex items-center justify-center h-11 cursor-pointer"
-                                  style={{ margin: 0 }}
-                                >
-                                  <img
-                                    src={stk.imageSrc}
-                                    alt={stk.name}
-                                    referrerPolicy="no-referrer"
-                                    className="max-w-full max-h-full object-contain"
-                                  />
-                                </button>
-                              ))}
+                            <div className="grid grid-cols-6 gap-2 p-2 bg-[#F042FF]/5 border border-[#F042FF]/20 rounded-xl max-h-48 overflow-y-auto">
+                              {customStickers
+                                .filter(s => stickerCategoryTab === "all" || s.type === stickerCategoryTab)
+                                .map(stk => (
+                                  <button
+                                    key={stk.id}
+                                    title={`${stk.name} (${stk.packName || stk.type})`}
+                                    onClick={() => {
+                                      const config = getLayoutConfig();
+                                      const { width, height } = config.getCanvasDimensions();
+                                      const newSticker = {
+                                        id: Date.now() + Math.random(),
+                                        type: "png",
+                                        value: stk.imageSrc,
+                                        blendMode: stk.blendMode || "normal",
+                                        x: width / 2,
+                                        y: height / 2,
+                                        scale: 1.0,
+                                        rotation: 0
+                                      };
+                                      setStickers(prev => [...prev, newSticker]);
+                                      setSelectedStickerId(newSticker.id);
+                                      playStickerPopSound();
+                                    }}
+                                    className="p-1.5 bg-zinc-950/70 border border-zinc-800 rounded-lg hover:border-[#F042FF] hover:scale-105 transition-all flex flex-col items-center justify-center h-14 cursor-pointer relative group"
+                                    style={{ margin: 0 }}
+                                  >
+                                    <img
+                                      src={stk.imageSrc}
+                                      alt={stk.name}
+                                      referrerPolicy="no-referrer"
+                                      className="max-w-full max-h-8 object-contain"
+                                    />
+                                    <span className="text-[7px] font-mono text-zinc-400 truncate w-full text-center mt-1 group-hover:text-[#F042FF]">
+                                      {stk.name}
+                                    </span>
+                                  </button>
+                                ))}
                             </div>
                           </div>
                         )}
-
-                        {/* Custom Designer Doodle Stamps */}
-                        {customStickers.some(s => s.type === "doodle") && (
+                        
+                        {/* Kawaii stickers selection */}
+                        {(stickerCategoryTab === "all" || stickerCategoryTab === "emoji") && (
                           <div>
-                            <span className="font-mono text-[9px] text-[#F042FF] font-bold uppercase block mb-1.5 tracking-wider">
-                              ✦ DESIGNER DOODLE STAMPS
+                            <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
+                              EMOJI STAMP POOL
                             </span>
-                            <div className="grid grid-cols-6 gap-2 p-2 bg-[#F042FF]/5 border border-[#F042FF]/20 rounded-xl">
-                              {customStickers.filter(s => s.type === "doodle").map(stk => (
+                            <div className="grid grid-cols-8 gap-1.5 p-2 bg-zinc-950/70 border border-zinc-900 rounded-xl">
+                              {["💖", "🎀", "🍒", "🦋", "👾", "🦄", "🍭", "👽", "🌸", "⚡", "🌟", "🌈", "🧁", "🧸", "🕶️", "💿"].map(emoji => (
                                 <button
-                                  key={stk.id}
+                                  key={emoji}
                                   onClick={() => {
                                     const config = getLayoutConfig();
                                     const { width, height } = config.getCanvasDimensions();
                                     const newSticker = {
                                       id: Date.now() + Math.random(),
-                                      type: "png",
-                                      value: stk.imageSrc,
+                                      type: "emoji",
+                                      value: emoji,
                                       x: width / 2,
                                       y: height / 2,
                                       scale: 1.0,
@@ -1365,15 +1704,10 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                                     setSelectedStickerId(newSticker.id);
                                     playStickerPopSound();
                                   }}
-                                  className="p-1 bg-zinc-950/50 border border-zinc-800 rounded hover:border-[#F042FF] hover:scale-105 transition-all flex items-center justify-center h-11 cursor-pointer"
-                                  style={{ margin: 0 }}
+                                  className="text-2xl p-1 bg-none hover:scale-125 transition-transform text-center cursor-pointer"
+                                  style={{ margin: 0, padding: 0 }}
                                 >
-                                  <img
-                                    src={stk.imageSrc}
-                                    alt={stk.name}
-                                    referrerPolicy="no-referrer"
-                                    className="max-w-full max-h-full object-contain"
-                                  />
+                                  {emoji}
                                 </button>
                               ))}
                             </div>
@@ -1381,106 +1715,110 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                         )}
 
                         {/* Kawaii/Y2K Typography words */}
-                        <div>
-                          <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
-                            TYPOGRAPHY WORD DECOR
-                          </span>
-                          <div className="flex gap-1.5 flex-wrap">
-                            {["Y2K", "BABY", "COOL", "ANGEL", "LOVE", "QUEEN", "SPARK", "CHILL"].map(textWord => (
-                              <button
-                                key={textWord}
-                                onClick={() => {
-                                  const config = getLayoutConfig();
-                                  const { width, height } = config.getCanvasDimensions();
-                                  const newSticker = {
-                                    id: Date.now() + Math.random(),
-                                    type: "text",
-                                    value: textWord,
-                                    x: width / 2,
-                                    y: height / 2,
-                                    scale: 1.2,
-                                    rotation: 0,
-                                    color: "#F042FF"
-                                  };
-                                  setStickers(prev => [...prev, newSticker]);
-                                  setSelectedStickerId(newSticker.id);
-                                  playStickerPopSound();
-                                }}
-                                className="camera-ctrl"
-                                style={{
-                                  margin: 0,
-                                  fontSize: "0.75rem",
-                                  fontWeight: "bold",
-                                  padding: "5px 12px",
-                                  border: "none",
-                                  borderRadius: "999px",
-                                  background: "linear-gradient(135deg, #FFE5F1, #F042FF, #7226FF)",
-                                  color: "white"
-                                }}
-                              >
-                                {textWord}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        {(stickerCategoryTab === "all" || stickerCategoryTab === "text") && (
+                          <>
+                            <div>
+                              <span className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
+                                TYPOGRAPHY WORD DECOR
+                              </span>
+                              <div className="flex gap-1.5 flex-wrap">
+                                {["Y2K", "BABY", "COOL", "ANGEL", "LOVE", "QUEEN", "SPARK", "CHILL", "DAEBAK", "IDOL"].map(textWord => (
+                                  <button
+                                    key={textWord}
+                                    onClick={() => {
+                                      const config = getLayoutConfig();
+                                      const { width, height } = config.getCanvasDimensions();
+                                      const newSticker = {
+                                        id: Date.now() + Math.random(),
+                                        type: "text",
+                                        value: textWord,
+                                        x: width / 2,
+                                        y: height / 2,
+                                        scale: 1.2,
+                                        rotation: 0,
+                                        color: "#F042FF"
+                                      };
+                                      setStickers(prev => [...prev, newSticker]);
+                                      setSelectedStickerId(newSticker.id);
+                                      playStickerPopSound();
+                                    }}
+                                    className="camera-ctrl"
+                                    style={{
+                                      margin: 0,
+                                      fontSize: "0.75rem",
+                                      fontWeight: "bold",
+                                      padding: "5px 12px",
+                                      border: "none",
+                                      borderRadius: "999px",
+                                      background: "linear-gradient(135deg, #FFE5F1, #F042FF, #7226FF)",
+                                      color: "white"
+                                    }}
+                                  >
+                                    {textWord}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
 
-                        {/* Custom Text input string */}
-                        <div className="flex gap-2">
-                          <input
-                            id="custom-sticker-text-input"
-                            type="text"
-                            placeholder="TYPE STICKER TEXT..."
-                            maxLength={12}
-                            style={{ flex: 1, padding: "8px 12px", fontSize: "0.8rem", textTransform: "uppercase" }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && e.target.value.trim()) {
-                                const config = getLayoutConfig();
-                                const { width, height } = config.getCanvasDimensions();
-                                const newSticker = {
-                                  id: Date.now() + Math.random(),
-                                  type: "text",
-                                  value: e.target.value.trim().toUpperCase(),
-                                  x: width / 2,
-                                  y: height / 2,
-                                  scale: 1.2,
-                                  rotation: 0,
-                                  color: "#F042FF"
-                                };
-                                setStickers(prev => [...prev, newSticker]);
-                                setSelectedStickerId(newSticker.id);
-                                playStickerPopSound();
-                                e.target.value = "";
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={() => {
-                              const inputEl = document.getElementById("custom-sticker-text-input");
-                              if (inputEl && inputEl.value.trim()) {
-                                const config = getLayoutConfig();
-                                const { width, height } = config.getCanvasDimensions();
-                                const newSticker = {
-                                  id: Date.now() + Math.random(),
-                                  type: "text",
-                                  value: inputEl.value.trim().toUpperCase(),
-                                  x: width / 2,
-                                  y: height / 2,
-                                  scale: 1.2,
-                                  rotation: 0,
-                                  color: "#F042FF"
-                                };
-                                setStickers(prev => [...prev, newSticker]);
-                                setSelectedStickerId(newSticker.id);
-                                playStickerPopSound();
-                                inputEl.value = "";
-                              }
-                            }}
-                            className="y2k-button font-mono text-xs font-bold"
-                            style={{ margin: 0, padding: "10px 16px" }}
-                          >
-                            ADD
-                          </button>
-                        </div>
+                            {/* Custom Text input string */}
+                            <div className="flex gap-2">
+                              <input
+                                id="custom-sticker-text-input"
+                                type="text"
+                                placeholder="TYPE STICKER TEXT..."
+                                maxLength={12}
+                                style={{ flex: 1, padding: "8px 12px", fontSize: "0.8rem", textTransform: "uppercase" }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && e.target.value.trim()) {
+                                    const config = getLayoutConfig();
+                                    const { width, height } = config.getCanvasDimensions();
+                                    const newSticker = {
+                                      id: Date.now() + Math.random(),
+                                      type: "text",
+                                      value: e.target.value.trim().toUpperCase(),
+                                      x: width / 2,
+                                      y: height / 2,
+                                      scale: 1.2,
+                                      rotation: 0,
+                                      color: "#F042FF"
+                                    };
+                                    setStickers(prev => [...prev, newSticker]);
+                                    setSelectedStickerId(newSticker.id);
+                                    playStickerPopSound();
+                                    e.target.value = "";
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() => {
+                                  const inputEl = document.getElementById("custom-sticker-text-input");
+                                  if (inputEl && inputEl.value.trim()) {
+                                    const config = getLayoutConfig();
+                                    const { width, height } = config.getCanvasDimensions();
+                                    const newSticker = {
+                                      id: Date.now() + Math.random(),
+                                      type: "text",
+                                      value: inputEl.value.trim().toUpperCase(),
+                                      x: width / 2,
+                                      y: height / 2,
+                                      scale: 1.2,
+                                      rotation: 0,
+                                      color: "#F042FF"
+                                    };
+                                    setStickers(prev => [...prev, newSticker]);
+                                    setSelectedStickerId(newSticker.id);
+                                    playStickerPopSound();
+                                    inputEl.value = "";
+                                  }
+                                }}
+                                className="y2k-button font-mono text-xs font-bold"
+                                style={{ margin: 0, padding: "10px 16px" }}
+                              >
+                                ADD
+                              </button>
+                            </div>
+                          </>
+                        )}
 
                         {/* Sticker Manipulator Box */}
                         {selectedStickerId && stickers.find(s => s.id === selectedStickerId) && (
@@ -1642,18 +1980,19 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {[
-                      { val: "white", label: "White" },
-                      { val: "black", label: "Black" },
-                      { val: "#f6d5da", label: "Pink" },
-                      { val: "#dde6d5", label: "Green" },
-                      { val: "#adc3e5", label: "Blue" },
-                      { val: "#FFF2CC", label: "Yellow" },
-                      { val: "#dbcfff", label: "Purple" }
+                      { id: "white", val: "white", label: "White" },
+                      { id: "black", val: "black", label: "Black" },
+                      { id: "pink", val: "#f6d5da", label: "Pink" },
+                      { id: "green", val: "#dde6d5", label: "Green" },
+                      { id: "blue", val: "#adc3e5", label: "Blue" },
+                      { id: "yellow", val: "#FFF2CC", label: "Yellow" },
+                      { id: "purple", val: "#dbcfff", label: "Purple" },
+                      ...customBgColors.filter(c => c.layout === 'all' || c.layout === (layout === 'grid' ? `${photoCount}-grid` : layout))
                     ].map((col) => {
                       const isSelected = stripColor === col.val;
                       return (
                         <button 
-                          key={col.val}
+                          key={col.id || col.val}
                           onClick={() => setStripColor(col.val)} 
                           className="camera-ctrl"
                           style={{
@@ -1673,39 +2012,39 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                     })}
                   </div>
                 </div>
+
+                {/* 4. OVERLAY THEMES */}
+                <div className="web3-glass-card p-5">
+                  <div className="flex items-center gap-1.5 pb-2 mb-3.5 border-b border-zinc-800 font-mono text-xs text-[#F042FF]">
+                    <Layers className="w-3.5 h-3.5" /> DESIGNER OVERLAY THEMES
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableFrames.map(frame => {
+                      const isSelected = selectedFrame === frame.id;
+                      return (
+                        <button
+                          key={frame.id}
+                          onClick={() => setSelectedFrame(frame.id)}
+                          className="camera-ctrl"
+                          style={{
+                            margin: 0,
+                            fontSize: "0.75rem",
+                            padding: "6px 14px",
+                            border: "1px solid",
+                            borderColor: isSelected ? "#F042FF" : "rgba(255,255,255,0.06)",
+                            background: isSelected ? "rgba(240, 66, 255, 0.15)" : "rgba(10,10,10,0.5)",
+                            color: isSelected ? "#F042FF" : "#A1A1AA",
+                            borderRadius: "999px"
+                          }}
+                        >
+                          {frame.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </>
             )}
-
-            {/* 4. OVERLAY THEMES */}
-            <div className="web3-glass-card p-5">
-              <div className="flex items-center gap-1.5 pb-2 mb-3.5 border-b border-zinc-800 font-mono text-xs text-[#F042FF]">
-                <Layers className="w-3.5 h-3.5" /> DESIGNER OVERLAY THEMES
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {availableFrames.map(frame => {
-                  const isSelected = selectedFrame === frame.id;
-                  return (
-                    <button
-                      key={frame.id}
-                      onClick={() => setSelectedFrame(frame.id)}
-                      className="camera-ctrl"
-                      style={{
-                        margin: 0,
-                        fontSize: "0.75rem",
-                        padding: "6px 14px",
-                        border: "1px solid",
-                        borderColor: isSelected ? "#F042FF" : "rgba(255,255,255,0.06)",
-                        background: isSelected ? "rgba(240, 66, 255, 0.15)" : "rgba(10,10,10,0.5)",
-                        color: isSelected ? "#F042FF" : "#A1A1AA",
-                        borderRadius: "999px"
-                      }}
-                    >
-                      {frame.name}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
 
             {/* 5. EMAIL SHARING */}
             <div className="web3-glass-card p-5">
@@ -1745,6 +2084,102 @@ const PhotoPreview = ({ capturedImages = [] }) => {
           </div>
 
         </div>
+
+        {/* Phase 3: Community Gallery Submission Modal */}
+        {isPublishModalOpen && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+            onClick={() => !isPublishing && setIsPublishModalOpen(false)}
+          >
+            <div 
+              className="bg-zinc-950 border border-[#F042FF]/40 rounded-3xl p-6 max-w-md w-full shadow-[0_0_50px_rgba(240,66,255,0.25)] relative text-white space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#F042FF]/20 border border-[#F042FF] flex items-center justify-center text-[#F042FF]">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-display font-black text-sm uppercase tracking-wider text-white">
+                      Community Gallery
+                    </h3>
+                    <p className="font-mono text-[10px] text-zinc-400">Share your creation with all SNPSHOT users</p>
+                  </div>
+                </div>
+                {!isPublishing && (
+                  <button 
+                    onClick={() => setIsPublishModalOpen(false)}
+                    className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {publishSuccess ? (
+                <div className="py-8 text-center space-y-2">
+                  <CheckCircle2 className="w-12 h-12 text-[#39FF14] mx-auto animate-bounce" />
+                  <h4 className="font-display font-black text-lg text-white uppercase">Published to Gallery!</h4>
+                  <p className="font-mono text-xs text-zinc-400">Your photostrip is now live in the Community Gallery.</p>
+                </div>
+              ) : (
+                <form onSubmit={handlePublishToGallery} className="space-y-3.5">
+                  <div>
+                    <label className="block font-mono text-[10px] text-[#F042FF] uppercase font-bold mb-1">
+                      Creator Handle / Tag
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. @your_name"
+                      value={publishCreator}
+                      onChange={(e) => setPublishCreator(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-[#F042FF] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-mono text-[10px] text-[#F042FF] uppercase font-bold mb-1">
+                      Caption / Aesthetic Note
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Vintage tones & Tokyo vibes ✨"
+                      value={publishCaption}
+                      onChange={(e) => setPublishCaption(e.target.value)}
+                      className="w-full bg-zinc-900 border border-zinc-700 focus:border-[#F042FF] rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-zinc-900/60 rounded-xl border border-zinc-800 flex items-center justify-between text-[10px] font-mono text-zinc-400">
+                    <span>FORMAT: <strong className="text-white uppercase">{layout === '3x2' ? '2x3' : (layout === '2x2' ? '2x2' : `${photoCount}-GRID`)}</strong></span>
+                    <span>RESOLUTION: <strong className="text-[#39FF14]">300 DPI HI-RES</strong></span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
+                    <button
+                      type="button"
+                      disabled={isPublishing}
+                      onClick={() => setIsPublishModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-mono text-zinc-400 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isPublishing}
+                      className="y2k-button text-xs font-mono font-bold px-5 py-2.5"
+                    >
+                      {isPublishing ? "Publishing..." : "✦ Confirm & Publish ✦"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

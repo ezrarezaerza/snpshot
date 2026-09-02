@@ -27,9 +27,9 @@ const Welcome = () => {
   const [selectedGroup, setSelectedGroup] = useState("ive");
   const [selectedArtist, setSelectedArtist] = useState(membersByGroup.ive ? membersByGroup.ive[0] : null);
 
-  // Fetch custom creator campaigns on mount and merge them
+  // Fetch custom studio campaigns on mount and merge them
   useEffect(() => {
-    axios.get("/api/creator/data")
+    axios.get("/api/studio/data")
       .then(res => {
         const { artists } = res.data;
         if (artists && artists.length > 0) {
@@ -38,35 +38,67 @@ const Welcome = () => {
           const updatedMembersByGroup = { ...membersByGroup };
 
           artists.forEach(art => {
-            // Merge custom agency
-            if (!updatedAgencies.some(a => a.id === art.agencyId)) {
-              updatedAgencies.push({ id: art.agencyId, name: art.agencyName });
+            // Only include active or non-archived campaigns in photo booth
+            if (art.status === "archived") return;
+
+            // Merge / update custom agency
+            if (art.agencyId && art.agencyName) {
+              if (!updatedAgencies.some(a => a.id === art.agencyId)) {
+                updatedAgencies.push({ id: art.agencyId, name: art.agencyName });
+              }
             }
-            // Merge custom group
-            if (!updatedGroupsByAgency[art.agencyId]) {
-              updatedGroupsByAgency[art.agencyId] = [];
-            }
-            if (!updatedGroupsByAgency[art.agencyId].some(g => g.id === art.groupId)) {
-              updatedGroupsByAgency[art.agencyId].push({
+
+            // Merge / update custom group
+            if (art.agencyId && art.groupId && art.groupName) {
+              if (!updatedGroupsByAgency[art.agencyId]) {
+                updatedGroupsByAgency[art.agencyId] = [];
+              }
+              const groupIndex = updatedGroupsByAgency[art.agencyId].findIndex(g => g.id === art.groupId);
+              const groupObj = {
                 id: art.groupId,
                 name: art.groupName,
-                logo: art.groupLogo,
-                isMale: art.isMale
-              });
+                logo: art.groupLogo || "✦",
+                isMale: Boolean(art.isMale)
+              };
+              if (groupIndex >= 0) {
+                updatedGroupsByAgency[art.agencyId][groupIndex] = { ...updatedGroupsByAgency[art.agencyId][groupIndex], ...groupObj };
+              } else {
+                updatedGroupsByAgency[art.agencyId].push(groupObj);
+              }
             }
-            // Merge custom artist member
-            if (!updatedMembersByGroup[art.groupId]) {
-              updatedMembersByGroup[art.groupId] = [];
-            }
-            if (!updatedMembersByGroup[art.groupId].some(m => m.id === art.id)) {
-              updatedMembersByGroup[art.groupId].push({
+
+            // Merge / update custom artist member
+            if (art.groupId) {
+              if (!updatedMembersByGroup[art.groupId]) {
+                updatedMembersByGroup[art.groupId] = [];
+              }
+              const memberIndex = updatedMembersByGroup[art.groupId].findIndex(m => m.id === art.id);
+              const memberObj = {
                 id: art.id,
                 name: art.name,
                 role: art.role,
-                color: art.color,
-                avatar: art.avatar,
-                poses: art.poses
-              });
+                color: art.color || "#F042FF",
+                avatar: art.avatar || (art.poses && art.poses[0]) || "",
+                poses: art.poses || [],
+                posesGuidance: art.posesGuidance || [],
+                isFeatured: Boolean(art.isFeatured),
+                status: art.status || "active",
+                agencyId: art.agencyId,
+                agencyName: art.agencyName,
+                groupId: art.groupId,
+                groupName: art.groupName,
+                groupLogo: art.groupLogo || "✦",
+                dedicatedFrameId: art.dedicatedFrameId || null,
+                dedicatedFrame: art.dedicatedFrame || null,
+                isFeaturedOnShowcase: Boolean(art.isFeaturedOnShowcase),
+                showcaseBadge: art.showcaseBadge || "",
+                showcaseTagline: art.showcaseTagline || ""
+              };
+              if (memberIndex >= 0) {
+                updatedMembersByGroup[art.groupId][memberIndex] = { ...updatedMembersByGroup[art.groupId][memberIndex], ...memberObj };
+              } else {
+                updatedMembersByGroup[art.groupId].push(memberObj);
+              }
             }
           });
 
@@ -74,7 +106,51 @@ const Welcome = () => {
           setDynamicGroupsByAgency(updatedGroupsByAgency);
           setDynamicMembersByGroup(updatedMembersByGroup);
 
-          // Correct selected artist references if we just merged new ones
+          // Check if navigated with specific artist or layout from Showcase or URL
+          const searchParams = new URLSearchParams(location.search);
+          const targetArtistId = location.state?.artistId || location.state?.artist?.id || searchParams.get("artist");
+          const targetCategory = location.state?.category || searchParams.get("category");
+          const targetLayout = location.state?.layout || searchParams.get("layout");
+
+          if (targetLayout) {
+            setSelectedLayout(targetLayout);
+          }
+
+          if (targetCategory === "artist" || targetArtistId) {
+            setCategory("artist");
+          }
+
+          if (targetArtistId) {
+            // Locate artist across all groups
+            let foundArtist = null;
+            let foundGroup = null;
+            let foundAgency = null;
+
+            for (const [groupId, members] of Object.entries(updatedMembersByGroup)) {
+              const match = members.find(m => m.id === targetArtistId || m.name?.toLowerCase() === targetArtistId.toLowerCase());
+              if (match) {
+                foundArtist = match;
+                foundGroup = groupId;
+                // Find agency
+                for (const [agencyId, groups] of Object.entries(updatedGroupsByAgency)) {
+                  if (groups.some(g => g.id === groupId)) {
+                    foundAgency = agencyId;
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+
+            if (foundArtist && foundGroup) {
+              if (foundAgency) setSelectedAgency(foundAgency);
+              setSelectedGroup(foundGroup);
+              setSelectedArtist(foundArtist);
+              return;
+            }
+          }
+
+          // Default fallback selection if no specific target artist
           const activeAgency = updatedAgencies.some(a => a.id === selectedAgency) ? selectedAgency : updatedAgencies[0].id;
           const activeGroups = updatedGroupsByAgency[activeAgency] || [];
           const activeGroup = activeGroups.some(g => g.id === selectedGroup) ? selectedGroup : (activeGroups[0]?.id || "");
@@ -177,25 +253,38 @@ const Welcome = () => {
 
   const handleStart = () => {
     let photoCount = 4;
-    let layoutType = "grid";
+    let layoutType = "4-grid";
 
     if (category === "basic") {
       if (selectedLayout === "3-grid") {
         photoCount = 3;
-        layoutType = "grid";
+        layoutType = "3-grid";
       } else if (selectedLayout === "4-grid") {
         photoCount = 4;
-        layoutType = "grid";
+        layoutType = "4-grid";
       } else if (selectedLayout === "2x2") {
         photoCount = 4;
         layoutType = "2x2";
-      } else if (selectedLayout === "3x2") {
+      } else if (selectedLayout === "3x2" || selectedLayout === "2x3") {
         photoCount = 6;
         layoutType = "3x2";
       }
     } else {
-      photoCount = 4;
-      layoutType = "grid";
+      // Artist Event & Collab Themes: automatically use the dedicated frame layout
+      const artistLayout = selectedArtist?.dedicatedFrame?.layout || "4-grid";
+      if (artistLayout === "3-grid") {
+        photoCount = 3;
+        layoutType = "3-grid";
+      } else if (artistLayout === "2x2") {
+        photoCount = 4;
+        layoutType = "2x2";
+      } else if (artistLayout === "2x3" || artistLayout === "3x2") {
+        photoCount = 6;
+        layoutType = "2x3";
+      } else {
+        photoCount = 4;
+        layoutType = "4-grid";
+      }
     }
 
     const navigationState = {
@@ -203,6 +292,8 @@ const Welcome = () => {
       count: photoCount,
       layout: layoutType,
       artist: category === "artist" ? selectedArtist : null,
+      dedicatedFrame: category === "artist" ? selectedArtist?.dedicatedFrame : null,
+      dedicatedFrameId: category === "artist" ? (selectedArtist?.dedicatedFrameId || selectedArtist?.dedicatedFrame?.id) : null,
       presetFrameId: location.state?.presetFrameId || null
     };
 
@@ -225,10 +316,10 @@ const Welcome = () => {
         
         {/* Header Title section */}
         <div className="text-center mb-10">
-          <div className="y2k-subtitle mb-2">✦ PRE-CAPTURE LOBBY ✦</div>
+          <div className="y2k-subtitle mb-2">✦ STUDIO SETUP ✦</div>
           <h1 className="text-4xl md:text-5xl font-display font-black text-white uppercase tracking-tight">
-            ENTER THE
-            <div className="y2k-highlight ml-3">BOOTH</div>
+            PREPARE YOUR
+            <div className="y2k-highlight ml-3">PHOTO BOOTH</div>
           </h1>
         </div>
 
@@ -241,7 +332,7 @@ const Welcome = () => {
               <div>
                 <div className="flex justify-between items-center mb-4 pb-2 border-b border-zinc-800">
                   <span className="font-mono text-[11px] text-[#F042FF] font-bold uppercase tracking-widest flex items-center gap-1">
-                    <Camera className="w-3.5 h-3.5" /> ✧ LIVE CAM VIEWFINDER ✧
+                    <Camera className="w-3.5 h-3.5" /> ✧ LIVE CAMERA FEED ✧
                   </span>
                   <span className="font-mono text-[10px] text-zinc-500 flex items-center gap-1.5 bg-zinc-900/80 px-2 py-0.5 rounded border border-zinc-800">
                     {cameraLoading ? (
@@ -274,7 +365,7 @@ const Welcome = () => {
 
                   {/* Playful indicator */}
                   <div className="absolute top-2.5 right-2.5 font-mono text-[9px] text-[#F042FF] font-bold tracking-wider bg-black/50 px-2.5 py-0.5 rounded-full">
-                    SAY CHEESE! 📸
+                    READY 📸
                   </div>
 
                   {cameraLoading && (
@@ -312,7 +403,7 @@ const Welcome = () => {
                   <span className="text-[#F042FF] text-xs font-bold">i</span>
                 </div>
                 <p className="font-sans text-xs text-zinc-400 leading-relaxed">
-                  <strong>Position Calibration:</strong> Center your shoulders inside the viewfinder frame. When choosing an <strong>Artist Collab</strong>, they will occupy the right side of the frame as a transparent guide overlay!
+                  <strong>Camera Positioning:</strong> Center yourself inside the frame. When selecting an <strong>Idol Collab</strong> pose guide, they will appear as a transparent overlay in your viewfinder.
                 </p>
               </div>
             </div>
@@ -326,7 +417,7 @@ const Welcome = () => {
               <div className="flex items-center gap-2 mb-4 pb-1 border-b border-zinc-800">
                 <Layers className="text-[#F042FF] w-4 h-4" />
                 <h3 className="font-display font-black text-sm tracking-wider uppercase text-zinc-200">
-                  1. SELECT YOUR EXPERIENCE
+                  1. SELECT EXPERIENCE TYPE
                 </h3>
               </div>
 
@@ -345,9 +436,9 @@ const Welcome = () => {
                     <span className="text-2xl">🎞️</span>
                     {category === "basic" && <Check className="w-4 h-4 text-[#F042FF]" />}
                   </div>
-                  <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Basic Strip</h4>
+                  <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Classic Photo Strip</h4>
                   <p className="font-sans text-[11px] text-zinc-400 leading-relaxed">
-                    Standard retro photobooth layout configs with full customizable border textures.
+                    Classic photobooth layouts with customizable frames, colors, and background textures.
                   </p>
                 </div>
 
@@ -364,9 +455,9 @@ const Welcome = () => {
                     <span className="text-2xl">🤝</span>
                     {category === "artist" && <Check className="w-4 h-4 text-purple-500" />}
                   </div>
-                  <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Artist Collab</h4>
+                  <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Event & Collab Themes</h4>
                   <p className="font-sans text-[11px] text-zinc-400 leading-relaxed">
-                    Snap high-energy frames side-by-side with digital K-Pop & J-Pop star pose guides.
+                    Capture photo strips with curated event themes, idol pose guides, and special collab frames.
                   </p>
                 </div>
 
@@ -434,111 +525,201 @@ const Welcome = () => {
                 <div className="flex items-center gap-2 mb-4 pb-1 border-b border-zinc-800">
                   <User className="text-[#F042FF] w-4 h-4" />
                   <h3 className="font-display font-black text-sm tracking-wider uppercase text-zinc-200">
-                    2. SELECT YOUR CO-STAR
+                    2. SELECT THEME & POSE GUIDE
                   </h3>
                 </div>
 
-                {/* Sub-step A: Agency Selector */}
+                {/* Sub-step A: Theme Selector */}
                 <div className="mb-4">
-                  <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
-                    CHOOSE AGENCY / CREATOR
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                      CHOOSE THEME / AGENCY ({dynamicAgencies.length})
+                    </label>
+                    <span className="font-mono text-[9px] text-purple-400 font-semibold">
+                      STEP 2A
+                    </span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
-                    {dynamicAgencies.map((agency) => (
-                      <button
-                        key={agency.id}
-                        onClick={() => handleAgencyChange(agency.id)}
-                        className={`camera-ctrl ${
-                          selectedAgency === agency.id 
-                            ? "bg-purple-500 text-white border-purple-500 shadow-[0_0_10px_rgba(138,43,226,0.25)]" 
-                            : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700"
-                        }`}
-                        style={{
-                          margin: 0,
-                          padding: "6px 14px",
-                          borderRadius: "999px",
-                          fontSize: "0.8rem",
-                          borderWidth: "1px",
-                          fontWeight: "700"
-                        }}
-                      >
-                        {agency.name}
-                      </button>
-                    ))}
+                    {dynamicAgencies.map((agency) => {
+                      const agencyGroups = dynamicGroupsByAgency[agency.id] || [];
+                      const isSelected = selectedAgency === agency.id;
+                      return (
+                        <button
+                          key={agency.id}
+                          onClick={() => handleAgencyChange(agency.id)}
+                          className={`camera-ctrl transition-all ${
+                            isSelected 
+                              ? "bg-purple-500 text-white border-purple-500 shadow-[0_0_12px_rgba(138,43,226,0.35)]" 
+                              : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
+                          }`}
+                          style={{
+                            margin: 0,
+                            padding: "6px 14px",
+                            borderRadius: "999px",
+                            fontSize: "0.8rem",
+                            borderWidth: "1px",
+                            fontWeight: "700"
+                          }}
+                        >
+                          <span>{agency.name}</span>
+                          {agencyGroups.length > 0 && (
+                            <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                              isSelected ? "bg-white/20 text-white" : "bg-zinc-800 text-zinc-400"
+                            }`}>
+                              {agencyGroups.length}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Sub-step B: Group Selector */}
                 <div className="mb-5">
-                  <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-1.5 tracking-wider">
-                    CHOOSE GROUP / LABEL
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                      CHOOSE GROUP / LABEL
+                    </label>
+                    <span className="font-mono text-[9px] text-[#F042FF] font-semibold">
+                      STEP 2B
+                    </span>
+                  </div>
                   <div className="flex gap-2 flex-wrap">
-                    {(dynamicGroupsByAgency[selectedAgency] || []).map((group) => (
-                      <button
-                        key={group.id}
-                        onClick={() => handleGroupChange(group.id)}
-                        className={`camera-ctrl ${
-                          selectedGroup === group.id 
-                            ? "bg-[#F042FF] text-white border-[#F042FF] shadow-[0_0_10px_rgba(240,66,255,0.25)]" 
-                            : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700"
-                        }`}
-                        style={{
-                          margin: 0,
-                          padding: "8px 16px",
-                          borderRadius: "999px",
-                          fontSize: "0.85rem",
-                          borderWidth: "1px",
-                          fontWeight: "700"
-                        }}
-                      >
-                        {group.logo} {group.name}
-                      </button>
-                    ))}
+                    {(dynamicGroupsByAgency[selectedAgency] || []).length === 0 ? (
+                      <div className="text-xs text-zinc-500 font-mono py-2">
+                        No groups available under this agency.
+                      </div>
+                    ) : (
+                      (dynamicGroupsByAgency[selectedAgency] || []).map((group) => {
+                        const isSelected = selectedGroup === group.id;
+                        const groupMembers = dynamicMembersByGroup[group.id] || [];
+                        return (
+                          <button
+                            key={group.id}
+                            onClick={() => handleGroupChange(group.id)}
+                            className={`camera-ctrl transition-all ${
+                              isSelected 
+                                ? "bg-[#F042FF] text-white border-[#F042FF] shadow-[0_0_14px_rgba(240,66,255,0.35)]" 
+                                : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
+                            }`}
+                            style={{
+                              margin: 0,
+                              padding: "8px 16px",
+                              borderRadius: "999px",
+                              fontSize: "0.85rem",
+                              borderWidth: "1px",
+                              fontWeight: "700"
+                            }}
+                          >
+                            <span>{group.logo || "✦"} {group.name}</span>
+                            {groupMembers.length > 0 && (
+                              <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                                isSelected ? "bg-black/30 text-white" : "bg-zinc-800 text-zinc-400"
+                              }`}>
+                                {groupMembers.length}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
                 {/* Sub-step C: Member Grid Selector */}
                 <div>
-                  <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase block mb-2 tracking-wider">
-                    CHOOSE CO-STAR GUIDE
-                  </label>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[190px] overflow-y-auto pr-1">
-                    {(dynamicMembersByGroup[selectedGroup] || []).map((member) => {
-                      const isSelected = selectedArtist?.id === member.id;
-                      return (
-                        <div
-                          key={member.id}
-                          onClick={() => setSelectedArtist(member)}
-                          className={`flex items-center gap-2.5 p-2 rounded-xl border cursor-pointer transition-all duration-200 ${
-                            isSelected 
-                              ? "border-purple-400 bg-purple-500/10 shadow-[0_0_12px_rgba(138,43,226,0.15)]" 
-                              : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
-                          }`}
-                        >
-                          <img
-                            src={member.avatar}
-                            alt={member.name}
-                            referrerPolicy="no-referrer"
-                            className="w-9 h-9 rounded-full object-cover shrink-0"
-                            style={{
-                              border: isSelected ? `2px solid ${member.color}` : "1.5px solid rgba(255,255,255,0.1)"
-                            }}
-                          />
-                          <div className="text-left overflow-hidden">
-                            <div className="font-display font-black text-xs text-zinc-200 truncate leading-none mb-1">
-                              {member.name}
-                            </div>
-                            <div className="font-mono text-[8.5px] text-zinc-500 truncate uppercase">
-                              {member.role}
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-mono text-[9px] text-zinc-500 font-bold uppercase tracking-wider">
+                      CHOOSE CO-STAR GUIDE ({ (dynamicMembersByGroup[selectedGroup] || []).length })
+                    </label>
+                    <span className="font-mono text-[9px] text-purple-400 font-semibold">
+                      STEP 2C
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[210px] overflow-y-auto pr-1">
+                    {(dynamicMembersByGroup[selectedGroup] || []).length === 0 ? (
+                      <div className="col-span-3 text-center py-6 text-zinc-500 font-mono text-xs border border-zinc-800 rounded-xl bg-zinc-950/40">
+                        No co-star guides found for this group.
+                      </div>
+                    ) : (
+                      (dynamicMembersByGroup[selectedGroup] || []).map((member) => {
+                        const isSelected = selectedArtist?.id === member.id;
+                        const posesCount = member.poses?.length || 4;
+                        return (
+                          <div
+                            key={member.id}
+                            onClick={() => setSelectedArtist(member)}
+                            className={`flex items-center gap-2.5 p-2 rounded-xl border cursor-pointer transition-all duration-200 relative overflow-hidden ${
+                              isSelected 
+                                ? "border-purple-400 bg-purple-500/15 shadow-[0_0_14px_rgba(138,43,226,0.2)]" 
+                                : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
+                            }`}
+                          >
+                            <img
+                              src={member.avatar || (member.poses && member.poses[0])}
+                              alt={member.name}
+                              referrerPolicy="no-referrer"
+                              className="w-10 h-10 rounded-full object-cover shrink-0"
+                              style={{
+                                border: isSelected ? `2px solid ${member.color || "#F042FF"}` : "1.5px solid rgba(255,255,255,0.1)"
+                              }}
+                            />
+                            <div className="text-left overflow-hidden flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                <div className="font-display font-black text-xs text-zinc-200 truncate leading-tight">
+                                  {member.name}
+                                </div>
+                                {member.isFeatured && (
+                                  <span className="text-[8px] bg-gradient-to-r from-amber-400 to-pink-500 text-black px-1 rounded font-bold uppercase tracking-wider shrink-0">
+                                    ★
+                                  </span>
+                                )}
+                              </div>
+                              <div className="font-mono text-[8.5px] text-zinc-400 truncate uppercase mt-0.5">
+                                {member.role}
+                              </div>
+                              <div className="font-mono text-[8px] text-purple-300 flex items-center gap-1 mt-0.5">
+                                <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: member.color || "#F042FF" }} />
+                                <span>{posesCount} Poses</span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })
+                    )}
                   </div>
-                  <div className="mt-4 p-3 rounded-lg border border-purple-500/25 bg-purple-500/5 font-mono text-[10.5px] text-purple-300 leading-relaxed">
-                    ℹ️ <strong>Selected Guide:</strong> {selectedArtist?.name || "NONE"} ({selectedGroup.toUpperCase()}). Layout strictly locked to **4-Grid Photo Strip** for side-by-side posing companion templates.
+                  {/* Exclusive Collab Dedicated Frame Binding Banner */}
+                  <div className="mt-4 p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 font-mono text-[11px] text-purple-200 leading-relaxed space-y-2">
+                    <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🔒</span>
+                        <span>
+                          <strong>EXCLUSIVE EVENT:</strong> <span className="text-white font-bold">{selectedArtist?.name || "ARTIST"}</span> {selectedGroup ? `(${selectedGroup.toUpperCase()})` : ""}
+                        </span>
+                      </div>
+                      <span className="text-[9.5px] bg-[#F042FF]/20 text-[#FFE5F1] px-2 py-0.5 rounded border border-[#F042FF]/40 font-bold uppercase tracking-wider">
+                        {selectedArtist?.dedicatedFrame?.layout?.toUpperCase() || "4-GRID"} COLLAB STRIP
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] text-zinc-300">
+                      <div className="flex items-center gap-2">
+                        <span className="text-zinc-500">BOUND FRAME:</span>
+                        <span className="text-[#F042FF] font-bold">
+                          {selectedArtist?.dedicatedFrame?.name || `${selectedArtist?.name || 'Artist'} Official Collab Frame`}
+                        </span>
+                      </div>
+                      {selectedArtist?.dedicatedFrame?.watermarkText && (
+                        <span className="text-zinc-400 truncate max-w-[200px] italic">
+                          "{selectedArtist.dedicatedFrame.watermarkText}"
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-[10px] text-zinc-400 pt-1 border-t border-purple-500/10">
+                      ✨ <strong>Exclusive Collab Rule:</strong> Dedicated official frame is automatically applied. Theme/color selection and stickers are locked to preserve authentic artist branding and collector value.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -556,7 +737,7 @@ const Welcome = () => {
                   justifyContent: "center"
                 }}
               >
-                ✦ CALIBRATION COMPLETE // ENTER THE PHOTOBOOTH ✦
+                ✦ START PHOTO BOOTH ✦
               </button>
             </div>
             

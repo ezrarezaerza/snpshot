@@ -1,6 +1,6 @@
 {
-  "name": "Remix 6: SNPSHOT",
-  "description": "An Virtual Cyber-Pop Photobooth",
+  "name": "SNPSHOT Studio",
+  "description": "Interactive Self-Photo Booth & Digital Print Studio",
   "requestFramePermissions": [
     "camera"
   ],

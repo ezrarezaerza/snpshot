@@ -138,10 +138,10 @@ const FeaturesSection = ({ tunerConfig }) => {
               ✦ CORE CAPABILITIES ✦
             </div>
             <h3 className="font-display font-black text-3xl md:text-5xl text-[#010030] uppercase leading-tight tracking-tight">
-              MADE FOR YOUR <span className="bg-gradient-to-r from-[#7226FF] via-[#160078] to-[#010030] bg-clip-text text-transparent px-2 inline-block">AESTHETIC ERA</span>
+              ENGINEERED FOR YOUR <span className="bg-gradient-to-r from-[#7226FF] via-[#160078] to-[#010030] bg-clip-text text-transparent px-2 inline-block">STUDIO EXPERIENCE</span>
             </h3>
             <p className="font-sans text-sm md:text-base text-[#160078]/80 max-w-xl mx-auto mt-4 leading-relaxed font-medium">
-              Designed with main character vibes. Every tool is crafted for seamless snapping, instant styling, and high-aura sharing.
+              Designed for seamless captures, instant customization, and studio-quality digital photo strips.
             </p>
           </div>
 
@@ -170,15 +170,15 @@ const FeaturesSection = ({ tunerConfig }) => {
                   <Layers className="text-white w-6 h-6 stroke-[2.5]" />
                 </div>
                 <h4 className="font-display font-black text-xl text-[#010030] uppercase tracking-tight mb-3">
-                  01 // Layout Deck
+                  01 // Layout Formats
                 </h4>
                 <p className="font-sans text-sm text-[#160078]/80 leading-relaxed font-medium">
-                  Choose from 4 unique vertical strip models or wide composite cards. Fully customizable with adjustable borders, retro textures, and vibrant gradients.
+                  Select from 4 classic photo strip layouts and composite grids. Customize with adjustable border colors, retro textures, and sleek gradients.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-[#160078]/10 flex justify-between items-center text-xs font-mono text-[#160078]/70">
-                <span>MODULE: LAYOUT DECK</span>
-                <span className="font-bold text-[#7226FF]">4 MODES</span>
+                <span>MODULE: LAYOUTS</span>
+                <span className="font-bold text-[#7226FF]">4 FORMATS</span>
               </div>
             </div>
 
@@ -189,15 +189,15 @@ const FeaturesSection = ({ tunerConfig }) => {
                   <Users className="text-white w-6 h-6 stroke-[2.5]" />
                 </div>
                 <h4 className="font-display font-black text-xl text-[#010030] uppercase tracking-tight mb-3">
-                  02 // Creator Co-Posing
+                  02 // Pose Guides & Event Collabs
                 </h4>
                 <p className="font-sans text-sm text-[#160078]/80 leading-relaxed font-medium">
-                  Strike your best poses side-by-side with guide loops from your fave creators. Absolute main character energy.
+                  Capture perfect shots using real-time pose references and interactive overlays from featured event themes, idol collabs, and pop culture celebrations.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-[#160078]/10 flex justify-between items-center text-xs font-mono text-[#160078]/70">
-                <span>MODULE: CREATOR CO-POSE</span>
-                <span className="font-bold text-[#7226FF]">WONYOUNG +</span>
+                <span>MODULE: POSE GUIDE</span>
+                <span className="font-bold text-[#7226FF]">EVENT COLLABS</span>
               </div>
             </div>
 
@@ -208,15 +208,15 @@ const FeaturesSection = ({ tunerConfig }) => {
                   <Sparkles className="text-white w-6 h-6 stroke-[2.5]" />
                 </div>
                 <h4 className="font-display font-black text-xl text-[#010030] uppercase tracking-tight mb-3">
-                  03 // Live Decor Deck
+                  03 // Decoration Suite
                 </h4>
                 <p className="font-sans text-sm text-[#160078]/80 leading-relaxed font-medium">
-                  Drag, pinch, scale, and rotate cute aesthetic stamps directly onto your completed strips. Draw custom glowing vector messages with our digital neon brush toolkit.
+                  Add custom digital stamps, aesthetic stickers, and personal timestamps. Draw glowing vector artwork using our interactive canvas brush tools.
                 </p>
               </div>
               <div className="mt-8 pt-4 border-t border-[#160078]/10 flex justify-between items-center text-xs font-mono text-[#160078]/70">
-                <span>MODULE: DECOR STATION</span>
-                <span className="font-bold text-[#7226FF]">STICKERS & GLOW</span>
+                <span>MODULE: DECORATION</span>
+                <span className="font-bold text-[#7226FF]">STAMPS & DRAW</span>
               </div>
             </div>
 

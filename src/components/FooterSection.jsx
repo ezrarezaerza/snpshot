@@ -1,8 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Camera } from "lucide-react";
+import axios from "axios";
+import { Camera, Globe, Share2, Sparkles, Send } from "lucide-react";
 
 const FooterSection = () => {
+  const [content, setContent] = useState({
+    brandName: "SNPSHOT Studio",
+    tagline: "Digital Self-Photo Booth & High-Res Photostrip Studio",
+    copyrightText: "© 2026 SNPSHOT VIBES. ALL RIGHTS RESERVED.",
+    contactEmail: "hello@snpshot.studio",
+    socials: {
+      instagram: "https://instagram.com/snpshot.studio",
+      tiktok: "https://tiktok.com/@snpshot.studio",
+      twitter: "https://twitter.com/snpshotstudio",
+      youtube: "https://youtube.com/@snpshotstudio"
+    }
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await axios.get("/api/creator/website-content");
+        if (res.data && res.data.websiteContent) {
+          setContent(prev => ({ ...prev, ...res.data.websiteContent }));
+        }
+      } catch (err) {
+        console.warn("Failed to fetch footer content, using defaults:", err);
+      }
+    };
+    fetchContent();
+  }, []);
+
   return (
     <footer className="bg-[#FAF6F9] text-[#010030] border-t border-[#160078]/15 py-12 md:py-16 relative z-10 mt-0">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
@@ -19,27 +47,67 @@ const FooterSection = () => {
           </div>
 
           <p className="font-mono text-[11px] font-bold text-[#160078]/80 uppercase tracking-widest text-center md:text-left">
-            © 2026 SNPSHOT VIBES. ALL RIGHTS RESERVED.
+            {content.copyrightText || "© 2026 SNPSHOT VIBES. ALL RIGHTS RESERVED."}
           </p>
+
+          {/* SOCIAL LINKS */}
+          {content.socials && (
+            <div className="flex items-center gap-2.5 mt-1">
+              {content.socials.instagram && (
+                <a 
+                  href={content.socials.instagram} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-full bg-white border border-[#160078]/15 flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#7226FF] hover:text-[#F042FF] hover:border-[#F042FF] transition-all shadow-xs"
+                  aria-label="Instagram"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> IG
+                </a>
+              )}
+              {content.socials.tiktok && (
+                <a 
+                  href={content.socials.tiktok} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-full bg-white border border-[#160078]/15 flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#7226FF] hover:text-[#F042FF] hover:border-[#F042FF] transition-all shadow-xs"
+                  aria-label="TikTok"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> TT
+                </a>
+              )}
+              {content.socials.twitter && (
+                <a 
+                  href={content.socials.twitter} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="px-2.5 py-1 rounded-full bg-white border border-[#160078]/15 flex items-center gap-1.5 text-[11px] font-mono font-bold text-[#7226FF] hover:text-[#F042FF] hover:border-[#F042FF] transition-all shadow-xs"
+                  aria-label="Twitter / X"
+                >
+                  <Globe className="w-3.5 h-3.5" /> X
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         {/* NAVIGATION ACTIONS */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link 
-            to="/creator" 
-            className="font-mono text-xs font-bold text-white uppercase tracking-wider bg-gradient-to-r from-[#160078] via-[#7226FF] to-[#F042FF] border border-white/40 px-5 py-2.5 rounded-full shadow-[0_4px_16px_rgba(22,0,120,0.25)] hover:shadow-[0_6px_22px_rgba(240,66,255,0.35)] hover:scale-105 transition-all duration-200"
+            to="/welcome" 
+            className="snpshot-btn-primary text-xs font-mono font-bold tracking-wider px-5 py-2.5 shadow-md flex items-center gap-2"
           >
-            ✦ [ CREATOR PORTAL ] ✦
+            <Sparkles className="w-3.5 h-3.5 text-[#FFE5F1]" />
+            <span>LAUNCH PHOTOBOOTH</span>
           </Link>
           <Link 
             to="/privacy-policy" 
-            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-white bg-white/80 border border-[#160078]/20 px-5 py-2.5 rounded-full shadow-sm transition-all duration-200"
+            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-[#FAF6F9] bg-white border border-[#160078]/20 px-4 py-2.5 rounded-xl shadow-xs transition-all duration-150"
           >
             Privacy Policy
           </Link>
           <Link 
             to="/contact" 
-            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-white bg-white/80 border border-[#160078]/20 px-5 py-2.5 rounded-full shadow-sm transition-all duration-200"
+            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-[#FAF6F9] bg-white border border-[#160078]/20 px-4 py-2.5 rounded-xl shadow-xs transition-all duration-150"
           >
             Contact Support
           </Link>

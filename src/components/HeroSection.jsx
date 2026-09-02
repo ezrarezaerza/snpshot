@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowRight, Heart } from "lucide-react";
@@ -7,8 +8,45 @@ import { ArrowRight, Heart } from "lucide-react";
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
+const DEFAULT_HERO_CONFIG = {
+  activeThemePreset: "snpshot-hero-default",
+  headline: "DIGITAL PHOTO BOOTH",
+  subheadline: "Capture studio-quality photo strips directly from your browser. Personalize your prints with flexible frame layouts, curated event themes, digital stamps, and high-resolution exports.",
+  eyebrowBadge: "✦ DIGITAL SELF-PHOTO STUDIO ✦",
+  ctaText: "START BOOTH",
+  ctaLink: "/welcome",
+  accentColor: "#F042FF",
+  heroBg: "linear-gradient(135deg, #010030 0%, #0e0048 50%, #2e109d 100%)",
+  doodleHeaderTag: "#PHOTOBOOTH",
+  card1Handle: "@wonyoung",
+  card1Subhandle: "★ IDOL EDITION",
+  card1Tag: "KPOP_01",
+  card3Title: "SNPSHOT STUDIO",
+  card3Subtitle: "Official Partner",
+  card3Stat: "98.4K DOWNLOADS",
+  card3Theme: "THEME: PURPLE_NEON ★ PRESET",
+  card3Prints: "✦ 15 STRIPS",
+  circularBadgeText: "★ DIGITAL PHOTO STUDIO ★ K-POP FRAMES ★ DIGITAL DOWNLOADS ★ PREMIUM PRINTS ★",
+  statusText: "ONLINE STUDIO ACTIVE",
+  photosCountText: "244,195 PHOTOS TAKEN"
+};
+
 const HeroSection = ({ tunerConfig }) => {
   const navigate = useNavigate();
+  const [heroConfig, setHeroConfig] = useState(DEFAULT_HERO_CONFIG);
+
+  useEffect(() => {
+    // Fetch live hero configuration published from Admin Dashboard
+    axios.get("/api/creator/hero-config")
+      .then(res => {
+        if (res.data && res.data.heroConfig) {
+          setHeroConfig(prev => ({ ...prev, ...res.data.heroConfig }));
+        }
+      })
+      .catch(err => {
+        console.warn("Using default hero config fallback:", err);
+      });
+  }, []);
 
   // Animation references
   const heroRef = useRef(null);
@@ -338,7 +376,7 @@ const HeroSection = ({ tunerConfig }) => {
         {/* REFERENCE INSPIRED BACKGROUND TYPOGRAPHY BLOCK */}
         <div className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none select-none z-0">
           <h1 ref={title1Ref} className="web3-stacked-title text-white tracking-tighter">
-            {"#GENZ".split("").map((char, index) => (
+            {"#PHOTO".split("").map((char, index) => (
               <span key={index} className="inline-block char-span" style={{ display: "inline-block" }}>
                 {char}
               </span>
@@ -352,7 +390,7 @@ const HeroSection = ({ tunerConfig }) => {
             ))}
           </h1>
           <h1 ref={title3Ref} className="web3-stacked-title text-white tracking-tighter">
-            {"CLUB".split("").map((char, index) => (
+            {"STUDIO".split("").map((char, index) => (
               <span key={index} className="inline-block char-span" style={{ display: "inline-block" }}>
                 {char}
               </span>
@@ -370,7 +408,7 @@ const HeroSection = ({ tunerConfig }) => {
             <path d="M60,34 L72,40 L68,52" />
           </svg>
           <div className="absolute -top-[10%] right-[10%] bg-gradient-to-r from-[#160078] to-[#7226FF] text-[#FAF6F9] font-display font-black text-xs px-3 py-1 rounded-full border border-white/30 rotate-[12deg] shadow-[0_4px_15px_rgba(240,66,255,0.4)] select-none uppercase">
-            TAP! ✦
+            START ✦
           </div>
         </div>
 
@@ -379,7 +417,7 @@ const HeroSection = ({ tunerConfig }) => {
           className="absolute top-[6%] left-[1.5%] text-[#F042FF] pointer-events-none z-50 hidden lg:block rotate-[-12deg]"
         >
           <div className="font-display font-black text-4xl tracking-tight text-[#FFE5F1] filter drop-shadow-[0_0_10px_rgba(240,66,255,0.5)]">
-            #AESTHETIC
+            {heroConfig.doodleHeaderTag || "#PHOTOBOOTH"}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current text-[#F042FF]">
@@ -467,7 +505,7 @@ const HeroSection = ({ tunerConfig }) => {
               <circle cx="50" cy="50" r="44" fill="url(#grad2Badge)" stroke="url(#gradient4Border)" strokeWidth="3.5" />
               <text className="font-display font-black text-[7.5px] uppercase fill-white">
                 <textPath href="#circlePath" startOffset="0%">
-                  ★ GET STARTED FOR FREE ★ CUTE STAMPS ★ SNAP NOW ★ MAIN CHARACTER VIBES ★
+                  {heroConfig.circularBadgeText || "★ DIGITAL PHOTO STUDIO ★ K-POP FRAMES ★ DIGITAL DOWNLOADS ★ PREMIUM PRINTS ★"}
                 </textPath>
               </text>
             </svg>
@@ -493,21 +531,21 @@ const HeroSection = ({ tunerConfig }) => {
             <div className="bg-black/30 p-2.5 rounded-xl border border-white/10 flex flex-col gap-2.5">
               <div className="aspect-[4/3] bg-[#010030] rounded-lg overflow-hidden border border-white/10 relative">
                 <img 
-                  src="/img/poses/Wonyoung1.png" 
-                  alt="Wonyoung Pose 1" 
+                  src={heroConfig.card1Photo1 || "/img/poses/Wonyoung1.png"} 
+                  alt="Hero Card 1 Photo 1" 
                   className="w-full h-full object-cover brightness-110"
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => { e.target.src = "/img/poses/Wonyoung1.png"; }}
                 />
                 <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-[#F042FF] to-[#7226FF] text-white text-[8px] font-mono font-black px-1.5 py-0.5 rounded-sm">
-                  WNY_01
+                  {heroConfig.card1Tag || "KPOP_01"}
                 </div>
               </div>
               <div className="aspect-[4/3] bg-[#010030] rounded-lg overflow-hidden border border-white/10 relative">
                 <img 
-                  src="/img/poses/Wonyoung2.png" 
-                  alt="Wonyoung Pose 2" 
+                  src={heroConfig.card1Photo2 || "/img/poses/Wonyoung2.png"} 
+                  alt="Hero Card 1 Photo 2" 
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => { e.target.src = "/img/poses/Wonyoung2.png"; }}
                 />
                 <div className="absolute bottom-1.5 right-1.5 text-[#FFE5F1] text-[8px] font-mono">
                   [REC ●]
@@ -517,10 +555,10 @@ const HeroSection = ({ tunerConfig }) => {
             <div className="flex justify-between items-center px-1">
               <div>
                 <span className="font-display font-black text-xs text-white tracking-wide block uppercase">
-                  @wonyoung
+                  {heroConfig.card1Handle || "@wonyoung"}
                 </span>
                 <span className="font-mono text-[9px] text-[#FFE5F1] uppercase tracking-widest">
-                  ★ +1,500 AURA
+                  {heroConfig.card1Subhandle || "★ IDOL EDITION"}
                 </span>
               </div>
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#F042FF] to-[#7226FF] flex items-center justify-center border border-white/30 shadow-[0_4px_12px_rgba(240,66,255,0.4)]">
@@ -536,35 +574,52 @@ const HeroSection = ({ tunerConfig }) => {
           >
             <div className="absolute inset-0 rounded-[32px] bg-[#160078]/60 backdrop-blur-2xl border border-white/30 -z-10 pointer-events-none shadow-[0_30px_70px_rgba(1,0,48,0.6)] transition-all duration-400 group-hover:border-[#F042FF]/60" />
             
-            <div className="bg-gradient-to-r from-[#FFE5F1] via-[#F042FF] to-[#7226FF] text-white font-display font-black text-xs tracking-widest px-4 py-1.5 rounded-full border border-white/30 shadow-[0_4px_15px_rgba(240,66,255,0.4)] uppercase">
-              ✦ MAXIMUM AURA ✦
+            <div className="bg-[#0e0048] text-[#FFE5F1] font-mono font-bold text-xs tracking-widest px-4 py-1.5 rounded-full border border-[#2e109d] shadow-sm uppercase">
+              {heroConfig.eyebrowBadge || "✦ DIGITAL SELF-PHOTO STUDIO ✦"}
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="font-display font-black text-3xl md:text-4xl text-white tracking-tight leading-none uppercase">
-                VIRTUAL <br/>
-                <span className="bg-gradient-to-r from-[#FFE5F1] via-[#F042FF] to-[#7226FF] bg-clip-text text-transparent">PHOTOBOOTH</span>
+                {(() => {
+                  const headlineText = heroConfig.headline || "DIGITAL PHOTO BOOTH";
+                  const parts = headlineText.split(" ");
+                  if (parts.length > 1) {
+                    const mid = Math.ceil(parts.length / 2);
+                    const firstPart = parts.slice(0, mid).join(" ");
+                    const secondPart = parts.slice(mid).join(" ");
+                    return (
+                      <>
+                        {firstPart} <br />
+                        <span className="bg-gradient-to-r from-[#FFE5F1] via-[#F042FF] to-[#7226FF] bg-clip-text text-transparent">
+                          {secondPart}
+                        </span>
+                      </>
+                    );
+                  }
+                  return headlineText;
+                })()}
               </h2>
               <p className="font-sans text-xs md:text-sm text-zinc-200 mt-2 leading-relaxed">
-                Snap aesthetic, high-key photo strips in seconds. Flex your fits, style with cute hand-drawn stamps, and pose alongside your fave creators! Absolute main character energy.
+                {heroConfig.subheadline || "Capture studio-quality photo strips directly from your browser. Personalize your prints with flexible frame layouts, curated event themes, digital stamps, and high-resolution exports."}
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
               <button 
-                onClick={() => navigate("/welcome")}
-                className="y2k-button flex-1 flex items-center justify-center gap-2 text-sm"
+                onClick={() => navigate(heroConfig.ctaLink || "/welcome")}
+                className="snpshot-btn-primary flex-1 flex items-center justify-center gap-2 text-sm font-mono font-bold tracking-wider py-3 px-6 shadow-md"
               >
-                START BOOTH <ArrowRight className="w-4 h-4 text-white" />
+                <span>{heroConfig.ctaText || "START BOOTH"}</span>
+                <ArrowRight className="w-4 h-4 text-[#FFE5F1]" />
               </button>
             </div>
 
             <div className="flex justify-around w-full border-t border-white/15 pt-4 font-mono text-[10px] text-zinc-300">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#F042FF] animate-pulse" />
-                <span>5,281 ONLINE</span>
+                <span>{heroConfig.statusText || "ONLINE STUDIO ACTIVE"}</span>
               </div>
               <div>|</div>
-              <div>244,195 SNAPS TAKEN</div>
+              <div>{heroConfig.photosCountText || "244,195 PHOTOS TAKEN"}</div>
             </div>
           </div>
 
@@ -577,37 +632,37 @@ const HeroSection = ({ tunerConfig }) => {
             
             <div className="flex items-center gap-3 px-1 mb-1">
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#FFE5F1] via-[#F042FF] to-[#7226FF] border border-white/40 flex items-center justify-center font-display font-black text-xs text-white">
-                B
+                S
               </div>
               <div>
                 <h4 className="font-display font-black text-xs text-white uppercase tracking-wider leading-none">
-                   @its.baseclub
+                   {heroConfig.card3Title || "SNPSHOT STUDIO"}
                 </h4>
-                <span className="font-mono text-[9px] text-zinc-300">verified bestie</span>
+                <span className="font-mono text-[9px] text-zinc-300">{heroConfig.card3Subtitle || "Official Partner"}</span>
               </div>
             </div>
             
             <div className="bg-black/30 p-2 rounded-xl border border-white/10 flex flex-col gap-2">
               <div className="aspect-square rounded-lg bg-[#010030] overflow-hidden relative border border-white/5">
                 <img 
-                   src="/img/poses/Wonyoung3.png" 
-                  alt="Wonyoung Pose 3" 
+                  src={heroConfig.card3Photo || "/img/poses/Wonyoung3.png"} 
+                  alt="Hero Card 3 Photo" 
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => { e.target.src = "/img/poses/Wonyoung3.png"; }}
                 />
                 <div className="absolute top-2 right-2 bg-[#010030]/80 backdrop-blur-md px-2 py-0.5 rounded-full border border-white/10 font-mono text-[8px] text-[#FFE5F1]">
-                  98.4K SAVES
+                  {heroConfig.card3Stat || "98.4K DOWNLOADS"}
                 </div>
               </div>
               <div className="flex justify-between items-center text-[9px] font-mono text-zinc-400">
-                <span>THEME: BOLD_PURPLE</span>
-                <span className="text-[#FFE5F1]">★ COMPLETED</span>
+                <span>{heroConfig.card3Theme || "THEME: PURPLE_NEON"}</span>
+                <span className="text-[#FFE5F1]">★ PRESET</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center text-xs font-mono border-t border-white/10 pt-3 text-zinc-200">
-              <span>DAILY STREAK:</span>
-              <span className="text-[#F042FF] font-black">🔥 15 DAYS</span>
+              <span>PRINTS SAVED:</span>
+              <span className="text-[#F042FF] font-black">{heroConfig.card3Prints || "✦ 15 STRIPS"}</span>
             </div>
           </div>
         </div>

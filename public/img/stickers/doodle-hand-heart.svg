@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Whimsical sketchy white hand heart -->
+  <path d="M40 75 C35 55 45 40 55 50 C60 42 75 42 75 55 C75 68 60 85 60 85 C60 85 45 68 40 75 Z" fill="#FFE5F1" fill-opacity="0.8" stroke="#F042FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Sparkles -->
+  <path d="M30 35 L33 42 L40 45 L33 48 L30 55 L27 48 L20 45 L27 42 Z" fill="#00FFFF" />
+  <path d="M85 30 L87 36 L93 38 L87 40 L85 46 L83 40 L77 38 L83 36 Z" fill="#FFD700" />
+  <path d="M25 80 Q35 85 45 82" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+  <path d="M95 80 Q85 85 75 82" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" />
+</svg>

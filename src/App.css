@@ -145,28 +145,24 @@
   box-shadow: 0 4px 12px rgba(240, 66, 255, 0.2) !important;
 }
 
-/* Frosted Glass Cards with Gradient 2 / 4 Accents */
-.paradise-card, .privacy-container, .contact-form, .creator-card, .cyber-glass {
-  background: rgba(22, 0, 120, 0.45) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-  border: 1.5px solid rgba(240, 66, 255, 0.25) !important;
+/* Solid Cards with Accent Borders */
+.paradise-card, .privacy-container, .contact-form, .cyber-glass {
+  background: #0f0054 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1.5px solid #2e109d !important;
   border-radius: 28px !important;
-  box-shadow: 
-    0 20px 50px rgba(1, 0, 48, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 20px 50px rgba(1, 0, 48, 0.5) !important;
   color: #ffffff !important;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   position: relative;
   z-index: 10;
 }
 
-.paradise-card:hover, .creator-card:hover, .cyber-glass:hover {
+.paradise-card:hover, .cyber-glass:hover {
   transform: translateY(-6px) scale(1.015) !important;
   border-color: #F042FF !important;
-  box-shadow: 
-    0 24px 60px rgba(240, 66, 255, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 24px 60px rgba(240, 66, 255, 0.35) !important;
 }
 
 .card-title {
@@ -186,173 +182,119 @@
   line-height: 1.6;
 }
 
-/* Primary Buttons with Gradient 2 */
-button:not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn), 
-.y2k-button, .paradise-button {
-  font-family: "Fugaz One", cursive, sans-serif !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.03em !important;
-  border-radius: 999px !important;
+/* Refined Button Design System */
+.y2k-button, .paradise-button, .snpshot-btn-primary {
+  font-family: "Work Sans", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  padding: 14px 36px !important;
-  font-size: 0.95rem !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 10px 22px;
+  font-size: 0.85rem;
   box-sizing: border-box;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #160078 0%, #7226FF 50%, #9d35ff 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 14px rgba(114, 38, 255, 0.25);
 }
 
-/* Standard button backgrounds and borders */
-button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn), 
-.y2k-button, .paradise-button {
-  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.35) !important;
-  box-shadow: 0 10px 30px rgba(240, 66, 255, 0.4) !important;
+.y2k-button:hover, .paradise-button:hover, .snpshot-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(240, 66, 255, 0.35);
+  border-color: rgba(255, 229, 241, 0.6);
+  background: linear-gradient(135deg, #7226FF 0%, #9d35ff 50%, #F042FF 100%);
 }
 
-button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn):hover, 
-.y2k-button:hover, .paradise-button:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 15px 40px rgba(240, 66, 255, 0.6) !important;
-  border-color: #FFE5F1 !important;
-}
-
-button:not(.secondary-btn):not(.count-button):not(.shutter-btn):not(.camera-ctrl):not(.carousel-control-btn):not(.admin-icon-btn):not(.admin-icon-btn-danger):not(.admin-action-btn):not(.admin-close-btn):not(.tab-btn):active, 
-.y2k-button:active, .paradise-button:active {
-  transform: translateY(0px) !important;
-  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.3) !important;
-}
-
-/* Compact Admin Dashboard Action & Icon Buttons */
-.admin-icon-btn {
-  padding: 6px 8px !important;
-  background: rgba(240, 66, 255, 0.1) !important;
-  border: 1px solid rgba(240, 66, 255, 0.3) !important;
-  border-radius: 8px !important;
-  color: #fbbf24 !important;
-  font-size: 12px !important;
-  min-width: 0 !important;
-  height: auto !important;
-  width: auto !important;
-  box-shadow: none !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-}
-
-.admin-icon-btn:hover {
-  background: rgba(251, 191, 36, 0.25) !important;
-  border-color: #fbbf24 !important;
-  color: #ffffff !important;
-  transform: translateY(-1px) !important;
-}
-
-.admin-icon-btn-danger {
-  padding: 6px 8px !important;
-  background: rgba(239, 68, 68, 0.1) !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
-  border-radius: 8px !important;
-  color: #f87171 !important;
-  font-size: 12px !important;
-  min-width: 0 !important;
-  height: auto !important;
-  width: auto !important;
-  box-shadow: none !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s ease !important;
-}
-
-.admin-icon-btn-danger:hover {
-  background: rgba(239, 68, 68, 0.3) !important;
-  border-color: #ef4444 !important;
-  color: #ffffff !important;
-  transform: translateY(-1px) !important;
-}
-
-.admin-close-btn {
-  background: transparent !important;
-  border: none !important;
-  color: #a1a1aa !important;
-  padding: 4px 8px !important;
-  font-size: 14px !important;
-  min-width: 0 !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
-}
-
-.admin-close-btn:hover {
-  color: #ffffff !important;
+.y2k-button:active, .paradise-button:active, .snpshot-btn-primary:active {
+  transform: translateY(0px);
+  box-shadow: 0 2px 8px rgba(114, 38, 255, 0.2);
 }
 
 /* Secondary Button Style */
-.secondary-btn, button.secondary {
-  background: rgba(22, 0, 120, 0.6) !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(240, 66, 255, 0.4) !important;
-  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.4) !important;
+.secondary-btn, button.secondary, .snpshot-btn-secondary {
+  background: #0e0048;
+  color: #FFE5F1;
+  font-family: "Work Sans", sans-serif;
+  font-weight: 600;
+  border: 1px solid #2e109d;
+  box-shadow: 0 2px 8px rgba(1, 0, 48, 0.3);
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-.secondary-btn:hover, button.secondary:hover {
-  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
-  color: #ffffff !important;
-  transform: translateY(-3px) !important;
-  box-shadow: 0 12px 30px rgba(240, 66, 255, 0.5) !important;
+.secondary-btn:hover, button.secondary:hover, .snpshot-btn-secondary:hover {
+  background: #160078;
+  color: #ffffff;
+  border-color: rgba(240, 66, 255, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(114, 38, 255, 0.25);
 }
 
-/* Setup / Count selection buttons */
+/* Setup / Count selection buttons - Sleek modern pill/panel tokens */
 .count-button {
-  background: rgba(22, 0, 120, 0.4) !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
-  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.3) !important;
-  border-radius: 20px !important;
-  padding: 18px !important;
+  background: rgba(14, 0, 72, 0.7) !important;
+  color: #FFE5F1 !important;
+  border: 1px solid #2e109d !important;
+  box-shadow: 0 4px 14px rgba(1, 0, 48, 0.4) !important;
+  border-radius: 14px !important;
+  padding: 14px 12px !important;
   font-family: "Work Sans", sans-serif !important;
   font-weight: 600 !important;
-  transition: all 0.25s ease !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
 }
 
 .count-button.selected {
-  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
+  background: linear-gradient(135deg, #160078 0%, #7226FF 50%, #9d35ff 100%) !important;
   color: #ffffff !important;
-  border: 1.5px solid #FFE5F1 !important;
-  box-shadow: 0 10px 30px rgba(240, 66, 255, 0.5) !important;
+  border: 1px solid rgba(240, 66, 255, 0.7) !important;
+  box-shadow: 0 4px 18px rgba(114, 38, 255, 0.35) !important;
 }
 
 .count-button:hover:not(.selected) {
-  background: rgba(240, 66, 255, 0.25) !important;
+  background: #160078 !important;
+  color: #ffffff !important;
+  border-color: rgba(240, 66, 255, 0.5) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.35) !important;
+  box-shadow: 0 6px 18px rgba(114, 38, 255, 0.25) !important;
 }
 
-/* Camera control / circular buttons */
+/* Camera control / Filter & Sub-step pill buttons */
 .camera-ctrl {
-  background: rgba(22, 0, 120, 0.8) !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(240, 66, 255, 0.4) !important;
-  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.4) !important;
+  background: #0e0048 !important;
+  color: #d1c8e8 !important;
+  border: 1px solid #2e109d !important;
+  box-shadow: 0 2px 8px rgba(1, 0, 48, 0.3) !important;
   font-family: "Work Sans", sans-serif !important;
   font-weight: 600 !important;
-  transition: all 0.2s ease !important;
+  border-radius: 999px !important;
+  padding: 8px 16px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
 }
 
 .camera-ctrl:hover {
-  background: linear-gradient(135deg, #F042FF, #7226FF) !important;
+  background: #160078 !important;
   color: #ffffff !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 25px rgba(240, 66, 255, 0.5) !important;
+  border-color: rgba(240, 66, 255, 0.6) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(114, 38, 255, 0.3) !important;
 }
 
-/* Inputs with Glassmorphic Style */
-input, textarea, select {
+/* Inputs with Glassmorphic Style (exclude .admin-ui) */
+input:not(.admin-ui), textarea:not(.admin-ui), select:not(.admin-ui) {
   background: rgba(1, 0, 48, 0.7) !important;
   border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
   border-radius: 12px !important;

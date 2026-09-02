@@ -1,9 +1,32 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { Camera, RefreshCw, Zap, Sliders, Play, Layout, Image as ImageIcon } from "lucide-react";
+import axios from "axios";
+import { Camera, RefreshCw, Zap, Sliders, Play, Layout, Image as ImageIcon, Sparkles } from "lucide-react";
 import Navbar from "./Navbar";
 import "../App.css";
 import { playShutterSound, playClickSound, playBeepSound } from "../utils/audio";
+
+const DEFAULT_BOOTH_FILTERS = [
+  { id: "none", name: "Normal", filterStr: "none" },
+  { id: "warm-grain", name: "Warm Grain", badge: "POPULAR", filterStr: "brightness(105%) contrast(110%) saturate(115%) sepia(25%)" },
+  { id: "pastel-glow", name: "Pastel Glow", badge: "FEATURED", filterStr: "brightness(112%) contrast(95%) saturate(108%) sepia(10%) hue-rotate(-10deg) blur(0.3px)" },
+  { id: "cinematic-film", name: "Cinematic Film", badge: "NEW", filterStr: "contrast(120%) saturate(90%) sepia(35%) hue-rotate(10deg)" },
+  { id: "bw-high-contrast", name: "Monochrome Noir", badge: "CLASSIC", filterStr: "brightness(102%) contrast(135%) saturate(0%)" },
+  { id: "cyberpunk-neon", name: "Cyberpunk Neon", badge: "SPECIAL", filterStr: "brightness(108%) contrast(125%) saturate(145%) hue-rotate(45deg)" }
+];
+
+const getCssFilterString = (f) => {
+  if (!f || f.id === "none") return "none";
+  if (f.filterStr) return f.filterStr;
+  const parts = [];
+  if (f.brightness !== undefined && f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
+  if (f.contrast !== undefined && f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
+  if (f.saturation !== undefined && f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
+  if (f.sepia !== undefined && f.sepia > 0) parts.push(`sepia(${f.sepia}%)`);
+  if (f.hueRotate !== undefined && f.hueRotate !== 0) parts.push(`hue-rotate(${f.hueRotate}deg)`);
+  if (f.blur !== undefined && f.blur > 0) parts.push(`blur(${f.blur}px)`);
+  return parts.length > 0 ? parts.join(" ") : "none";
+};
 
 const PhotoBooth = ({ setCapturedImages }) => {
   const navigate = useNavigate();
@@ -12,9 +35,11 @@ const PhotoBooth = ({ setCapturedImages }) => {
   // Extract configuration from location state
   const { 
     count: photoCount = 4, 
-    layout = 'grid', 
+    layout = '4-grid', 
     category = 'basic', 
     artist = null,
+    dedicatedFrame = null,
+    dedicatedFrameId = null,
     presetFrameId = null
   } = location.state || {};
 
@@ -23,15 +48,65 @@ const PhotoBooth = ({ setCapturedImages }) => {
   
   const [capturedImages, setImages] = useState([]);
   const [filter, setFilter] = useState("none");
+  const [availableFilters, setAvailableFilters] = useState(DEFAULT_BOOTH_FILTERS);
   const [countdown, setCountdown] = useState(null);
   const [capturing, setCapturing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [countdownSeconds, setCountdownSeconds] = useState(5);
 
-  // Custom states for Phase 2: Live Camera Session & Guided Overlay
+  // Custom states for Live Camera Session & Guided Overlay
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
   const [isFlashing, setIsFlashing] = useState(false);
   const totalShots = category === "artist" ? 8 : (photoCount + 2); // 8 shots for artist collab, otherwise photoCount + 2
+
+  // Track layout selection analytics & load system settings
+  useEffect(() => {
+    // 1. Log layout selection in studio analytics
+    axios.post("/api/creator/analytics/track", {
+      eventType: "layout_select",
+      layoutId: layout || "3-grid"
+    }).catch(() => {});
+
+    // 2. Fetch system settings for custom countdown duration
+    const loadSettings = async () => {
+      try {
+        const res = await axios.get("/api/creator/settings");
+        if (res.data?.camera?.defaultCountdown) {
+          setCountdownSeconds(Number(res.data.camera.defaultCountdown) || 5);
+        }
+      } catch (e) {
+        console.warn("Using default booth settings:", e);
+      }
+    };
+    loadSettings();
+  }, [layout]);
+
+  useEffect(() => {
+    const loadFilters = async () => {
+      try {
+        const res = await axios.get("/api/studio/data");
+        if (res.data && Array.isArray(res.data.filters)) {
+          const active = res.data.filters.filter(f => f.active !== false);
+          if (active.length > 0) {
+            const mapped = [
+              { id: "none", name: "Normal", filterStr: "none" },
+              ...active.map(f => ({
+                id: f.id,
+                name: f.name,
+                badge: f.badge,
+                filterStr: getCssFilterString(f)
+              }))
+            ];
+            setAvailableFilters(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch studio filters for booth, using default list:", err);
+      }
+    };
+    loadFilters();
+  }, []);
 
   // Web Audio Context Synthesized Beeps for countdown & capture
   const playBeep = (frequency = 800, duration = 120) => {
@@ -197,7 +272,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
           setTimeout(() => {
             navigate("/preview", { 
-              state: { photoCount, layout, category, artist, initialFilter: filter, presetFrameId }
+              state: { photoCount, layout, category, artist, dedicatedFrame, dedicatedFrameId, initialFilter: filter, presetFrameId }
             });
           }, 400);
         } catch (error) {
@@ -207,7 +282,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
       }
 
       setCurrentShotIndex(photosTaken);
-      let timeLeft = 5; // Guided 5-second countdown
+      let timeLeft = countdownSeconds || 5; // Configured countdown duration from system settings
       setCountdown(timeLeft);
       playBeepSound(); // programmatically synthesized retro self-timer beep
 
@@ -230,6 +305,8 @@ const PhotoBooth = ({ setCapturedImages }) => {
           if (imageUrl) {
             newCapturedImages.push(imageUrl);
             setImages((prevImages) => [...prevImages, imageUrl]);
+            // Track photo capture in studio analytics
+            axios.post("/api/creator/analytics/track", { eventType: "photo_capture" }).catch(() => {});
           }
           photosTaken += 1;
           
@@ -336,13 +413,18 @@ const PhotoBooth = ({ setCapturedImages }) => {
         )}
 
         {/* Active Session Status Bar */}
-        <div className="web3-glass-card p-3.5 mb-6 flex justify-between items-center border-zinc-800/80 bg-zinc-950/65">
+        <div className="web3-glass-card p-3.5 mb-6 flex flex-wrap gap-2 justify-between items-center border-zinc-800/80 bg-zinc-950/65">
           <div className="flex items-center gap-2 font-mono text-xs">
             <span className="w-2 h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
             <span className="text-zinc-400">SESSION:</span>
             <span className="text-white font-bold uppercase">
-              {category === "artist" ? `Collab with ${artist?.name}` : "Classic Photo Strip"}
+              {category === "artist" ? `Collab with ${artist?.name || 'Artist'}` : "Classic Photo Strip"}
             </span>
+            {category === "artist" && (
+              <span className="text-[10px] bg-purple-500/20 text-purple-200 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase">
+                🔒 {dedicatedFrame?.name || `${artist?.name || 'Collab'} Frame Bound`}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 font-mono text-xs">
             <span className="bg-[#F042FF]/15 border border-[#F042FF]/40 text-[#F042FF] px-2.5 py-1 rounded">
@@ -446,7 +528,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
                 {/* Live Action Pose prompt overlay */}
                 <div className="absolute bottom-3 left-3 right-3 bg-black/75 border border-[#F042FF]/30 text-[#F042FF] font-mono text-[10px] text-center py-2 px-4 rounded-md tracking-wider z-20">
-                  👉 STAND ON THE LEFT HALF OF THE VIEWPORT TO COMPOSE WITH {artist.name.toUpperCase()}!
+                  POSITION YOURSELF ON THE LEFT SIDE TO POSE WITH {artist.name.toUpperCase()}
                 </div>
               </div>
             ) : (
@@ -576,31 +658,31 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
           {/* FILTER CONSOLE SELECTOR */}
           <div className="web3-glass-card p-5 w-full">
-            <div className="flex items-center gap-1.5 pb-2 mb-3 border-b border-zinc-800 font-mono text-xs text-[#F042FF]">
-              <Sliders className="w-3.5 h-3.5" /> CHOOSE CAMERA FILTER
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-zinc-800 font-mono text-xs text-[#F042FF]">
+              <div className="flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5" /> CHOOSE CAMERA FILTER
+              </div>
+              <span className="text-[10px] text-zinc-400 font-normal">
+                {availableFilters.length} STUDIO PRESETS
+              </span>
             </div>
             
             <div className="flex flex-wrap gap-2 justify-center">
-              {[
-                { id: "none", label: "Normal" },
-                { id: "grayscale(100%)", label: "Grayscale" },
-                { id: "sepia(100%)", label: "Sepia" },
-                { 
-                  id: "grayscale(100%) contrast(120%) brightness(110%) sepia(30%) hue-rotate(10deg) blur(0.4px)", 
-                  label: "Vintage Retro" 
-                },
-                { 
-                  id: "brightness(135%) contrast(105%) saturate(85%) blur(0.3px)", 
-                  label: "Cream Soft" 
-                }
-              ].map((filt) => {
-                const isSelected = filter === filt.id;
+              {availableFilters.map((filt) => {
+                const isSelected = filter === filt.filterStr || (filt.id === "none" && filter === "none");
                 return (
                   <button
                     key={filt.id}
-                    onClick={() => { setFilter(filt.id); playClickSound(); }}
+                    onClick={() => { 
+                      setFilter(filt.filterStr); 
+                      playClickSound(); 
+                      axios.post("/api/creator/analytics/track", {
+                        eventType: "filter_use",
+                        filterId: filt.id
+                      }).catch(() => {});
+                    }}
                     disabled={capturing}
-                    className="camera-ctrl"
+                    className="camera-ctrl group transition-all"
                     style={{
                       margin: 0,
                       padding: "8px 16px",
@@ -608,13 +690,18 @@ const PhotoBooth = ({ setCapturedImages }) => {
                       fontSize: "0.8rem",
                       border: "1px solid",
                       borderColor: isSelected ? "#F042FF" : "rgba(255,255,255,0.08)",
-                      background: isSelected ? "rgba(240, 66, 255, 0.1)" : "rgba(20, 20, 20, 0.6)",
+                      background: isSelected ? "rgba(240, 66, 255, 0.15)" : "rgba(20, 20, 20, 0.6)",
                       color: isSelected ? "#F042FF" : "#A1A1AA",
-                      boxShadow: isSelected ? "0 0 10px rgba(240, 66, 255, 0.2)" : "none",
+                      boxShadow: isSelected ? "0 0 12px rgba(240, 66, 255, 0.3)" : "none",
                       fontWeight: "700"
                     }}
                   >
-                    {filt.label}
+                    {filt.badge && (
+                      <span className="mr-1.5 text-[9px] px-1.5 py-0.2 rounded bg-[#F042FF]/20 text-[#FFE5F1] font-mono">
+                        {filt.badge}
+                      </span>
+                    )}
+                    {filt.name}
                   </button>
                 );
               })}
@@ -638,8 +725,8 @@ const PhotoBooth = ({ setCapturedImages }) => {
                 {!cameraReady 
                   ? "⌛ STARTING CAMERA..." 
                   : capturing 
-                    ? "🔴 TAKING PHOTOS... STAY STILL!" 
-                    : `✧ SNAP ALL PHOTOS (${totalShots} SHOTS) ✧`
+                    ? "CAPTURING PHOTOS... STAY STILL" 
+                    : `✧ TAKE PHOTOS (${totalShots} SHOTS) ✧`
                 }
               </button>
             </div>
