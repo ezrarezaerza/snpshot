@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNPSHOT Studio</title>
+    <title>SNPSHOT Studio - Interactive Self-Photo Booth & Digital Print Studio</title>
     <meta name="description" content="Interactive Self-Photo Booth & Digital Print Studio">
     <meta name="keywords" content="photo booth, self photo studio, digital photostrip, photobooth online, photo strip, event photo booth, aesthetic photos">
     
     <!-- Open Graph / Facebook / Kakao -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://snpshot.studio/">
-    <meta property="og:title" content="SNPSHOT Studio">
+    <meta property="og:title" content="SNPSHOT Studio - Interactive Self-Photo Booth & Digital Print Studio">
     <meta property="og:description" content="Interactive Self-Photo Booth & Digital Print Studio">
     <meta property="og:image" content="/img/og-preview.png">
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SNPSHOT Studio">
+    <meta name="twitter:title" content="SNPSHOT Studio - Interactive Self-Photo Booth & Digital Print Studio">
     <meta name="twitter:description" content="Interactive Self-Photo Booth & Digital Print Studio">
     <meta name="twitter:image" content="/img/og-preview.png">
 
@@ -28,17 +28,16 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-TG43TBMNGF"></script>
     <script>
-      try {
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
         gtag('config', 'G-TG43TBMNGF');
-      } catch (e) {
-        // Analytics blocked or sandboxed
-      }
     </script>
 </head>
-<body style="background-color: #010030; color: #ffffff; margin: 0; min-height: 100vh;">
-    <div id="root" style="min-height: 100vh; background-color: #010030;"></div>
-<script type="module" src="/src/index.jsx"></script></body>
+<body>
+    <div id="root"></div>
+
+    <!-- Vite module entry point for React application mounting -->
+    <script type="module" src="/src/index.jsx"></script>
+</body>
 </html>

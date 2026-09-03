@@ -82,17 +82,7 @@ const Welcome = () => {
                 poses: art.poses || [],
                 posesGuidance: art.posesGuidance || [],
                 isFeatured: Boolean(art.isFeatured),
-                status: art.status || "active",
-                agencyId: art.agencyId,
-                agencyName: art.agencyName,
-                groupId: art.groupId,
-                groupName: art.groupName,
-                groupLogo: art.groupLogo || "✦",
-                dedicatedFrameId: art.dedicatedFrameId || null,
-                dedicatedFrame: art.dedicatedFrame || null,
-                isFeaturedOnShowcase: Boolean(art.isFeaturedOnShowcase),
-                showcaseBadge: art.showcaseBadge || "",
-                showcaseTagline: art.showcaseTagline || ""
+                status: art.status || "active"
               };
               if (memberIndex >= 0) {
                 updatedMembersByGroup[art.groupId][memberIndex] = { ...updatedMembersByGroup[art.groupId][memberIndex], ...memberObj };
@@ -106,51 +96,7 @@ const Welcome = () => {
           setDynamicGroupsByAgency(updatedGroupsByAgency);
           setDynamicMembersByGroup(updatedMembersByGroup);
 
-          // Check if navigated with specific artist or layout from Showcase or URL
-          const searchParams = new URLSearchParams(location.search);
-          const targetArtistId = location.state?.artistId || location.state?.artist?.id || searchParams.get("artist");
-          const targetCategory = location.state?.category || searchParams.get("category");
-          const targetLayout = location.state?.layout || searchParams.get("layout");
-
-          if (targetLayout) {
-            setSelectedLayout(targetLayout);
-          }
-
-          if (targetCategory === "artist" || targetArtistId) {
-            setCategory("artist");
-          }
-
-          if (targetArtistId) {
-            // Locate artist across all groups
-            let foundArtist = null;
-            let foundGroup = null;
-            let foundAgency = null;
-
-            for (const [groupId, members] of Object.entries(updatedMembersByGroup)) {
-              const match = members.find(m => m.id === targetArtistId || m.name?.toLowerCase() === targetArtistId.toLowerCase());
-              if (match) {
-                foundArtist = match;
-                foundGroup = groupId;
-                // Find agency
-                for (const [agencyId, groups] of Object.entries(updatedGroupsByAgency)) {
-                  if (groups.some(g => g.id === groupId)) {
-                    foundAgency = agencyId;
-                    break;
-                  }
-                }
-                break;
-              }
-            }
-
-            if (foundArtist && foundGroup) {
-              if (foundAgency) setSelectedAgency(foundAgency);
-              setSelectedGroup(foundGroup);
-              setSelectedArtist(foundArtist);
-              return;
-            }
-          }
-
-          // Default fallback selection if no specific target artist
+          // Correct selected artist references if we just merged new ones
           const activeAgency = updatedAgencies.some(a => a.id === selectedAgency) ? selectedAgency : updatedAgencies[0].id;
           const activeGroups = updatedGroupsByAgency[activeAgency] || [];
           const activeGroup = activeGroups.some(g => g.id === selectedGroup) ? selectedGroup : (activeGroups[0]?.id || "");
@@ -253,38 +199,25 @@ const Welcome = () => {
 
   const handleStart = () => {
     let photoCount = 4;
-    let layoutType = "4-grid";
+    let layoutType = "grid";
 
     if (category === "basic") {
       if (selectedLayout === "3-grid") {
         photoCount = 3;
-        layoutType = "3-grid";
+        layoutType = "grid";
       } else if (selectedLayout === "4-grid") {
         photoCount = 4;
-        layoutType = "4-grid";
+        layoutType = "grid";
       } else if (selectedLayout === "2x2") {
         photoCount = 4;
         layoutType = "2x2";
-      } else if (selectedLayout === "3x2" || selectedLayout === "2x3") {
+      } else if (selectedLayout === "3x2") {
         photoCount = 6;
         layoutType = "3x2";
       }
     } else {
-      // Artist Event & Collab Themes: automatically use the dedicated frame layout
-      const artistLayout = selectedArtist?.dedicatedFrame?.layout || "4-grid";
-      if (artistLayout === "3-grid") {
-        photoCount = 3;
-        layoutType = "3-grid";
-      } else if (artistLayout === "2x2") {
-        photoCount = 4;
-        layoutType = "2x2";
-      } else if (artistLayout === "2x3" || artistLayout === "3x2") {
-        photoCount = 6;
-        layoutType = "2x3";
-      } else {
-        photoCount = 4;
-        layoutType = "4-grid";
-      }
+      photoCount = 4;
+      layoutType = "grid";
     }
 
     const navigationState = {
@@ -292,8 +225,6 @@ const Welcome = () => {
       count: photoCount,
       layout: layoutType,
       artist: category === "artist" ? selectedArtist : null,
-      dedicatedFrame: category === "artist" ? selectedArtist?.dedicatedFrame : null,
-      dedicatedFrameId: category === "artist" ? (selectedArtist?.dedicatedFrameId || selectedArtist?.dedicatedFrame?.id) : null,
       presetFrameId: location.state?.presetFrameId || null
     };
 
@@ -426,15 +357,19 @@ const Welcome = () => {
                 {/* Basic selector */}
                 <div 
                   onClick={() => { setCategory("basic"); playClickSound(); }}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all duration-300 ${
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${
                     category === "basic" 
-                      ? "border-[#F042FF] bg-[#F042FF]/10 shadow-[0_4px_12px_rgba(240,66,255,0.15)]" 
-                      : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
+                      ? "border-[#F042FF] bg-[#0e0048] shadow-[0_4px_20px_rgba(240,66,255,0.2)]" 
+                      : "border-zinc-800/80 bg-[#010030] hover:border-[#7226FF]/60 hover:bg-[#0e0048]/50"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-2xl">🎞️</span>
-                    {category === "basic" && <Check className="w-4 h-4 text-[#F042FF]" />}
+                    {category === "basic" && (
+                      <span className="w-5 h-5 rounded-full bg-[#F042FF]/20 border border-[#F042FF] flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-[#F042FF]" />
+                      </span>
+                    )}
                   </div>
                   <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Classic Photo Strip</h4>
                   <p className="font-sans text-[11px] text-zinc-400 leading-relaxed">
@@ -445,15 +380,19 @@ const Welcome = () => {
                 {/* Artist selector */}
                 <div 
                   onClick={() => { setCategory("artist"); playClickSound(); }}
-                  className={`p-4 rounded-xl border cursor-pointer transition-all duration-300 ${
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all duration-300 ${
                     category === "artist" 
-                      ? "border-purple-500 bg-purple-500/5 shadow-[0_0_15px_rgba(138,43,226,0.1)]" 
-                      : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
+                      ? "border-[#7226FF] bg-[#0e0048] shadow-[0_4px_20px_rgba(114,38,255,0.25)]" 
+                      : "border-zinc-800/80 bg-[#010030] hover:border-[#7226FF]/60 hover:bg-[#0e0048]/50"
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-2xl">🤝</span>
-                    {category === "artist" && <Check className="w-4 h-4 text-purple-500" />}
+                    {category === "artist" && (
+                      <span className="w-5 h-5 rounded-full bg-[#7226FF]/20 border border-[#7226FF] flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-[#7226FF]" />
+                      </span>
+                    )}
                   </div>
                   <h4 className="font-display font-black text-xs text-white uppercase tracking-wider mb-1">Event & Collab Themes</h4>
                   <p className="font-sans text-[11px] text-zinc-400 leading-relaxed">
@@ -475,46 +414,30 @@ const Welcome = () => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <button
-                    className={`count-button ${selectedLayout === "3-grid" ? "selected" : ""}`}
-                    onClick={() => { setSelectedLayout("3-grid"); playClickSound(); }}
-                    style={{ margin: 0, padding: "12px 6px!" }}
-                  >
-                    <span className="flex flex-col items-center text-center gap-1">
-                      <span className="font-bold text-xs">🎞️ 3-GRID</span>
-                      <span className="text-[9px] font-mono opacity-60">3_S_VERT</span>
-                    </span>
-                  </button>
-                  <button
-                    className={`count-button ${selectedLayout === "4-grid" ? "selected" : ""}`}
-                    onClick={() => { setSelectedLayout("4-grid"); playClickSound(); }}
-                    style={{ margin: 0, padding: "12px 6px!" }}
-                  >
-                    <span className="flex flex-col items-center text-center gap-1">
-                      <span className="font-bold text-xs">🎞️ 4-GRID</span>
-                      <span className="text-[9px] font-mono opacity-60">4_S_VERT</span>
-                    </span>
-                  </button>
-                  <button
-                    className={`count-button ${selectedLayout === "2x2" ? "selected" : ""}`}
-                    onClick={() => { setSelectedLayout("2x2"); playClickSound(); }}
-                    style={{ margin: 0, padding: "12px 6px!" }}
-                  >
-                    <span className="flex flex-col items-center text-center gap-1">
-                      <span className="font-bold text-xs">🖼️ 2x2 GRID</span>
-                      <span className="text-[9px] font-mono opacity-60">4_S_SQUARE</span>
-                    </span>
-                  </button>
-                  <button
-                    className={`count-button ${selectedLayout === "3x2" ? "selected" : ""}`}
-                    onClick={() => { setSelectedLayout("3x2"); playClickSound(); }}
-                    style={{ margin: 0, padding: "12px 6px!" }}
-                  >
-                    <span className="flex flex-col items-center text-center gap-1">
-                      <span className="font-bold text-xs">🖼️ 3x2 GRID</span>
-                      <span className="text-[9px] font-mono opacity-60">6_S_LAND</span>
-                    </span>
-                  </button>
+                  {[
+                    { id: "3-grid", icon: "🎞️", label: "3-GRID", code: "3_S_VERT" },
+                    { id: "4-grid", icon: "🎞️", label: "4-GRID", code: "4_S_VERT" },
+                    { id: "2x2", icon: "🖼️", label: "2x2 GRID", code: "4_S_SQUARE" },
+                    { id: "3x2", icon: "🖼️", label: "3x2 GRID", code: "6_S_LAND" },
+                  ].map((layoutItem) => {
+                    const isSelected = selectedLayout === layoutItem.id;
+                    return (
+                      <button
+                        key={layoutItem.id}
+                        onClick={() => { setSelectedLayout(layoutItem.id); playClickSound(); }}
+                        className={`p-3.5 rounded-2xl border transition-all duration-200 flex flex-col items-center justify-center text-center cursor-pointer ${
+                          isSelected
+                            ? "bg-[#160078] border-[#F042FF] text-white shadow-[0_0_16px_rgba(240,66,255,0.25)]"
+                            : "bg-[#010030] border-[#7226FF]/30 text-zinc-400 hover:border-[#7226FF] hover:text-white"
+                        }`}
+                      >
+                        <span className="font-mono font-bold text-xs flex items-center gap-1">
+                          <span>{layoutItem.icon}</span> {layoutItem.label}
+                        </span>
+                        <span className="text-[9px] font-mono opacity-60 mt-0.5">{layoutItem.code}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -547,24 +470,12 @@ const Welcome = () => {
                         <button
                           key={agency.id}
                           onClick={() => handleAgencyChange(agency.id)}
-                          className={`camera-ctrl transition-all ${
-                            isSelected 
-                              ? "bg-purple-500 text-white border-purple-500 shadow-[0_0_12px_rgba(138,43,226,0.35)]" 
-                              : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
-                          }`}
-                          style={{
-                            margin: 0,
-                            padding: "6px 14px",
-                            borderRadius: "999px",
-                            fontSize: "0.8rem",
-                            borderWidth: "1px",
-                            fontWeight: "700"
-                          }}
+                          className={isSelected ? "btn-studio-tab-active" : "btn-studio-tab"}
                         >
                           <span>{agency.name}</span>
                           {agencyGroups.length > 0 && (
-                            <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                              isSelected ? "bg-white/20 text-white" : "bg-zinc-800 text-zinc-400"
+                            <span className={`ml-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                              isSelected ? "bg-white/20 text-white" : "bg-[#160078] text-zinc-400"
                             }`}>
                               {agencyGroups.length}
                             </span>
@@ -598,24 +509,12 @@ const Welcome = () => {
                           <button
                             key={group.id}
                             onClick={() => handleGroupChange(group.id)}
-                            className={`camera-ctrl transition-all ${
-                              isSelected 
-                                ? "bg-[#F042FF] text-white border-[#F042FF] shadow-[0_0_14px_rgba(240,66,255,0.35)]" 
-                                : "bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700 hover:text-white"
-                            }`}
-                            style={{
-                              margin: 0,
-                              padding: "8px 16px",
-                              borderRadius: "999px",
-                              fontSize: "0.85rem",
-                              borderWidth: "1px",
-                              fontWeight: "700"
-                            }}
+                            className={isSelected ? "btn-studio-tab-active" : "btn-studio-tab"}
                           >
                             <span>{group.logo || "✦"} {group.name}</span>
                             {groupMembers.length > 0 && (
-                              <span className={`ml-1.5 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
-                                isSelected ? "bg-black/30 text-white" : "bg-zinc-800 text-zinc-400"
+                              <span className={`ml-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+                                isSelected ? "bg-white/20 text-white" : "bg-[#160078] text-zinc-400"
                               }`}>
                                 {groupMembers.length}
                               </span>
@@ -652,8 +551,8 @@ const Welcome = () => {
                             onClick={() => setSelectedArtist(member)}
                             className={`flex items-center gap-2.5 p-2 rounded-xl border cursor-pointer transition-all duration-200 relative overflow-hidden ${
                               isSelected 
-                                ? "border-purple-400 bg-purple-500/15 shadow-[0_0_14px_rgba(138,43,226,0.2)]" 
-                                : "border-zinc-800 bg-zinc-950/40 hover:border-zinc-700"
+                                ? "border-[#F042FF] bg-[#160078]/80 shadow-[0_0_14px_rgba(240,66,255,0.25)]" 
+                                : "border-zinc-800 bg-[#010030] hover:border-[#7226FF]"
                             }`}
                           >
                             <img
@@ -689,55 +588,25 @@ const Welcome = () => {
                       })
                     )}
                   </div>
-                  {/* Exclusive Collab Dedicated Frame Binding Banner */}
-                  <div className="mt-4 p-3.5 rounded-xl border border-purple-500/30 bg-purple-950/20 font-mono text-[11px] text-purple-200 leading-relaxed space-y-2">
-                    <div className="flex items-center justify-between border-b border-purple-500/20 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">🔒</span>
-                        <span>
-                          <strong>EXCLUSIVE EVENT:</strong> <span className="text-white font-bold">{selectedArtist?.name || "ARTIST"}</span> {selectedGroup ? `(${selectedGroup.toUpperCase()})` : ""}
-                        </span>
-                      </div>
-                      <span className="text-[9.5px] bg-[#F042FF]/20 text-[#FFE5F1] px-2 py-0.5 rounded border border-[#F042FF]/40 font-bold uppercase tracking-wider">
-                        {selectedArtist?.dedicatedFrame?.layout?.toUpperCase() || "4-GRID"} COLLAB STRIP
-                      </span>
+                  <div className="mt-4 p-3 rounded-xl border border-purple-500/25 bg-[#010030] font-mono text-[10.5px] text-purple-300 leading-relaxed flex items-center justify-between">
+                    <div>
+                      ℹ️ <strong>Active Guide:</strong> <span className="text-white font-bold">{selectedArtist?.name || "NONE"}</span> {selectedGroup ? `(${selectedGroup.toUpperCase()})` : ""}.
                     </div>
-
-                    <div className="flex items-center justify-between text-[10px] text-zinc-300">
-                      <div className="flex items-center gap-2">
-                        <span className="text-zinc-500">BOUND FRAME:</span>
-                        <span className="text-[#F042FF] font-bold">
-                          {selectedArtist?.dedicatedFrame?.name || `${selectedArtist?.name || 'Artist'} Official Collab Frame`}
-                        </span>
-                      </div>
-                      {selectedArtist?.dedicatedFrame?.watermarkText && (
-                        <span className="text-zinc-400 truncate max-w-[200px] italic">
-                          "{selectedArtist.dedicatedFrame.watermarkText}"
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-[10px] text-zinc-400 pt-1 border-t border-purple-500/10">
-                      ✨ <strong>Exclusive Collab Rule:</strong> Dedicated official frame is automatically applied. Theme/color selection and stickers are locked to preserve authentic artist branding and collector value.
-                    </p>
+                    <span className="text-[10px] bg-purple-500/20 text-purple-200 px-2.5 py-0.5 rounded-full border border-purple-500/30">
+                      4-Grid Collab Strip
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Launch Shutter console */}
-            <div className="shutter-outer">
-              <div className="shutter-pulse-ring" />
+            <div className="w-full">
               <button
                 onClick={() => { handleStart(); playClickSound(); }}
-                className="y2k-button w-full relative z-10"
-                style={{
-                  padding: "16px",
-                  fontSize: "1.2rem",
-                  justifyContent: "center"
-                }}
+                className="btn-studio-primary w-full py-4.5 px-6 rounded-2xl text-base tracking-wider cursor-pointer shadow-[0_10px_30px_rgba(1,0,48,0.7)] hover:border-[#F042FF]"
               >
-                ✦ START PHOTO BOOTH ✦
+                <span>✦ START PHOTO BOOTH ✦</span>
               </button>
             </div>
             

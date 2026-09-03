@@ -94,20 +94,19 @@ const FooterSection = () => {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link 
             to="/welcome" 
-            className="snpshot-btn-primary text-xs font-mono font-bold tracking-wider px-5 py-2.5 shadow-md flex items-center gap-2"
+            className="btn-studio-primary font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 shadow-[0_4px_16px_rgba(22,0,120,0.25)]"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#FFE5F1]" />
-            <span>LAUNCH PHOTOBOOTH</span>
+            ✦ LAUNCH PHOTOBOOTH ✦
           </Link>
           <Link 
             to="/privacy-policy" 
-            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-[#FAF6F9] bg-white border border-[#160078]/20 px-4 py-2.5 rounded-xl shadow-xs transition-all duration-150"
+            className="btn-studio-secondary font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5"
           >
             Privacy Policy
           </Link>
           <Link 
             to="/contact" 
-            className="font-mono text-xs font-bold text-[#010030] uppercase tracking-wider hover:text-[#7226FF] hover:border-[#7226FF] hover:bg-[#FAF6F9] bg-white border border-[#160078]/20 px-4 py-2.5 rounded-xl shadow-xs transition-all duration-150"
+            className="btn-studio-secondary font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5"
           >
             Contact Support
           </Link>

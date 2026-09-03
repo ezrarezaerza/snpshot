@@ -35,11 +35,9 @@ const PhotoBooth = ({ setCapturedImages }) => {
   // Extract configuration from location state
   const { 
     count: photoCount = 4, 
-    layout = '4-grid', 
+    layout = 'grid', 
     category = 'basic', 
     artist = null,
-    dedicatedFrame = null,
-    dedicatedFrameId = null,
     presetFrameId = null
   } = location.state || {};
 
@@ -53,34 +51,11 @@ const PhotoBooth = ({ setCapturedImages }) => {
   const [capturing, setCapturing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
-  const [countdownSeconds, setCountdownSeconds] = useState(5);
 
   // Custom states for Live Camera Session & Guided Overlay
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
   const [isFlashing, setIsFlashing] = useState(false);
   const totalShots = category === "artist" ? 8 : (photoCount + 2); // 8 shots for artist collab, otherwise photoCount + 2
-
-  // Track layout selection analytics & load system settings
-  useEffect(() => {
-    // 1. Log layout selection in studio analytics
-    axios.post("/api/creator/analytics/track", {
-      eventType: "layout_select",
-      layoutId: layout || "3-grid"
-    }).catch(() => {});
-
-    // 2. Fetch system settings for custom countdown duration
-    const loadSettings = async () => {
-      try {
-        const res = await axios.get("/api/creator/settings");
-        if (res.data?.camera?.defaultCountdown) {
-          setCountdownSeconds(Number(res.data.camera.defaultCountdown) || 5);
-        }
-      } catch (e) {
-        console.warn("Using default booth settings:", e);
-      }
-    };
-    loadSettings();
-  }, [layout]);
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -272,7 +247,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
           setTimeout(() => {
             navigate("/preview", { 
-              state: { photoCount, layout, category, artist, dedicatedFrame, dedicatedFrameId, initialFilter: filter, presetFrameId }
+              state: { photoCount, layout, category, artist, initialFilter: filter, presetFrameId }
             });
           }, 400);
         } catch (error) {
@@ -282,7 +257,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
       }
 
       setCurrentShotIndex(photosTaken);
-      let timeLeft = countdownSeconds || 5; // Configured countdown duration from system settings
+      let timeLeft = 5; // Guided 5-second countdown
       setCountdown(timeLeft);
       playBeepSound(); // programmatically synthesized retro self-timer beep
 
@@ -305,8 +280,6 @@ const PhotoBooth = ({ setCapturedImages }) => {
           if (imageUrl) {
             newCapturedImages.push(imageUrl);
             setImages((prevImages) => [...prevImages, imageUrl]);
-            // Track photo capture in studio analytics
-            axios.post("/api/creator/analytics/track", { eventType: "photo_capture" }).catch(() => {});
           }
           photosTaken += 1;
           
@@ -413,18 +386,13 @@ const PhotoBooth = ({ setCapturedImages }) => {
         )}
 
         {/* Active Session Status Bar */}
-        <div className="web3-glass-card p-3.5 mb-6 flex flex-wrap gap-2 justify-between items-center border-zinc-800/80 bg-zinc-950/65">
+        <div className="web3-glass-card p-3.5 mb-6 flex justify-between items-center border-zinc-800/80 bg-zinc-950/65">
           <div className="flex items-center gap-2 font-mono text-xs">
             <span className="w-2 h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
             <span className="text-zinc-400">SESSION:</span>
             <span className="text-white font-bold uppercase">
-              {category === "artist" ? `Collab with ${artist?.name || 'Artist'}` : "Classic Photo Strip"}
+              {category === "artist" ? `Collab with ${artist?.name}` : "Classic Photo Strip"}
             </span>
-            {category === "artist" && (
-              <span className="text-[10px] bg-purple-500/20 text-purple-200 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase">
-                🔒 {dedicatedFrame?.name || `${artist?.name || 'Collab'} Frame Bound`}
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-2 font-mono text-xs">
             <span className="bg-[#F042FF]/15 border border-[#F042FF]/40 text-[#F042FF] px-2.5 py-1 rounded">
@@ -453,8 +421,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
                 <div className="flex gap-3">
                   <button 
                     onClick={startCamera}
-                    className="y2k-button text-xs"
-                    style={{ padding: "8px 16px" }}
+                    className="btn-studio-primary py-2.5 px-5 text-xs font-mono"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> TRY AGAIN
                   </button>
@@ -462,8 +429,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
                     href={window.location.href} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="secondary-btn text-xs font-mono font-bold"
-                    style={{ padding: "8px 16px" }}
+                    className="btn-studio-tab py-2.5 px-5 text-xs font-mono inline-flex items-center gap-1.5"
                   >
                     NEW TAB ↗
                   </a>
@@ -673,31 +639,12 @@ const PhotoBooth = ({ setCapturedImages }) => {
                 return (
                   <button
                     key={filt.id}
-                    onClick={() => { 
-                      setFilter(filt.filterStr); 
-                      playClickSound(); 
-                      axios.post("/api/creator/analytics/track", {
-                        eventType: "filter_use",
-                        filterId: filt.id
-                      }).catch(() => {});
-                    }}
+                    onClick={() => { setFilter(filt.filterStr); playClickSound(); }}
                     disabled={capturing}
-                    className="camera-ctrl group transition-all"
-                    style={{
-                      margin: 0,
-                      padding: "8px 16px",
-                      borderRadius: "999px",
-                      fontSize: "0.8rem",
-                      border: "1px solid",
-                      borderColor: isSelected ? "#F042FF" : "rgba(255,255,255,0.08)",
-                      background: isSelected ? "rgba(240, 66, 255, 0.15)" : "rgba(20, 20, 20, 0.6)",
-                      color: isSelected ? "#F042FF" : "#A1A1AA",
-                      boxShadow: isSelected ? "0 0 12px rgba(240, 66, 255, 0.3)" : "none",
-                      fontWeight: "700"
-                    }}
+                    className={isSelected ? "btn-studio-tab-active" : "btn-studio-tab"}
                   >
                     {filt.badge && (
-                      <span className="mr-1.5 text-[9px] px-1.5 py-0.2 rounded bg-[#F042FF]/20 text-[#FFE5F1] font-mono">
+                      <span className="mr-1 text-[9px] px-1.5 py-0.2 rounded bg-[#F042FF]/20 text-[#FFE5F1] font-mono">
                         {filt.badge}
                       </span>
                     )}
@@ -710,26 +657,20 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
           {/* BIG SHUTTER CAPTURE FAB TRIGGER */}
           <div className="w-full">
-            <div className="shutter-outer">
-              <div className="shutter-pulse-ring" />
-              <button 
-                onClick={() => { startCountdown(); playClickSound(); }} 
-                disabled={capturing || !cameraReady}
-                className="y2k-button w-full relative z-10"
-                style={{
-                  padding: "18px",
-                  fontSize: "1.2rem",
-                  justifyContent: "center"
-                }}
-              >
+            <button 
+              onClick={() => { startCountdown(); playClickSound(); }} 
+              disabled={capturing || !cameraReady}
+              className="btn-studio-primary w-full py-4 px-6 rounded-2xl text-base tracking-wider cursor-pointer shadow-[0_10px_30px_rgba(1,0,48,0.7)] hover:border-[#F042FF] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>
                 {!cameraReady 
                   ? "⌛ STARTING CAMERA..." 
                   : capturing 
                     ? "CAPTURING PHOTOS... STAY STILL" 
                     : `✧ TAKE PHOTOS (${totalShots} SHOTS) ✧`
                 }
-              </button>
-            </div>
+              </span>
+            </button>
           </div>
 
         </div>

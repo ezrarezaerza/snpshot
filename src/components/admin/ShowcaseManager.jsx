@@ -28,7 +28,6 @@ import {
   ArrowRight,
   Megaphone,
   ShieldAlert,
-  ShieldCheck,
   Sliders,
   CheckSquare,
   Square,

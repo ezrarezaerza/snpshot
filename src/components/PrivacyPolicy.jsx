@@ -192,8 +192,8 @@ const PrivacyPolicy = () => {
             </Link>
             
             <Link 
-              to="/studio"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#160078] via-[#7226FF] to-[#F042FF] hover:opacity-95 text-white font-display font-bold text-xs px-5 py-2.5 rounded-full shadow-[0_4px_14px_rgba(240,66,255,0.4)] transition-all"
+              to="/welcome"
+              className="btn-studio-primary inline-flex items-center gap-2 px-5 py-2.5 text-xs font-mono font-bold tracking-wider shadow-[0_4px_14px_rgba(240,66,255,0.35)]"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Launch Studio Booth</span>

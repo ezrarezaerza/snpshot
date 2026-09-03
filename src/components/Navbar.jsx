@@ -27,9 +27,8 @@ export default function Navbar({ onLogout }) {
   // Reset GSAP positions on route change
   useEffect(() => {
     const contentEl = getContentElement();
-    const targets = [dropdownRef.current, navRef.current, contentEl].filter(Boolean);
-    if (targets.length > 0) {
-      gsap.set(targets, { y: 0 });
+    if (contentEl) {
+      gsap.set([dropdownRef.current, navRef.current, contentEl], { y: 0 });
     }
     setIsOpen(false);
     isAnimatingRef.current = false;

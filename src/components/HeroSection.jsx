@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight, Heart, Sparkles } from "lucide-react";
 
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
@@ -561,8 +561,8 @@ const HeroSection = ({ tunerConfig }) => {
                   {heroConfig.card1Subhandle || "★ IDOL EDITION"}
                 </span>
               </div>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#F042FF] to-[#7226FF] flex items-center justify-center border border-white/30 shadow-[0_4px_12px_rgba(240,66,255,0.4)]">
-                <Heart className="w-3.5 h-3.5 text-white fill-current" />
+              <div className="w-8 h-8 rounded-full bg-[#010030] border border-[#7226FF]/50 flex items-center justify-center shadow-sm">
+                <Heart className="w-3.5 h-3.5 text-[#F042FF] fill-current" />
               </div>
             </div>
           </div>
@@ -574,8 +574,9 @@ const HeroSection = ({ tunerConfig }) => {
           >
             <div className="absolute inset-0 rounded-[32px] bg-[#160078]/60 backdrop-blur-2xl border border-white/30 -z-10 pointer-events-none shadow-[0_30px_70px_rgba(1,0,48,0.6)] transition-all duration-400 group-hover:border-[#F042FF]/60" />
             
-            <div className="bg-[#0e0048] text-[#FFE5F1] font-mono font-bold text-xs tracking-widest px-4 py-1.5 rounded-full border border-[#2e109d] shadow-sm uppercase">
-              {heroConfig.eyebrowBadge || "✦ DIGITAL SELF-PHOTO STUDIO ✦"}
+            <div className="inline-flex items-center gap-2 bg-[#010030] text-white font-mono text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full border border-[#7226FF]/40 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#F042FF]" />
+              <span>{heroConfig.eyebrowBadge || "✦ DIGITAL SELF-PHOTO STUDIO ✦"}</span>
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="font-display font-black text-3xl md:text-4xl text-white tracking-tight leading-none uppercase">
@@ -606,10 +607,10 @@ const HeroSection = ({ tunerConfig }) => {
             <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
               <button 
                 onClick={() => navigate(heroConfig.ctaLink || "/welcome")}
-                className="snpshot-btn-primary flex-1 flex items-center justify-center gap-2 text-sm font-mono font-bold tracking-wider py-3 px-6 shadow-md"
+                className="btn-studio-primary flex-1 flex items-center justify-center gap-2 text-sm py-3.5 px-6 rounded-2xl cursor-pointer"
               >
                 <span>{heroConfig.ctaText || "START BOOTH"}</span>
-                <ArrowRight className="w-4 h-4 text-[#FFE5F1]" />
+                <ArrowRight className="w-4 h-4 text-[#F042FF]" />
               </button>
             </div>
 

@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const emailsDir = path.join(__dirname, "saved_emails");
 if (!fs.existsSync(emailsDir)) {
@@ -158,7 +158,7 @@ const defaultShowcaseThemes = [
     desc: "High-contrast photostrip frames with solid borders and nostalgic digital stamps.",
     bg: "linear-gradient(135deg, #020617, #0F3AE2)",
     badge: "CLASSIC_POP",
-    image: "/img/showcase/classic-studio-photostrip.png",
+    image: "/photobooth-strip.png",
     caption: "Studio Frame ✦",
     overlayFrameId: "classic-navy"
   },
@@ -169,18 +169,18 @@ const defaultShowcaseThemes = [
     desc: "Soft flower power stamps with pastel gradients and refined hand-drawn borders.",
     bg: "linear-gradient(135deg, #18001e, #2e083c)",
     badge: "SOFT_PASTEL",
-    image: "/img/showcase/wonyoung-birthday-photostrip.png",
+    image: "/photobooth-strip.png",
     caption: "Soft Floral Frame",
     overlayFrameId: "pastel-2x2-grid"
   },
   {
-    id: "cinematic-film",
+    id: "vintage",
     name: "Cinematic Film",
     color: "#F59E0B",
     desc: "Warm cinematic film grain with retro date stamps and nostalgic lighting.",
     bg: "linear-gradient(135deg, #1a0f00, #2b1800)",
     badge: "VINTAGE_FILM",
-    image: "/img/showcase/hanni-bunny-photostrip.png",
+    image: "/photobooth-strip.png",
     caption: "Warm Grain Filter",
     overlayFrameId: "vintage-2x3-postcard"
   },
@@ -191,7 +191,7 @@ const defaultShowcaseThemes = [
     desc: "Vibrant neon reflections with custom digital overlays and star halo clusters.",
     bg: "linear-gradient(135deg, #022c22, #064e3b)",
     badge: "NEON_CYBER",
-    image: "/img/showcase/karina-cyber-photostrip.png",
+    image: "/photobooth-strip.png",
     caption: "Electric Cyan",
     overlayFrameId: "electric-magenta"
   },
@@ -202,7 +202,7 @@ const defaultShowcaseThemes = [
     desc: "Editable baseline showcase theme for seasonal studio campaigns.",
     bg: "linear-gradient(135deg, #010030, #2e109d)",
     badge: "FEATURED",
-    image: "/img/showcase/jungkook-golden-photostrip.png",
+    image: "/photobooth-strip.png",
     caption: "Custom Baseline ✦",
     overlayFrameId: "custom-baseline-frame"
   }
@@ -668,24 +668,8 @@ const defaultArtists = [
     startDate: "2026-01-01",
     endDate: "",
     isFeatured: true,
-    isFeaturedOnShowcase: true,
-    showcaseBadge: "★ BIRTHDAY SPECIAL",
-    showcaseTagline: "Celebrate with exclusive 4-pose idol deck & dedicated birthday collector frame",
-    dedicatedFrameId: "ive-wonyoung-birthday-frame",
-    dedicatedFrame: {
-      id: "ive-wonyoung-birthday-frame",
-      name: "IVE Wonyoung Birthday Edition",
-      layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: "#F042FF",
-      watermarkText: "IVE WONYOUNG ✦ OFFICIAL BIRTHDAY EVENT",
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    finalPreviewImage: "/img/showcase/wonyoung-birthday-photostrip.png",
     avatar: "/img/poses/Wonyoung1.png",
+    finalPreviewImage: "/photobooth-strip.png",
     poses: [
       "/img/poses/Wonyoung1.png",
       "/img/poses/Wonyoung2.png",
@@ -714,24 +698,8 @@ const defaultArtists = [
     startDate: "2026-02-01",
     endDate: "",
     isFeatured: true,
-    isFeaturedOnShowcase: true,
-    showcaseBadge: "✦ Y2K POP-UP",
-    showcaseTagline: "Get the iconic Bunny Club 4-cut photostrip with official pastel blue border",
-    dedicatedFrameId: "newjeans-hanni-bunny-frame",
-    dedicatedFrame: {
-      id: "newjeans-hanni-bunny-frame",
-      name: "NewJeans Hanni Bunny Club Frame",
-      layout: "4-grid",
-      bgColor: "#021226",
-      bgGradient: "linear-gradient(135deg, #0055ff 0%, #00a8ff 100%)",
-      borderColor: "#00a8ff",
-      watermarkText: "NEWJEANS HANNI 🐰 BUNNY CLUB EXCLUSIVE",
-      padding: 16,
-      innerGap: 10,
-      borderRadius: 6
-    },
-    finalPreviewImage: "/img/showcase/hanni-bunny-photostrip.png",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600",
+    finalPreviewImage: "/photobooth-strip.png",
     poses: [
       "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=600",
       "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=600",
@@ -760,24 +728,8 @@ const defaultArtists = [
     startDate: "2026-03-01",
     endDate: "",
     isFeatured: false,
-    isFeaturedOnShowcase: false,
-    showcaseBadge: "💜 GOLDEN STUDIO",
-    showcaseTagline: "Golden Era tribute photoshoot with sleek studio monochrome borders",
-    dedicatedFrameId: "bts-jungkook-golden-frame",
-    dedicatedFrame: {
-      id: "bts-jungkook-golden-frame",
-      name: "BTS Jungkook Golden Frame",
-      layout: "2x2",
-      bgColor: "#160024",
-      bgGradient: "linear-gradient(135deg, #4a0072 0%, #9c27b0 100%)",
-      borderColor: "#9c27b0",
-      watermarkText: "BTS JUNGKOOK 💜 GOLDEN SPECIAL",
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    finalPreviewImage: "/img/showcase/jungkook-golden-photostrip.png",
     avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600",
+    finalPreviewImage: "/photobooth-strip.png",
     poses: [
       "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600",
       "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=600",
@@ -806,24 +758,8 @@ const defaultArtists = [
     startDate: "2026-09-01",
     endDate: "2026-10-31",
     isFeatured: true,
-    isFeaturedOnShowcase: true,
-    showcaseBadge: "🔥 LIMITED DROP",
-    showcaseTagline: "Synk into the digital realm with official cyber aesthetic 2x3 postcard frame",
-    dedicatedFrameId: "aespa-karina-cyber-frame",
-    dedicatedFrame: {
-      id: "aespa-karina-cyber-frame",
-      name: "aespa Karina Synk Cyber Frame",
-      layout: "2x3",
-      bgColor: "#03001e",
-      bgGradient: "linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)",
-      borderColor: "#7226FF",
-      watermarkText: "AESPA KARINA 🦋 SYNK KWANGYA DROP",
-      padding: 18,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    finalPreviewImage: "/img/showcase/karina-cyber-photostrip.png",
     avatar: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&q=80&w=600",
+    finalPreviewImage: "/photobooth-strip.png",
     poses: [
       "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&q=80&w=600",
       "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=600",
@@ -1080,21 +1016,6 @@ const getStudioData = () => {
     if (!data.subjectCategories || data.subjectCategories.length === 0) data.subjectCategories = defaultSubjectCategories;
     if (!data.analytics) data.analytics = defaultAnalytics;
     if (!data.settings) data.settings = defaultPlatformSettings;
-    
-    // Ensure default artists have high quality finalPreviewImage populated
-    if (data.artists && data.artists.length > 0) {
-      data.artists = data.artists.map(artist => {
-        if (!artist.finalPreviewImage) {
-          if (artist.id?.includes("wonyoung")) artist.finalPreviewImage = "/img/showcase/wonyoung-birthday-photostrip.png";
-          else if (artist.id?.includes("hanni")) artist.finalPreviewImage = "/img/showcase/hanni-bunny-photostrip.png";
-          else if (artist.id?.includes("jungkook")) artist.finalPreviewImage = "/img/showcase/jungkook-golden-photostrip.png";
-          else if (artist.id?.includes("karina")) artist.finalPreviewImage = "/img/showcase/karina-cyber-photostrip.png";
-          else artist.finalPreviewImage = artist.avatar || artist.poses?.[0] || "/img/showcase/classic-studio-photostrip.png";
-        }
-        return artist;
-      });
-    }
-
     return data;
   } catch (err) {
     console.error("Error reading studio data:", err);
@@ -1308,12 +1229,11 @@ app.delete(["/api/admin/frames/:id", "/api/creator/frame/:id"], (req, res) => {
   res.json({ success: true, message: "Frame layout removed" });
 });
 
-// Upload and register a new artist collaboration campaign with flexible pose guidance & dedicated frame
-app.post("/api/creator/artist", uploadPoses.any(), (req, res) => {
+// Upload and register a new artist collaboration campaign with flexible pose guidance and final preview photostrip
+app.post("/api/creator/artist", uploadPoses.fields([{ name: "poses", maxCount: 8 }, { name: "finalPreview", maxCount: 1 }]), (req, res) => {
   const { 
     name, role, color, agencyId, agencyName, groupId, groupName, groupLogo, isMale, 
-    status, startDate, endDate, isFeatured, isFeaturedOnShowcase, showcaseBadge, showcaseTagline,
-    dedicatedFrameId, dedicatedFrame, posesGuidance, finalPreviewImage: finalPreviewImageBody
+    status, startDate, endDate, isFeatured, posesGuidance, finalPreviewImage 
   } = req.body;
   
   if (!name || !role || !agencyId || !agencyName || !groupId || !groupName) {
@@ -1321,27 +1241,19 @@ app.post("/api/creator/artist", uploadPoses.any(), (req, res) => {
   }
 
   let poses = [];
-  let finalPreviewImage = finalPreviewImageBody || null;
-
-  if (req.files && req.files.length > 0) {
-    const poseFiles = req.files.filter(f => f.fieldname === "poses" || f.fieldname.startsWith("poses["));
-    const previewFile = req.files.find(f => f.fieldname === "finalPreviewImage" || f.fieldname === "previewImage");
-    
-    if (poseFiles.length > 0) {
-      poses = poseFiles.map(file => `/img/poses/${file.filename}`);
-    }
-    if (previewFile) {
-      finalPreviewImage = `/img/poses/${previewFile.filename}`;
-    }
-  }
-
-  if (poses.length === 0) {
+  if (req.files && req.files.poses && req.files.poses.length > 0) {
+    poses = req.files.poses.map(file => `/img/poses/${file.filename}`);
+  } else {
     // Default fallback pose placeholders if no files attached
     poses = ["/img/poses/Wonyoung1.png", "/img/poses/Wonyoung2.png", "/img/poses/Wonyoung3.png", "/img/poses/Wonyoung4.png"];
   }
 
-  if (!finalPreviewImage) {
-    finalPreviewImage = poses[0] || "/img/showcase/wonyoung-birthday-photostrip.png";
+  let finalPreview = finalPreviewImage || "";
+  if (req.files && req.files.finalPreview && req.files.finalPreview.length > 0) {
+    finalPreview = `/img/poses/${req.files.finalPreview[0].filename}`;
+  }
+  if (!finalPreview) {
+    finalPreview = "/photobooth-strip.png";
   }
 
   let parsedGuidance = [];
@@ -1350,15 +1262,6 @@ app.post("/api/creator/artist", uploadPoses.any(), (req, res) => {
       parsedGuidance = typeof posesGuidance === "string" ? JSON.parse(posesGuidance) : posesGuidance;
     } catch (e) {
       parsedGuidance = [];
-    }
-  }
-
-  let parsedDedicatedFrame = null;
-  if (dedicatedFrame) {
-    try {
-      parsedDedicatedFrame = typeof dedicatedFrame === "string" ? JSON.parse(dedicatedFrame) : dedicatedFrame;
-    } catch (e) {
-      parsedDedicatedFrame = null;
     }
   }
 
@@ -1380,25 +1283,9 @@ app.post("/api/creator/artist", uploadPoses.any(), (req, res) => {
     startDate: startDate || null,
     endDate: endDate || null,
     isFeatured: isFeatured === "true" || isFeatured === true,
-    isFeaturedOnShowcase: isFeaturedOnShowcase === "true" || isFeaturedOnShowcase === true,
-    showcaseBadge: showcaseBadge || "★ OFFICIAL EVENT",
-    showcaseTagline: showcaseTagline || "Official idol collab deck & exclusive collector frame",
-    dedicatedFrameId: dedicatedFrameId || (parsedDedicatedFrame?.id || "custom-event-frame"),
-    dedicatedFrame: parsedDedicatedFrame || {
-      id: "custom-event-frame",
-      name: `${name} Official Collab Frame`,
-      layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: color || "#F042FF",
-      watermarkText: `${(groupName || "").toUpperCase()} ${name.toUpperCase()} ✦ OFFICIAL EVENT`,
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    finalPreviewImage,
     posesGuidance: parsedGuidance,
     avatar,
+    finalPreviewImage: finalPreview,
     poses
   };
 
@@ -1409,12 +1296,11 @@ app.post("/api/creator/artist", uploadPoses.any(), (req, res) => {
 });
 
 // Edit custom artist campaign
-app.put("/api/creator/artist/:id", uploadPoses.any(), (req, res) => {
+app.put("/api/creator/artist/:id", uploadPoses.fields([{ name: "poses", maxCount: 8 }, { name: "finalPreview", maxCount: 1 }]), (req, res) => {
   const { id } = req.params;
   const { 
     name, role, color, agencyId, agencyName, groupId, groupName, groupLogo, isMale,
-    status, startDate, endDate, isFeatured, isFeaturedOnShowcase, showcaseBadge, showcaseTagline,
-    dedicatedFrameId, dedicatedFrame, posesGuidance, existingPoses, finalPreviewImage: finalPreviewImageBody
+    status, startDate, endDate, isFeatured, posesGuidance, existingPoses, finalPreviewImage
   } = req.body;
   
   const data = getCreatorData();
@@ -1426,22 +1312,20 @@ app.put("/api/creator/artist/:id", uploadPoses.any(), (req, res) => {
   const existingArtist = data.artists[artistIndex];
 
   let poses = existingArtist.poses || [];
-  let finalPreviewImage = finalPreviewImageBody !== undefined ? finalPreviewImageBody : (existingArtist.finalPreviewImage || existingArtist.poses?.[0]);
-
-  if (req.files && req.files.length > 0) {
-    const poseFiles = req.files.filter(f => f.fieldname === "poses" || f.fieldname.startsWith("poses["));
-    const previewFile = req.files.find(f => f.fieldname === "finalPreviewImage" || f.fieldname === "previewImage");
-    
-    if (poseFiles.length > 0) {
-      poses = poseFiles.map(file => `/img/poses/${file.filename}`);
-    }
-    if (previewFile) {
-      finalPreviewImage = `/img/poses/${previewFile.filename}`;
-    }
+  if (req.files && req.files.poses && req.files.poses.length > 0) {
+    // If new files provided, use new files
+    poses = req.files.poses.map(file => `/img/poses/${file.filename}`);
   } else if (existingPoses) {
     try {
       poses = typeof existingPoses === "string" ? JSON.parse(existingPoses) : existingPoses;
     } catch(e) {}
+  }
+
+  let finalPreview = existingArtist.finalPreviewImage || "/photobooth-strip.png";
+  if (req.files && req.files.finalPreview && req.files.finalPreview.length > 0) {
+    finalPreview = `/img/poses/${req.files.finalPreview[0].filename}`;
+  } else if (finalPreviewImage !== undefined && finalPreviewImage !== "") {
+    finalPreview = finalPreviewImage;
   }
 
   let parsedGuidance = existingArtist.posesGuidance || [];
@@ -1450,15 +1334,6 @@ app.put("/api/creator/artist/:id", uploadPoses.any(), (req, res) => {
       parsedGuidance = typeof posesGuidance === "string" ? JSON.parse(posesGuidance) : posesGuidance;
     } catch (e) {
       parsedGuidance = [];
-    }
-  }
-
-  let parsedDedicatedFrame = existingArtist.dedicatedFrame || null;
-  if (dedicatedFrame !== undefined) {
-    try {
-      parsedDedicatedFrame = typeof dedicatedFrame === "string" ? JSON.parse(dedicatedFrame) : dedicatedFrame;
-    } catch (e) {
-      parsedDedicatedFrame = existingArtist.dedicatedFrame || null;
     }
   }
 
@@ -1477,14 +1352,9 @@ app.put("/api/creator/artist/:id", uploadPoses.any(), (req, res) => {
     startDate: startDate !== undefined ? startDate : existingArtist.startDate,
     endDate: endDate !== undefined ? endDate : existingArtist.endDate,
     isFeatured: isFeatured !== undefined ? (isFeatured === "true" || isFeatured === true) : Boolean(existingArtist.isFeatured),
-    isFeaturedOnShowcase: isFeaturedOnShowcase !== undefined ? (isFeaturedOnShowcase === "true" || isFeaturedOnShowcase === true) : Boolean(existingArtist.isFeaturedOnShowcase),
-    showcaseBadge: showcaseBadge !== undefined ? showcaseBadge : (existingArtist.showcaseBadge || "★ OFFICIAL EVENT"),
-    showcaseTagline: showcaseTagline !== undefined ? showcaseTagline : (existingArtist.showcaseTagline || "Official idol collab deck & exclusive collector frame"),
-    dedicatedFrameId: dedicatedFrameId !== undefined ? dedicatedFrameId : (existingArtist.dedicatedFrameId || "custom-event-frame"),
-    dedicatedFrame: parsedDedicatedFrame || existingArtist.dedicatedFrame,
-    finalPreviewImage: finalPreviewImage || existingArtist.finalPreviewImage || poses[0],
     posesGuidance: parsedGuidance,
     poses,
+    finalPreviewImage: finalPreview,
     avatar: poses[0] || existingArtist.avatar
   };
 
@@ -1494,10 +1364,10 @@ app.put("/api/creator/artist/:id", uploadPoses.any(), (req, res) => {
   res.json({ success: true, artist: updatedArtist });
 });
 
-// Quick Toggle for Campaign Status, Featured Flag & Showcase Flag
+// Quick Toggle for Campaign Status & Featured Flag
 app.patch("/api/creator/artist/:id/quick-toggle", (req, res) => {
   const { id } = req.params;
-  const { status, isFeatured, isFeaturedOnShowcase } = req.body;
+  const { status, isFeatured } = req.body;
 
   const data = getCreatorData();
   const artistIndex = data.artists.findIndex(a => a.id === id);
@@ -1507,7 +1377,6 @@ app.patch("/api/creator/artist/:id/quick-toggle", (req, res) => {
 
   if (status) data.artists[artistIndex].status = status;
   if (isFeatured !== undefined) data.artists[artistIndex].isFeatured = isFeatured;
-  if (isFeaturedOnShowcase !== undefined) data.artists[artistIndex].isFeaturedOnShowcase = isFeaturedOnShowcase;
 
   saveCreatorData(data);
   res.json({ success: true, artist: data.artists[artistIndex] });
@@ -2544,210 +2413,22 @@ app.put("/api/creator/subject-categories", (req, res) => {
   res.json({ success: true, subjectCategories: categories });
 });
 
-// Helper: Compute dynamic, real live studio analytics from system databases
-function computeLiveStudioAnalytics(data) {
-  const analytics = data.analytics || defaultAnalytics;
-  const frames = data.frames || defaultFrames;
-  const artists = data.artists || defaultArtists;
-  const galleryItems = data.galleryItems || defaultGalleryItems;
-  const filters = data.filters || defaultFilters;
-  const inquiries = data.inquiries || defaultInquiries;
-
-  const frameUsageMap = analytics.frameUsage || {};
-  const framesAnalysis = frames.map((frame, index) => {
-    const usageCount = frameUsageMap[frame.id] !== undefined 
-      ? frameUsageMap[frame.id] 
-      : Math.max(28, Math.floor(190 - index * 22 + (frame.active !== false ? 35 : 0)));
-    const printCount = Math.floor(usageCount * 0.88);
-    const conversion = Number(((printCount / (usageCount || 1)) * 100).toFixed(1));
-    return {
-      id: frame.id,
-      name: frame.name,
-      layout: frame.layout || "3-grid",
-      type: frame.type || "color",
-      bgColor: frame.bgColor || "#0e0048",
-      borderColor: frame.borderColor || "#F042FF",
-      active: frame.active !== false,
-      padding: frame.padding || 16,
-      innerGap: frame.innerGap || 12,
-      usageCount,
-      printCount,
-      conversionRate: conversion,
-      resolution: frame.layout === '2x3' ? '1800x1200' : '1200x1800',
-      dpi: 300,
-      sharePercentage: 0
-    };
-  });
-
-  const totalCalculatedFrameUses = framesAnalysis.reduce((acc, f) => acc + f.usageCount, 0) || 1;
-  framesAnalysis.forEach(f => {
-    f.sharePercentage = Number(((f.usageCount / totalCalculatedFrameUses) * 100).toFixed(1));
-  });
-  framesAnalysis.sort((a, b) => b.usageCount - a.usageCount);
-
-  // Real Campaign / Artist Pose Analysis
-  const campaignUsageMap = analytics.campaignUsage || {};
-  const campaignsAnalysis = artists.map((artist, index) => {
-    const sessionCount = campaignUsageMap[artist.id] !== undefined 
-      ? campaignUsageMap[artist.id] 
-      : Math.max(45, Math.floor(340 - index * 42 + (artist.isFeatured ? 85 : 0)));
-    const photosCaptured = sessionCount * (artist.poses?.length || 4);
-    const downloads = Math.floor(sessionCount * 0.86);
-    const engagementRate = Number(((downloads / (sessionCount || 1)) * 100).toFixed(1));
-    const communityLikes = galleryItems
-      .filter(g => g.caption?.toLowerCase().includes(artist.name?.toLowerCase()) || g.creator?.toLowerCase().includes(artist.name?.toLowerCase()))
-      .reduce((acc, g) => acc + (g.likes || 0), 0) || (sessionCount * 4 + 110);
-
-    return {
-      id: artist.id,
-      name: artist.name,
-      groupName: artist.groupName || "K-Pop Group",
-      agencyName: artist.agencyName || "Studio Label",
-      role: artist.role || "Partner Artist",
-      color: artist.color || "#F042FF",
-      avatar: artist.avatar || artist.poses?.[0] || "",
-      posesCount: artist.poses?.length || 0,
-      status: artist.status || "active",
-      isFeatured: Boolean(artist.isFeatured),
-      sessionCount,
-      photosCaptured,
-      downloads,
-      engagementRate,
-      communityLikes,
-      topPosePreview: artist.poses?.[0] || "",
-      sharePercentage: 0
-    };
-  });
-
-  const totalCampaignSessions = campaignsAnalysis.reduce((acc, c) => acc + c.sessionCount, 0) || 1;
-  campaignsAnalysis.forEach(c => {
-    c.sharePercentage = Number(((c.sessionCount / totalCampaignSessions) * 100).toFixed(1));
-  });
-  campaignsAnalysis.sort((a, b) => b.sessionCount - a.sessionCount);
-
-  // Filter Analysis
-  const filterUsageMap = analytics.filterUsage || {};
-  const filtersAnalysis = filters.map((flt, index) => {
-    const uses = filterUsageMap[flt.id] !== undefined 
-      ? filterUsageMap[flt.id] 
-      : Math.max(22, Math.floor(360 - index * 45 + (flt.active !== false ? 30 : 0)));
-    return {
-      id: flt.id,
-      name: flt.name,
-      badge: flt.badge || "PRESET",
-      active: flt.active !== false,
-      uses,
-      percentage: 0
-    };
-  });
-  const totalFilterUses = filtersAnalysis.reduce((acc, f) => acc + f.uses, 0) || 1;
-  filtersAnalysis.forEach(f => {
-    f.percentage = Number(((f.uses / totalFilterUses) * 100).toFixed(1));
-  });
-  filtersAnalysis.sort((a, b) => b.uses - a.uses);
-
-  // Layout distribution
-  const layoutUsage = {
-    "3-grid": framesAnalysis.filter(f => f.layout === "3-grid" || f.layout === "all").reduce((a, b) => a + b.usageCount, 0),
-    "4-grid": framesAnalysis.filter(f => f.layout === "4-grid" || f.layout === "all").reduce((a, b) => a + b.usageCount, 0),
-    "2x2": framesAnalysis.filter(f => f.layout === "2x2" || f.layout === "all").reduce((a, b) => a + b.usageCount, 0),
-    "2x3": framesAnalysis.filter(f => f.layout === "2x3" || f.layout === "all").reduce((a, b) => a + b.usageCount, 0)
-  };
-  const totalLayoutUses = Object.values(layoutUsage).reduce((a, b) => a + b, 0) || 1;
-
-  const layouts = [
-    { id: "vertical-3", name: "Vertical 3-Strip", count: layoutUsage["3-grid"], percentage: Number(((layoutUsage["3-grid"] / totalLayoutUses) * 100).toFixed(1)), color: "#7226FF" },
-    { id: "classic-4", name: "Classic 4-Strip", count: layoutUsage["4-grid"], percentage: Number(((layoutUsage["4-grid"] / totalLayoutUses) * 100).toFixed(1)), color: "#F042FF" },
-    { id: "grid-2x2", name: "2x2 Square Grid", count: layoutUsage["2x2"], percentage: Number(((layoutUsage["2x2"] / totalLayoutUses) * 100).toFixed(1)), color: "#010030" },
-    { id: "postcard-2x3", name: "2x3 Postcard", count: layoutUsage["2x3"], percentage: Number(((layoutUsage["2x3"] / totalLayoutUses) * 100).toFixed(1)), color: "#3B82F6" }
-  ];
-
-  // Gallery Print Metrics
-  const totalCommunityPrints = galleryItems.length;
-  const verifiedDpiPrints = galleryItems.filter(g => g.printDpi === 300 || g.printStatus === "dpi_verified").length;
-  const totalLikes = galleryItems.reduce((acc, g) => acc + (g.likes || 0), 0);
-
-  // Overall Live KPIs
-  const baseSessions = analytics.kpis?.activeSessions || (totalCampaignSessions + totalCalculatedFrameUses);
-  const totalSessions = Math.max(baseSessions, totalCalculatedFrameUses);
-  const totalPhotos = analytics.kpis?.photosCaptured || Math.floor(totalSessions * 3.8);
-  const totalDownloads = analytics.kpis?.downloadsCompleted || Math.floor(totalSessions * 0.85);
-  const completionRate = Number(((totalDownloads / (totalSessions || 1)) * 100).toFixed(1));
-
-  const kpis = {
-    activeSessions: totalSessions,
-    photosCaptured: totalPhotos,
-    downloadsCompleted: totalDownloads,
-    completionRate: completionRate,
-    avgRenderLatencyMs: analytics.kpis?.avgRenderLatencyMs || 228,
-    exportSuccessRate: analytics.kpis?.exportSuccessRate || 99.6,
-    totalCommunityPrints,
-    verifiedDpiPrints,
-    totalLikes,
-    totalFramesInCatalog: frames.length,
-    activeFramesCount: frames.filter(f => f.active !== false).length,
-    totalCampaignsInCatalog: artists.length,
-    activeCampaignsCount: artists.filter(a => a.status === "active").length,
-    totalInquiries: inquiries.length,
-    unresolvedInquiries: inquiries.filter(i => i.status === "unread" || i.status === "in_review").length
-  };
-
-  const funnel = [
-    { step: "Step 01: Layout & Frame Select", count: totalSessions, conversion: 100 },
-    { step: "Step 02: Camera Shutter Capture", count: Math.floor(totalSessions * 0.94), conversion: 94.0 },
-    { step: "Step 03: Customize, Filter & Stamps", count: Math.floor(totalSessions * 0.86), conversion: 86.0 },
-    { step: "Step 04: High-Res 300 DPI Export", count: totalDownloads, conversion: completionRate }
-  ];
-
-  return {
-    kpis,
-    funnel,
-    layouts,
-    filters: filtersAnalysis,
-    framesAnalysis,
-    campaignsAnalysis,
-    decorations: analytics.decorations || defaultAnalytics.decorations,
-    timeframeData: {
-      today: { ...kpis, activeSessions: totalSessions, photosCaptured: totalPhotos, downloadsCompleted: totalDownloads },
-      last7d: { ...kpis, activeSessions: Math.floor(totalSessions * 6.2), photosCaptured: Math.floor(totalPhotos * 6.2), downloadsCompleted: Math.floor(totalDownloads * 6.2) },
-      last30d: { ...kpis, activeSessions: Math.floor(totalSessions * 24.5), photosCaptured: Math.floor(totalPhotos * 24.5), downloadsCompleted: Math.floor(totalDownloads * 24.5) },
-      allTime: { ...kpis, activeSessions: Math.floor(totalSessions * 85), photosCaptured: Math.floor(totalPhotos * 85), downloadsCompleted: Math.floor(totalDownloads * 85) }
-    },
-    engineLogs: analytics.engineLogs || defaultAnalytics.engineLogs
-  };
-}
-
 // GET /api/creator/analytics - Studio usage metrics & pipeline funnel
 app.get("/api/creator/analytics", (req, res) => {
   const data = getCreatorData();
-  const liveAnalytics = computeLiveStudioAnalytics(data);
-  res.json(liveAnalytics);
+  res.json(data.analytics || defaultAnalytics);
 });
 
 // POST /api/creator/analytics/track - Log pipeline interaction event
 app.post("/api/creator/analytics/track", (req, res) => {
-  const { eventType, layoutId, filterId, frameId, campaignId, artistId, decorationName, latencyMs } = req.body;
+  const { eventType, layoutId, filterId, decorationName, latencyMs } = req.body;
   const data = getCreatorData();
   if (!data.analytics) data.analytics = JSON.parse(JSON.stringify(defaultAnalytics));
 
   const analytics = data.analytics;
-  if (!analytics.frameUsage) analytics.frameUsage = {};
-  if (!analytics.campaignUsage) analytics.campaignUsage = {};
-  if (!analytics.filterUsage) analytics.filterUsage = {};
-
-  if (frameId) {
-    analytics.frameUsage[frameId] = (analytics.frameUsage[frameId] || 0) + 1;
-  }
-  const targetCampaign = campaignId || artistId;
-  if (targetCampaign) {
-    analytics.campaignUsage[targetCampaign] = (analytics.campaignUsage[targetCampaign] || 0) + 1;
-  }
-  if (filterId) {
-    analytics.filterUsage[filterId] = (analytics.filterUsage[filterId] || 0) + 1;
-  }
 
   if (eventType === "layout_select" && layoutId) {
-    const layoutObj = analytics.layouts?.find(l => l.id === layoutId);
+    const layoutObj = analytics.layouts.find(l => l.id === layoutId);
     if (layoutObj) {
       layoutObj.count += 1;
       const total = analytics.layouts.reduce((acc, curr) => acc + curr.count, 0);
@@ -2755,20 +2436,32 @@ app.post("/api/creator/analytics/track", (req, res) => {
         l.percentage = Number(((l.count / total) * 100).toFixed(1));
       });
     }
-    if (analytics.funnel?.[0]) analytics.funnel[0].count += 1;
-    if (analytics.kpis) analytics.kpis.activeSessions += 1;
+    analytics.funnel[0].count += 1;
+    analytics.kpis.activeSessions += 1;
   } else if (eventType === "photo_capture") {
-    if (analytics.funnel?.[1]) analytics.funnel[1].count += 1;
-    if (analytics.kpis) analytics.kpis.photosCaptured += 1;
+    analytics.funnel[1].count += 1;
+    analytics.kpis.photosCaptured += 1;
   } else if (eventType === "filter_use" && filterId) {
-    if (analytics.funnel?.[2]) analytics.funnel[2].count += 1;
+    const filterObj = analytics.filters.find(f => f.id === filterId);
+    if (filterObj) {
+      filterObj.uses += 1;
+      const totalUses = analytics.filters.reduce((acc, curr) => acc + curr.uses, 0);
+      analytics.filters.forEach(f => {
+        f.percentage = Number(((f.uses / totalUses) * 100).toFixed(1));
+      });
+    }
+    analytics.funnel[2].count += 1;
+  } else if (eventType === "decoration_use" && decorationName) {
+    const decObj = analytics.decorations.find(d => d.name.toLowerCase().includes(decorationName.toLowerCase()));
+    if (decObj) {
+      decObj.count += 1;
+    }
   } else if (eventType === "export_download") {
-    if (analytics.funnel?.[3]) analytics.funnel[3].count += 1;
-    if (analytics.kpis) analytics.kpis.downloadsCompleted += 1;
+    analytics.funnel[3].count += 1;
+    analytics.kpis.downloadsCompleted += 1;
     
     // Add latency log
     const renderLatency = latencyMs || Math.floor(180 + Math.random() * 120);
-    if (!analytics.engineLogs) analytics.engineLogs = [];
     analytics.engineLogs.unshift({
       id: `log-${Date.now()}`,
       timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
@@ -2780,9 +2473,15 @@ app.post("/api/creator/analytics/track", (req, res) => {
     if (analytics.engineLogs.length > 20) analytics.engineLogs.pop();
   }
 
+  // Recalculate funnel conversion ratios
+  const step1 = analytics.funnel[0].count || 1;
+  analytics.funnel.forEach((fStep) => {
+    fStep.conversion = Number(((fStep.count / step1) * 100).toFixed(1));
+  });
+  analytics.kpis.completionRate = analytics.funnel[3].conversion;
+
   saveCreatorData(data);
-  const liveAnalytics = computeLiveStudioAnalytics(data);
-  res.json({ success: true, analytics: liveAnalytics });
+  res.json({ success: true, analytics });
 });
 
 // POST /api/creator/analytics/simulate - Trigger benchmark simulation
@@ -2792,31 +2491,25 @@ app.post("/api/creator/analytics/simulate", (req, res) => {
   if (!data.analytics) data.analytics = JSON.parse(JSON.stringify(defaultAnalytics));
 
   const analytics = data.analytics;
-  if (!analytics.frameUsage) analytics.frameUsage = {};
-  if (!analytics.campaignUsage) analytics.campaignUsage = {};
-  if (!analytics.filterUsage) analytics.filterUsage = {};
 
   const simCount = Number(count) || 10;
-  if (!analytics.kpis) analytics.kpis = { ...defaultAnalytics.kpis };
   analytics.kpis.activeSessions += simCount;
   analytics.kpis.photosCaptured += simCount * 4;
   analytics.kpis.downloadsCompleted += Math.floor(simCount * 0.85);
 
-  // Distribute simulation randomly across active frames and campaigns
-  const frames = data.frames || defaultFrames;
-  const artists = data.artists || defaultArtists;
-  if (frames.length > 0) {
-    const randomFrame = frames[Math.floor(Math.random() * frames.length)];
-    analytics.frameUsage[randomFrame.id] = (analytics.frameUsage[randomFrame.id] || 0) + simCount;
-  }
-  if (artists.length > 0) {
-    const randomArtist = artists[Math.floor(Math.random() * artists.length)];
-    analytics.campaignUsage[randomArtist.id] = (analytics.campaignUsage[randomArtist.id] || 0) + simCount;
-  }
+  analytics.funnel[0].count += simCount;
+  analytics.funnel[1].count += Math.floor(simCount * 0.95);
+  analytics.funnel[2].count += Math.floor(simCount * 0.88);
+  analytics.funnel[3].count += Math.floor(simCount * 0.85);
+
+  const step1 = analytics.funnel[0].count || 1;
+  analytics.funnel.forEach((fStep) => {
+    fStep.conversion = Number(((fStep.count / step1) * 100).toFixed(1));
+  });
+  analytics.kpis.completionRate = analytics.funnel[3].conversion;
 
   // Add simulated latency log
   const simLatency = Math.floor(190 + Math.random() * 110);
-  if (!analytics.engineLogs) analytics.engineLogs = [];
   analytics.engineLogs.unshift({
     id: `log-${Date.now()}`,
     timestamp: new Date().toISOString().replace("T", " ").substring(0, 19),
@@ -2828,20 +2521,15 @@ app.post("/api/creator/analytics/simulate", (req, res) => {
   if (analytics.engineLogs.length > 20) analytics.engineLogs.pop();
 
   saveCreatorData(data);
-  const liveAnalytics = computeLiveStudioAnalytics(data);
-  res.json({ success: true, message: `Simulated ${simCount} studio sessions`, analytics: liveAnalytics });
+  res.json({ success: true, message: `Simulated ${simCount} studio sessions`, analytics });
 });
 
 // POST /api/creator/analytics/reset - Reset analytics data to defaults
 app.post("/api/creator/analytics/reset", (req, res) => {
   const data = getCreatorData();
   data.analytics = JSON.parse(JSON.stringify(defaultAnalytics));
-  data.analytics.frameUsage = {};
-  data.analytics.campaignUsage = {};
-  data.analytics.filterUsage = {};
   saveCreatorData(data);
-  const liveAnalytics = computeLiveStudioAnalytics(data);
-  res.json({ success: true, message: "Analytics reset to baseline defaults", analytics: liveAnalytics });
+  res.json({ success: true, message: "Analytics reset to baseline defaults", analytics: data.analytics });
 });
 
 // GET /api/creator/settings - Get system & platform settings
@@ -3088,24 +2776,29 @@ app.get("/api/saved-emails", (req, res) => {
   });
 });
 
-// Vite middleware for development or static serving for production
-if (process.env.NODE_ENV !== "production") {
-  const vite = await createViteServer({
-    server: { 
-      middlewareMode: true,
-      hmr: false 
-    },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
-} else {
-  const distPath = path.join(process.cwd(), "dist");
-  app.use(express.static(distPath));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(distPath, "index.html"));
+async function startServer() {
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(__dirname, "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Application not built. Please run npm run build.");
+      }
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-});
+startServer();

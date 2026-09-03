@@ -14,39 +14,28 @@ function App() {
   const [capturedImages, setCapturedImages] = useState([]);
 
   useEffect(() => {
-    let lenis = null;
-    let rafId = null;
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      autoResize: true,
+    });
 
-    try {
-      lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        orientation: "vertical",
-        gestureOrientation: "vertical",
-        smoothWheel: true,
-        wheelMultiplier: 1,
-        autoResize: true,
-      });
-
-      function raf(time) {
-        if (lenis) {
-          lenis.raf(time);
-          rafId = requestAnimationFrame(raf);
-        }
-      }
-
-      rafId = requestAnimationFrame(raf);
-      window.lenis = lenis;
-    } catch (err) {
-      console.warn("Lenis smooth scroll initialization skipped:", err);
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
     }
 
+    requestAnimationFrame(raf);
+
+    window.lenis = lenis;
+
     return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (lenis) {
-        lenis.destroy();
-        window.lenis = null;
-      }
+      lenis.destroy();
+      window.lenis = null;
     };
   }, []);
 
@@ -60,12 +49,6 @@ function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/admin" element={<AdminDashboard />} />
-
-        {/* Studio Alias & Fallback Routes */}
-        <Route path="/studio" element={<Navigate to="/welcome" replace />} />
-        <Route path="/booth" element={<Navigate to="/welcome" replace />} />
-        <Route path="/gallery" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

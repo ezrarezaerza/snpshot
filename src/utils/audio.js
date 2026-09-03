@@ -5,15 +5,7 @@
  */
 
 let audioCtx = null;
-let isMuted = false;
-try {
-  if (typeof window !== "undefined" && window.localStorage) {
-    isMuted = window.localStorage.getItem("snpshot_muted") === "true";
-  }
-} catch (e) {
-  // Graceful fallback for restricted iframe storage environments
-  isMuted = false;
-}
+let isMuted = localStorage.getItem("snpshot_muted") === "true";
 
 export const getMuted = () => {
   return isMuted;
@@ -21,13 +13,7 @@ export const getMuted = () => {
 
 export const setMuted = (muted) => {
   isMuted = muted;
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem("snpshot_muted", String(muted));
-    }
-  } catch (e) {
-    // Ignore storage write error in restricted iframe environments
-  }
+  localStorage.setItem("snpshot_muted", String(muted));
 };
 
 const getAudioContext = () => {

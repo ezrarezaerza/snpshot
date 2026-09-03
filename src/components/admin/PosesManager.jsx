@@ -27,23 +27,17 @@ import {
   ChevronRight,
   HelpCircle,
   Building2,
-  Users,
-  Lock,
-  Palette,
-  Award,
-  Globe,
-  LayoutGrid
+  Users
 } from "lucide-react";
 
 const PosesManager = () => {
   const [artists, setArtists] = useState([]);
-  const [catalogFrames, setCatalogFrames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'scheduled', 'archived', 'featured', 'showcase'
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all', 'active', 'scheduled', 'archived', 'featured'
   const [agencyFilter, setAgencyFilter] = useState("all");
   const [groupFilter, setGroupFilter] = useState("all");
 
@@ -56,7 +50,7 @@ const PosesManager = () => {
   const [isCustomAgency, setIsCustomAgency] = useState(false);
   const [isCustomGroup, setIsCustomGroup] = useState(false);
 
-  // Modal State - Live Camera Overlay Inspector
+  // Modal State - Live Camera Overlay Inspector (Phase 2C)
   const [inspectArtist, setInspectArtist] = useState(null);
   const [activeShotIndex, setActiveShotIndex] = useState(0);
   const [overlayOpacity, setOverlayOpacity] = useState(45); // %
@@ -119,24 +113,6 @@ const PosesManager = () => {
     startDate: "",
     endDate: "",
     isFeatured: false,
-    isFeaturedOnShowcase: true,
-    showcaseBadge: "★ BIRTHDAY SPECIAL",
-    showcaseTagline: "Celebrate with exclusive 4-pose idol deck & dedicated birthday collector frame",
-    finalPreviewImage: "/img/showcase/wonyoung-birthday-photostrip.png",
-    finalPreviewImageFile: null,
-    dedicatedFrameId: "custom-event-frame",
-    dedicatedFrame: {
-      id: "custom-event-frame",
-      name: "IVE Wonyoung Official Birthday Frame",
-      layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: "#F042FF",
-      watermarkText: "IVE WONYOUNG ✦ OFFICIAL BIRTHDAY EVENT",
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
     deckSize: 4,
     posesGuidance: ["Finger Heart Pose", "Dual Cheek Poke", "Wink & V Sign", "Cute Cat Paws"],
     posesFiles: [null, null, null, null],
@@ -148,13 +124,12 @@ const PosesManager = () => {
     setError(null);
     try {
       const res = await axios.get("/api/studio/data");
-      if (res.data) {
-        if (res.data.artists) setArtists(res.data.artists);
-        if (res.data.frames) setCatalogFrames(res.data.frames);
+      if (res.data && res.data.artists) {
+        setArtists(res.data.artists);
       }
     } catch (err) {
-      console.error("Error fetching artist campaigns:", err);
-      setError("Failed to load artist campaigns. Please check server status.");
+      console.error("Error fetching pose campaigns:", err);
+      setError("Failed to load pose campaigns. Please check server status.");
     } finally {
       setLoading(false);
     }
@@ -187,24 +162,8 @@ const PosesManager = () => {
       startDate: new Date().toISOString().split("T")[0],
       endDate: "",
       isFeatured: false,
-      isFeaturedOnShowcase: true,
-      showcaseBadge: "★ OFFICIAL COLLAB",
-      showcaseTagline: "Official idol collab deck & exclusive collector frame",
-      finalPreviewImage: "/img/showcase/wonyoung-birthday-photostrip.png",
-      finalPreviewImageFile: null,
-      dedicatedFrameId: "custom-event-frame",
-      dedicatedFrame: {
-        id: "custom-event-frame",
-        name: "Official Idol Event Frame",
-        layout: "3-grid",
-        bgColor: "#0e0048",
-        bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-        borderColor: "#F042FF",
-        watermarkText: "SNPSHOT ✦ OFFICIAL ARTIST EVENT",
-        padding: 16,
-        innerGap: 12,
-        borderRadius: 8
-      },
+      finalPreviewImage: "/photobooth-strip.png",
+      finalPreviewFile: null,
       deckSize: 4,
       posesGuidance: ["Finger Heart Pose", "Dual Cheek Poke", "Wink & V Sign", "Cute Cat Paws"],
       posesFiles: [null, null, null, null],
@@ -225,19 +184,6 @@ const PosesManager = () => {
     setIsCustomAgency(!isAgencyKnown);
     setIsCustomGroup(!isGroupKnown);
 
-    const initialDedicatedFrame = artist.dedicatedFrame || {
-      id: artist.dedicatedFrameId || "custom-event-frame",
-      name: `${artist.name} Official Event Frame`,
-      layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: artist.color || "#F042FF",
-      watermarkText: `${(artist.groupName || "").toUpperCase()} ${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`,
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    };
-
     setFormData({
       name: artist.name || "",
       role: artist.role || "",
@@ -252,13 +198,8 @@ const PosesManager = () => {
       startDate: artist.startDate || "",
       endDate: artist.endDate || "",
       isFeatured: Boolean(artist.isFeatured),
-      isFeaturedOnShowcase: artist.isFeaturedOnShowcase !== undefined ? Boolean(artist.isFeaturedOnShowcase) : true,
-      showcaseBadge: artist.showcaseBadge || "★ OFFICIAL EVENT",
-      showcaseTagline: artist.showcaseTagline || "Official idol collab deck & exclusive collector frame",
-      finalPreviewImage: artist.finalPreviewImage || artist.avatar || artist.poses?.[0] || "",
-      finalPreviewImageFile: null,
-      dedicatedFrameId: artist.dedicatedFrameId || initialDedicatedFrame.id || "custom-event-frame",
-      dedicatedFrame: initialDedicatedFrame,
+      finalPreviewImage: artist.finalPreviewImage || artist.previewImage || "/photobooth-strip.png",
+      finalPreviewFile: null,
       deckSize: existingPoses.length,
       posesGuidance: guidance,
       posesFiles: new Array(existingPoses.length).fill(null),
@@ -330,62 +271,12 @@ const PosesManager = () => {
 
   // Quick preset member auto-fill
   const handleQuickFillMember = (member) => {
-    const watermark = `${(formData.groupName || "").toUpperCase()} ${member.name.toUpperCase()} ✦ OFFICIAL EVENT`;
     setFormData(prev => ({
       ...prev,
       name: member.name,
       role: member.role || prev.role,
-      color: member.color || prev.color,
-      dedicatedFrame: {
-        ...prev.dedicatedFrame,
-        name: `${member.name} Dedicated Event Frame`,
-        borderColor: member.color || prev.color,
-        watermarkText: watermark
-      }
+      color: member.color || prev.color
     }));
-  };
-
-  // Dedicated Frame Selection Handler in Modal
-  const handleDedicatedFrameTemplateSelect = (frameId) => {
-    if (frameId === "custom-event-frame") {
-      setFormData(prev => ({
-        ...prev,
-        dedicatedFrameId: "custom-event-frame",
-        dedicatedFrame: {
-          id: "custom-event-frame",
-          name: `${prev.name || "Artist"} Custom Event Frame`,
-          layout: "3-grid",
-          bgColor: "#0e0048",
-          bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-          borderColor: prev.color || "#F042FF",
-          watermarkText: `${(prev.groupName || "").toUpperCase()} ${(prev.name || "").toUpperCase()} ✦ OFFICIAL EVENT`,
-          padding: 16,
-          innerGap: 12,
-          borderRadius: 8
-        }
-      }));
-      return;
-    }
-
-    const selectedCatalogFrame = catalogFrames.find(f => f.id === frameId);
-    if (selectedCatalogFrame) {
-      setFormData(prev => ({
-        ...prev,
-        dedicatedFrameId: selectedCatalogFrame.id,
-        dedicatedFrame: {
-          id: selectedCatalogFrame.id,
-          name: selectedCatalogFrame.name,
-          layout: selectedCatalogFrame.layout || "3-grid",
-          bgColor: selectedCatalogFrame.bgColor || "#0e0048",
-          bgGradient: selectedCatalogFrame.bgGradient || "",
-          borderColor: selectedCatalogFrame.borderColor || prev.color || "#F042FF",
-          watermarkText: `${(prev.groupName || "").toUpperCase()} ${(prev.name || "").toUpperCase()} ✦ OFFICIAL EVENT`,
-          padding: selectedCatalogFrame.padding || 16,
-          innerGap: selectedCatalogFrame.innerGap || 12,
-          borderRadius: selectedCatalogFrame.borderRadius || 8
-        }
-      }));
-    }
   };
 
   const handleDeckSizeChange = (newSize) => {
@@ -432,6 +323,24 @@ const PosesManager = () => {
     }));
   };
 
+  const handleFinalPreviewFileChange = (file) => {
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({
+      ...prev,
+      finalPreviewFile: file,
+      finalPreviewImage: previewUrl
+    }));
+  };
+
+  const handleFinalPreviewUrlChange = (url) => {
+    setFormData(prev => ({
+      ...prev,
+      finalPreviewImage: url,
+      finalPreviewFile: null
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -451,16 +360,11 @@ const PosesManager = () => {
       data.append("startDate", formData.startDate);
       data.append("endDate", formData.endDate);
       data.append("isFeatured", formData.isFeatured);
-      data.append("isFeaturedOnShowcase", formData.isFeaturedOnShowcase);
-      data.append("showcaseBadge", formData.showcaseBadge);
-      data.append("showcaseTagline", formData.showcaseTagline);
-      data.append("dedicatedFrameId", formData.dedicatedFrameId);
-      data.append("dedicatedFrame", JSON.stringify(formData.dedicatedFrame));
       data.append("posesGuidance", JSON.stringify(formData.posesGuidance));
 
-      // Append final preview image (file or text URL)
-      if (formData.finalPreviewImageFile) {
-        data.append("finalPreviewImage", formData.finalPreviewImageFile);
+      // Append final preview image if file uploaded or url string
+      if (formData.finalPreviewFile) {
+        data.append("finalPreview", formData.finalPreviewFile);
       } else if (formData.finalPreviewImage) {
         data.append("finalPreviewImage", formData.finalPreviewImage);
       }
@@ -483,8 +387,8 @@ const PosesManager = () => {
       setIsModalOpen(false);
       fetchStudioData();
     } catch (err) {
-      console.error("Error saving artist campaign:", err);
-      alert(err.response?.data?.message || "Error saving artist campaign.");
+      console.error("Error saving pose campaign:", err);
+      alert(err.response?.data?.message || "Error saving campaign.");
     } finally {
       setSubmitting(false);
     }
@@ -512,25 +416,14 @@ const PosesManager = () => {
     }
   };
 
-  const handleQuickToggleShowcase = async (artist) => {
-    try {
-      await axios.patch(`/api/creator/artist/${artist.id}/quick-toggle`, {
-        isFeaturedOnShowcase: !artist.isFeaturedOnShowcase
-      });
-      fetchStudioData();
-    } catch (err) {
-      console.error("Error toggling showcase campaign:", err);
-    }
-  };
-
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this artist campaign?")) return;
+    if (!window.confirm("Are you sure you want to delete this pose campaign?")) return;
     try {
       await axios.delete(`/api/creator/artist/${id}`);
       fetchStudioData();
     } catch (err) {
       console.error("Error deleting campaign:", err);
-      alert("Failed to delete artist campaign.");
+      alert("Failed to delete pose campaign.");
     }
   };
 
@@ -563,15 +456,13 @@ const PosesManager = () => {
     const matchesSearch = 
       artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (artist.groupName && artist.groupName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (artist.agencyName && artist.agencyName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (artist.dedicatedFrame?.name && artist.dedicatedFrame.name.toLowerCase().includes(searchQuery.toLowerCase()));
+      (artist.agencyName && artist.agencyName.toLowerCase().includes(searchQuery.toLowerCase()));
     
     let matchesStatus = true;
     if (statusFilter === "active") matchesStatus = artist.status === "active" || !artist.status;
     else if (statusFilter === "scheduled") matchesStatus = artist.status === "scheduled";
     else if (statusFilter === "archived") matchesStatus = artist.status === "archived";
     else if (statusFilter === "featured") matchesStatus = Boolean(artist.isFeatured);
-    else if (statusFilter === "showcase") matchesStatus = Boolean(artist.isFeaturedOnShowcase);
 
     const matchesAgency = agencyFilter === "all" || artist.agencyId === agencyFilter;
     const matchesGroup = groupFilter === "all" || artist.groupId === groupFilter;
@@ -582,6 +473,7 @@ const PosesManager = () => {
   // Groups available for the currently selected agency in the filter bar
   const filterAvailableGroups = useMemo(() => {
     if (agencyFilter === "all") {
+      // Gather all unique groups across all agencies
       const allGrps = [];
       const seen = new Set();
       Object.values(availableGroupsByAgency).flat().forEach(g => {
@@ -599,14 +491,38 @@ const PosesManager = () => {
   const activeCount = artists.filter(a => a.status === "active" || !a.status).length;
   const scheduledCount = artists.filter(a => a.status === "scheduled").length;
   const featuredCount = artists.filter(a => a.isFeatured).length;
-  const showcaseCount = artists.filter(a => a.isFeaturedOnShowcase).length;
   const totalShotsCount = artists.reduce((sum, a) => sum + (a.poses?.length || 0), 0);
 
   return (
     <div className="space-y-6">
       
+      {/* SECTION BANNER */}
+      <div className="bg-white border border-[#e2dced] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="bg-gradient-to-r from-[#7226FF] to-[#F042FF] text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+              K-POP & IDOL COLLABS
+            </span>
+            <span className="text-xs font-mono text-[#625b82]">STUDIO_CORE // V2.6</span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-[#010030] tracking-tight uppercase font-display">
+            ARTIST CAMPAIGNS STUDIO
+          </h2>
+          <p className="text-xs text-[#625b82] mt-0.5">
+            Manage idol collaboration campaigns, pose guidance decks, and showcase photostrip preview composites.
+          </p>
+        </div>
+        <button
+          onClick={openCreateModal}
+          className="admin-btn bg-[#7226FF] hover:bg-[#5f1ee0] text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer self-start sm:self-center shrink-0"
+        >
+          <Plus className="w-4 h-4" />
+          <span>New Artist Campaign</span>
+        </button>
+      </div>
+
       {/* STAT TILES */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
@@ -623,33 +539,7 @@ const PosesManager = () => {
         <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
-              Featured Header
-            </span>
-            <div className="text-3xl font-black text-[#7226FF]">{featuredCount}</div>
-            <span className="text-[10px] text-[#7226FF] font-medium">Header Pop-Up Drops</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#7226FF] flex items-center justify-center">
-            <Star className="w-5 h-5 fill-[#7226FF]" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
-              Showcase Active
-            </span>
-            <div className="text-3xl font-black text-[#F042FF]">{showcaseCount}</div>
-            <span className="text-[10px] text-[#F042FF] font-medium">On Homepage Showcase</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-pink-50 text-[#F042FF] flex items-center justify-center">
-            <Globe className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
-          <div>
-            <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
-              Scheduled Drops
+              Scheduled Pop-Ups
             </span>
             <div className="text-3xl font-black text-amber-600">{scheduledCount}</div>
             <span className="text-[10px] text-amber-700 font-medium">Upcoming Launch Dates</span>
@@ -662,10 +552,23 @@ const PosesManager = () => {
         <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
           <div>
             <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
-              Total Pose Shots
+              Featured Collabs
+            </span>
+            <div className="text-3xl font-black text-[#7226FF]">{featuredCount}</div>
+            <span className="text-[10px] text-[#7226FF] font-medium">Top Priority Collabs</span>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-[#7226FF] flex items-center justify-center">
+            <Star className="w-5 h-5 fill-[#7226FF]" />
+          </div>
+        </div>
+
+        <div className="bg-white border border-[#e2dced] rounded-2xl p-5 flex items-center justify-between shadow-xs">
+          <div>
+            <span className="text-[11px] font-bold text-[#625b82] uppercase tracking-wider block mb-1">
+              Total Pose Guide Shots
             </span>
             <div className="text-3xl font-black text-[#010030]">{totalShotsCount}</div>
-            <span className="text-[10px] text-[#625b82] font-medium">Exclusive Guidance Decks</span>
+            <span className="text-[10px] text-[#625b82] font-medium">Across All Artist Decks</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-[#f0ecf8] text-[#010030] flex items-center justify-center">
             <ImageIcon className="w-5 h-5" />
@@ -682,7 +585,7 @@ const PosesManager = () => {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7226FF]" />
             <input 
               type="text"
-              placeholder="Search artist campaign, idol group, agency, or dedicated frame..."
+              placeholder="Search campaign by artist, group, agency..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="admin-ui w-full bg-[#f8f7fc] border border-[#e2dced] focus:bg-white focus:border-[#7226FF] rounded-xl pl-10 pr-9 py-2.5 text-xs text-[#010030] placeholder-[#625b82]/60 focus:outline-none transition-colors"
@@ -700,13 +603,12 @@ const PosesManager = () => {
           {/* Status Filter Pills & Add Campaign CTA */}
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1 bg-[#f4f2f8] p-1 rounded-xl border border-[#e2dced] text-xs max-w-full overflow-x-auto">
-              <span className="text-[11px] font-bold text-[#625b82] uppercase px-1.5 shrink-0">Filter:</span>
+              <span className="text-[11px] font-bold text-[#625b82] uppercase px-1.5 shrink-0">Status:</span>
               {[
                 { id: "all", label: "All" },
                 { id: "active", label: "Active" },
-                { id: "showcase", label: "Showcase ✦" },
-                { id: "featured", label: "Featured ★" },
                 { id: "scheduled", label: "Scheduled" },
+                { id: "featured", label: "Featured ★" },
                 { id: "archived", label: "Archived" }
               ].map((item) => (
                 <button
@@ -728,7 +630,7 @@ const PosesManager = () => {
               className="admin-btn bg-gradient-to-r from-[#160078] via-[#7226FF] to-[#F042FF] hover:opacity-95 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-[0_4px_14px_rgba(114,38,255,0.35)] flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto sm:ml-auto"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Artist Campaign</span>
+              <span>Add Pose Campaign</span>
             </button>
           </div>
         </div>
@@ -798,7 +700,7 @@ const PosesManager = () => {
       {loading ? (
         <div className="bg-white border border-[#e2dced] rounded-3xl p-12 text-center text-[#625b82] text-xs flex items-center justify-center gap-3">
           <RefreshCw className="w-5 h-5 animate-spin text-[#7226FF]" />
-          <span>Loading Artist Campaigns...</span>
+          <span>Loading Pose Campaigns...</span>
         </div>
       ) : error ? (
         <div className="bg-white border border-rose-200 rounded-3xl p-8 text-center text-rose-600 text-xs">
@@ -806,7 +708,7 @@ const PosesManager = () => {
         </div>
       ) : filteredArtists.length === 0 ? (
         <div className="bg-white border border-[#e2dced] rounded-3xl p-12 text-center text-[#625b82] text-xs">
-          No artist campaigns found matching search criteria.
+          No pose campaigns found matching search criteria.
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -814,7 +716,6 @@ const PosesManager = () => {
             const posesList = artist.poses || [];
             const guidanceList = artist.posesGuidance || [];
             const status = artist.status || "active";
-            const dedicatedFrame = artist.dedicatedFrame;
 
             return (
               <div 
@@ -823,7 +724,7 @@ const PosesManager = () => {
               >
                 {/* Top Status & Featured Banner Bar */}
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center gap-2">
                     {status === "active" && (
                       <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -846,48 +747,27 @@ const PosesManager = () => {
                     {artist.isFeatured && (
                       <span className="bg-gradient-to-r from-[#7226FF] to-[#F042FF] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-2xs">
                         <Star className="w-3 h-3 fill-white" />
-                        HEADER DROP
-                      </span>
-                    )}
-
-                    {artist.isFeaturedOnShowcase && (
-                      <span className="bg-gradient-to-r from-[#010030] to-[#160078] text-[#FFE5F1] border border-[#7226FF]/40 px-2 py-0.5 rounded-full text-[9px] font-bold flex items-center gap-1">
-                        <Globe className="w-2.5 h-2.5 text-[#F042FF]" />
-                        SHOWCASE
+                        FEATURED
                       </span>
                     )}
                   </div>
 
-                  {/* Quick Toggles */}
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleQuickToggleShowcase(artist)}
-                      className={`admin-btn p-1.5 rounded-xl border transition-colors cursor-pointer ${
-                        artist.isFeaturedOnShowcase 
-                          ? "bg-pink-50 text-[#F042FF] border-[#F042FF]/30" 
-                          : "bg-[#f8f7fc] text-slate-400 border-[#e2dced] hover:text-[#F042FF]"
-                      }`}
-                      title={artist.isFeaturedOnShowcase ? "Remove from Homepage Showcase" : "Feature on Homepage Showcase"}
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                    </button>
-
-                    <button
-                      onClick={() => handleQuickToggleFeatured(artist)}
-                      className={`admin-btn p-1.5 rounded-xl border transition-colors cursor-pointer ${
-                        artist.isFeatured 
-                          ? "bg-purple-50 text-[#7226FF] border-[#7226FF]/30" 
-                          : "bg-[#f8f7fc] text-slate-400 border-[#e2dced] hover:text-[#7226FF]"
-                      }`}
-                      title={artist.isFeatured ? "Unfeature from Header Drop" : "Feature on Header Drop"}
-                    >
-                      <Star className={`w-3.5 h-3.5 ${artist.isFeatured ? "fill-[#7226FF]" : ""}`} />
-                    </button>
-                  </div>
+                  {/* Star Toggle Quick Action */}
+                  <button
+                    onClick={() => handleQuickToggleFeatured(artist)}
+                    className={`admin-btn p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                      artist.isFeatured 
+                        ? "bg-purple-50 text-[#7226FF] border-[#7226FF]/30" 
+                        : "bg-[#f8f7fc] text-slate-400 border-[#e2dced] hover:text-[#7226FF]"
+                    }`}
+                    title={artist.isFeatured ? "Unfeature Campaign" : "Feature Campaign"}
+                  >
+                    <Star className={`w-3.5 h-3.5 ${artist.isFeatured ? "fill-[#7226FF]" : ""}`} />
+                  </button>
                 </div>
 
                 {/* Card Header Info */}
-                <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3">
                     <div 
                       className="w-12 h-12 rounded-2xl bg-cover bg-center border border-[#e2dced] shadow-2xs shrink-0 overflow-hidden"
@@ -918,107 +798,72 @@ const PosesManager = () => {
                   />
                 </div>
 
-                {/* DEDICATED EVENT FRAME BINDING PREVIEW CARD */}
-                <div className="bg-[#f0ecf8]/60 border border-[#e2dced] rounded-2xl p-3 mb-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-[#7226FF]" />
-                      <span className="text-[10px] font-bold text-[#010030] uppercase tracking-wider">
-                        Dedicated Exclusive Frame (Locked)
-                      </span>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold bg-white text-[#7226FF] border border-[#7226FF]/20 px-2 py-0.5 rounded-md uppercase">
-                      {dedicatedFrame?.layout || "3-grid"}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-[#e2dced]">
-                    <div 
-                      className="w-8 h-10 rounded-lg shrink-0 border flex flex-col items-center justify-between p-1 shadow-inner relative overflow-hidden"
-                      style={{ 
-                        backgroundColor: dedicatedFrame?.bgColor || "#0e0048",
-                        backgroundImage: dedicatedFrame?.bgGradient || undefined,
-                        borderColor: dedicatedFrame?.borderColor || artist.color || "#F042FF"
-                      }}
-                    >
-                      <div className="w-full h-1.5 bg-white/40 rounded-xs" />
-                      <div className="w-full h-1.5 bg-white/40 rounded-xs" />
-                      <div className="w-full h-1 bg-white/60 rounded-xs" />
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <h5 className="font-bold text-xs text-[#010030] truncate">
-                        {dedicatedFrame?.name || `${artist.name} Dedicated Frame`}
-                      </h5>
-                      <p className="text-[10px] text-[#625b82] font-mono truncate">
-                        {dedicatedFrame?.watermarkText || `${artist.groupName} ${artist.name} ✦ OFFICIAL EVENT`}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* FINAL SHOWCASE PREVIEW PHOTOSTRIP BADGE */}
-                {artist.finalPreviewImage && (
-                  <div className="bg-gradient-to-r from-[#FAF6F9] to-white border border-[#F042FF]/20 rounded-2xl p-2.5 mb-3 flex items-center justify-between gap-3">
+                {/* Final Photostrip Preview & Pose Deck Guidance Grid */}
+                <div className="bg-[#f8f7fc] border border-[#e2dced] rounded-2xl p-3 mb-4 space-y-3">
+                  {/* Final Composite Preview Banner */}
+                  <div className="bg-white border border-[#e2dced] rounded-xl p-2 flex items-center justify-between gap-3 shadow-2xs">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-12 rounded-lg bg-black/5 border border-[#e2dced] overflow-hidden shrink-0 flex items-center justify-center p-0.5 shadow-2xs">
+                      <div className="w-10 h-14 rounded-lg bg-[#010030] overflow-hidden border border-[#e2dced] shrink-0 flex items-center justify-center">
                         <img 
-                          src={artist.finalPreviewImage} 
+                          src={artist.finalPreviewImage || artist.previewImage || "/photobooth-strip.png"} 
                           alt="Showcase Strip" 
-                          className="max-h-full max-w-full object-contain"
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "/photobooth-strip.png";
+                          }}
                         />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <Sparkles className="w-3 h-3 text-[#F042FF]" />
-                          <span className="text-[10px] font-bold text-[#010030] uppercase">
-                            Showcase Final Strip
-                          </span>
-                        </div>
-                        <span className="text-[9px] text-[#625b82] font-mono truncate block">
-                          300 DPI composite preview active
+                        <span className="text-[9px] font-bold text-[#7226FF] uppercase tracking-wider block">
+                          Showcase Strip Preview
+                        </span>
+                        <p className="text-[11px] font-semibold text-[#010030] truncate">
+                          Final Composite Preview
+                        </p>
+                        <span className="text-[9px] text-[#625b82] block truncate">
+                          Displayed in Photoshoot Showcase
                         </span>
                       </div>
                     </div>
-
-                    <span className="text-[9px] font-mono bg-purple-100 text-[#7226FF] px-2 py-0.5 rounded-full font-bold shrink-0">
-                      SHOWCASE READY
-                    </span>
-                  </div>
-                )}
-
-                {/* Pose Deck Guidance Grid */}
-                <div className="bg-[#f8f7fc] border border-[#e2dced] rounded-2xl p-3 mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-bold text-[#625b82] uppercase">
-                      Pose Deck ({posesList.length} Shots)
-                    </span>
-                    <span className="text-[9px] font-mono font-bold text-[#7226FF] bg-purple-50 px-1.5 py-0.5 rounded">
-                      Guidance Active
+                    <span className="bg-purple-50 text-[#7226FF] text-[9px] font-mono font-bold px-2 py-1 rounded-md border border-purple-100 shrink-0">
+                      SHOWCASE PREVIEW
                     </span>
                   </div>
 
-                  <div className={`grid gap-2 ${posesList.length <= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                    {posesList.map((poseUrl, idx) => (
-                      <div 
-                        key={idx}
-                        className="bg-white border border-[#e2dced] rounded-xl p-1.5 flex flex-col items-center shadow-2xs group/shot"
-                      >
+                  {/* Pose Deck Section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold text-[#625b82] uppercase">
+                        Pose Deck ({posesList.length} Guidance Shots)
+                      </span>
+                      <span className="text-[9px] font-mono font-bold text-[#7226FF] bg-purple-50 px-1.5 py-0.5 rounded">
+                        Guidance Active
+                      </span>
+                    </div>
+
+                    <div className={`grid gap-2 ${posesList.length <= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                      {posesList.map((poseUrl, idx) => (
                         <div 
-                          className="w-full h-20 bg-cover bg-center rounded-lg border border-[#e2dced] shadow-2xs relative overflow-hidden mb-1"
-                          style={{ backgroundImage: `url(${poseUrl})` }}
+                          key={idx}
+                          className="bg-white border border-[#e2dced] rounded-xl p-1.5 flex flex-col items-center shadow-2xs group/shot"
                         >
-                          <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover/shot:opacity-100 transition-opacity flex items-center justify-center">
-                            <span className="text-[9px] font-mono text-white font-bold bg-slate-900/70 px-1 py-0.5 rounded">
-                              P{idx + 1}
-                            </span>
+                          <div 
+                            className="w-full h-20 bg-cover bg-center rounded-lg border border-[#e2dced] shadow-2xs relative overflow-hidden mb-1"
+                            style={{ backgroundImage: `url(${poseUrl})` }}
+                          >
+                            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover/shot:opacity-100 transition-opacity flex items-center justify-center">
+                              <span className="text-[9px] font-mono text-white font-bold bg-slate-900/70 px-1 py-0.5 rounded">
+                                P{idx + 1}
+                              </span>
+                            </div>
                           </div>
+                          <span className="text-[9px] font-medium text-[#010030] text-center line-clamp-1 w-full truncate" title={guidanceList[idx] || `Pose ${idx + 1}`}>
+                            {guidanceList[idx] || `Shot ${idx + 1}`}
+                          </span>
                         </div>
-                        <span className="text-[9px] font-medium text-[#010030] text-center line-clamp-1 w-full truncate" title={guidanceList[idx] || `Pose ${idx + 1}`}>
-                          {guidanceList[idx] || `Shot ${idx + 1}`}
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -1053,7 +898,7 @@ const PosesManager = () => {
                     <button
                       onClick={() => openEditModal(artist)}
                       className="admin-btn p-2 bg-[#f4f2f8] hover:bg-[#eae6f3] text-[#010030] rounded-xl transition-colors cursor-pointer border border-[#e2dced]"
-                      title="Edit Artist Campaign Deck"
+                      title="Edit Campaign Deck"
                     >
                       <Edit3 className="w-3.5 h-3.5 text-[#7226FF]" />
                     </button>
@@ -1076,11 +921,11 @@ const PosesManager = () => {
       {/* CREATE / EDIT CAMPAIGN MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-[#010030]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-[#e2dced] rounded-3xl p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white border border-[#e2dced] rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#f0ebf7] pb-3">
               <h3 className="font-bold text-lg text-[#010030] flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-[#7226FF]" />
-                <span>{editingArtist ? "Edit Artist Campaign Deck" : "Create Artist Campaign"}</span>
+                <span>{editingArtist ? "Edit Pose Campaign Deck" : "Create Pose Campaign"}</span>
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -1092,10 +937,10 @@ const PosesManager = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
               
-              {/* 1. Campaign Lifecycle & Scheduling Controls */}
+              {/* Campaign Lifecycle & Scheduling Controls */}
               <div className="bg-[#f8f7fc] border border-[#e2dced] p-3.5 rounded-2xl space-y-3">
                 <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider block">
-                  1. Lifecycle & Drop Scheduling
+                  1. Lifecycle & Schedule Settings
                 </span>
 
                 <div className="grid grid-cols-3 gap-3">
@@ -1106,7 +951,7 @@ const PosesManager = () => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-2.5 py-2 text-[#010030]"
                     >
-                      <option value="active">Active (Live in Studio)</option>
+                      <option value="active">Active (Live)</option>
                       <option value="scheduled">Scheduled (Pop-Up)</option>
                       <option value="archived">Archived</option>
                     </select>
@@ -1133,36 +978,22 @@ const PosesManager = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <label className="flex items-center gap-2 font-bold text-[#010030] cursor-pointer bg-white p-2.5 rounded-xl border border-[#e2dced]">
-                    <input 
-                      type="checkbox"
-                      checked={formData.isFeatured}
-                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                      className="w-4 h-4 text-[#7226FF] rounded border-[#e2dced] focus:ring-0 cursor-pointer"
-                    />
-                    <div className="flex items-center gap-1.5">
-                      <Star className="w-3.5 h-3.5 text-[#7226FF] fill-[#7226FF]" />
-                      <span>Feature in Live Header Banner</span>
-                    </div>
-                  </label>
-
-                  <label className="flex items-center gap-2 font-bold text-[#010030] cursor-pointer bg-white p-2.5 rounded-xl border border-[#e2dced]">
-                    <input 
-                      type="checkbox"
-                      checked={formData.isFeaturedOnShowcase}
-                      onChange={(e) => setFormData({ ...formData, isFeaturedOnShowcase: e.target.checked })}
-                      className="w-4 h-4 text-[#F042FF] rounded border-[#e2dced] focus:ring-0 cursor-pointer"
-                    />
-                    <div className="flex items-center gap-1.5">
-                      <Globe className="w-3.5 h-3.5 text-[#F042FF]" />
-                      <span>Sync to Homepage Photoshoot Showcase</span>
-                    </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <input 
+                    type="checkbox"
+                    id="isFeaturedCheck"
+                    checked={formData.isFeatured}
+                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                    className="w-4 h-4 text-[#7226FF] rounded border-[#e2dced] focus:ring-0 cursor-pointer"
+                  />
+                  <label htmlFor="isFeaturedCheck" className="font-bold text-[#010030] cursor-pointer flex items-center gap-1.5">
+                    <Star className="w-3.5 h-3.5 text-[#7226FF] fill-[#7226FF]" />
+                    <span>Feature this campaign on live studio header</span>
                   </label>
                 </div>
               </div>
 
-              {/* 2. Artist Metadata & Agency Hierarchy */}
+              {/* Artist Metadata & Agency Hierarchy */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider block">
@@ -1334,17 +1165,7 @@ const PosesManager = () => {
                       required
                       placeholder="e.g. Wonyoung"
                       value={formData.name}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormData(prev => ({
-                          ...prev,
-                          name: val,
-                          dedicatedFrame: {
-                            ...prev.dedicatedFrame,
-                            watermarkText: `${(prev.groupName || "").toUpperCase()} ${val.toUpperCase()} ✦ OFFICIAL EVENT`
-                          }
-                        }));
-                      }}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="admin-ui w-full bg-[#f8f7fc] border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030]"
                     />
                   </div>
@@ -1397,33 +1218,13 @@ const PosesManager = () => {
                       <input 
                         type="color" 
                         value={formData.color}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData(prev => ({
-                            ...prev,
-                            color: val,
-                            dedicatedFrame: {
-                              ...prev.dedicatedFrame,
-                              borderColor: val
-                            }
-                          }));
-                        }}
+                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                         className="w-8 h-8 rounded-lg cursor-pointer border border-[#e2dced]"
                       />
                       <input 
                         type="text" 
                         value={formData.color}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFormData(prev => ({
-                            ...prev,
-                            color: val,
-                            dedicatedFrame: {
-                              ...prev.dedicatedFrame,
-                              borderColor: val
-                            }
-                          }));
-                        }}
+                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
                         className="admin-ui flex-1 bg-[#f8f7fc] border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-mono"
                       />
                     </div>
@@ -1431,313 +1232,93 @@ const PosesManager = () => {
                 </div>
               </div>
 
-              {/* 3. DEDICATED EXCLUSIVE EVENT FRAME BINDING & SHOWCASE CONTROLS */}
-              <div className="bg-[#f8f7fc] border border-[#7226FF]/30 p-4 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-[#e2dced] pb-2">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[#7226FF]" />
-                    <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider">
-                      3. Dedicated Event Frame & Showcase Binding (Exclusive)
-                    </span>
-                  </div>
-                  <span className="text-[10px] bg-purple-100 text-[#7226FF] px-2 py-0.5 rounded-full font-bold">
-                    Auto-Locked for Users
-                  </span>
-                </div>
-
-                {/* Frame Template Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Select Base Frame Template</label>
-                    <select
-                      value={formData.dedicatedFrameId}
-                      onChange={(e) => handleDedicatedFrameTemplateSelect(e.target.value)}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-medium"
-                    >
-                      <option value="custom-event-frame">✦ Custom Exclusive Event Frame</option>
-                      {catalogFrames.map((frame) => (
-                        <option key={frame.id} value={frame.id}>
-                          {frame.name} ({frame.layout})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Locked Layout Format</label>
-                    <select
-                      value={formData.dedicatedFrame?.layout || "3-grid"}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dedicatedFrame: { ...prev.dedicatedFrame, layout: e.target.value }
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-medium"
-                    >
-                      <option value="3-grid">3-Grid Vertical Photostrip</option>
-                      <option value="4-grid">Classic 4-Cut Vertical Strip</option>
-                      <option value="2x2">2x2 Square Grid</option>
-                      <option value="2x3">2x3 Postcard Grid</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Frame Color & Watermark Customization */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Frame Canvas Color</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="color" 
-                        value={formData.dedicatedFrame?.bgColor || "#0e0048"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, bgColor: e.target.value }
-                        }))}
-                        className="w-8 h-8 rounded-lg cursor-pointer border border-[#e2dced]"
-                      />
-                      <input 
-                        type="text" 
-                        value={formData.dedicatedFrame?.bgColor || "#0e0048"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, bgColor: e.target.value }
-                        }))}
-                        className="admin-ui flex-1 bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Border Accent Color</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="color" 
-                        value={formData.dedicatedFrame?.borderColor || formData.color || "#F042FF"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, borderColor: e.target.value }
-                        }))}
-                        className="w-8 h-8 rounded-lg cursor-pointer border border-[#e2dced]"
-                      />
-                      <input 
-                        type="text" 
-                        value={formData.dedicatedFrame?.borderColor || formData.color || "#F042FF"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, borderColor: e.target.value }
-                        }))}
-                        className="admin-ui flex-1 bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">CSS Gradient Overlay</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. linear-gradient(135deg, #7226FF 0%, #F042FF 100%)"
-                      value={formData.dedicatedFrame?.bgGradient || ""}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dedicatedFrame: { ...prev.dedicatedFrame, bgGradient: e.target.value }
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
-                    />
-                  </div>
-                </div>
-
-                {/* Watermark and Showcase Badges */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Official Frame Watermark Text</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. IVE WONYOUNG ✦ OFFICIAL BIRTHDAY EVENT"
-                      value={formData.dedicatedFrame?.watermarkText || ""}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dedicatedFrame: { ...prev.dedicatedFrame, watermarkText: e.target.value }
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Showcase Badge Label</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. ★ BIRTHDAY SPECIAL, ✦ Y2K DROP"
-                      value={formData.showcaseBadge || ""}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        showcaseBadge: e.target.value
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030]"
-                    />
-                  </div>
-                </div>
-
-                {/* Showcase Tagline */}
-                <div>
-                  <label className="block font-bold text-[#010030] mb-1">Homepage Showcase Description Tagline</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Celebrate with exclusive 4-pose idol deck & dedicated birthday collector frame"
-                    value={formData.showcaseTagline || ""}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      showcaseTagline: e.target.value
-                    }))}
-                    className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030]"
-                  />
-                </div>
-
-                {/* Live Frame Preview Box */}
-                <div className="bg-white p-3 rounded-xl border border-[#e2dced] flex items-center gap-4">
-                  <div 
-                    className="w-12 h-16 rounded-xl border flex flex-col items-center justify-between p-1.5 shadow-md shrink-0 relative overflow-hidden"
-                    style={{ 
-                      backgroundColor: formData.dedicatedFrame?.bgColor || "#0e0048",
-                      backgroundImage: formData.dedicatedFrame?.bgGradient || undefined,
-                      borderColor: formData.dedicatedFrame?.borderColor || formData.color || "#F042FF"
-                    }}
-                  >
-                    <div className="w-full h-2.5 bg-white/30 rounded-xs" />
-                    <div className="w-full h-2.5 bg-white/30 rounded-xs" />
-                    <div className="w-full h-2 bg-white/60 rounded-xs" />
-                  </div>
-
-                  <div className="text-[11px] space-y-0.5">
-                    <span className="font-bold text-[#010030] block">
-                      Live Frame Preset Preview ({formData.dedicatedFrame?.layout || "3-grid"})
-                    </span>
-                    <span className="text-[#625b82] block">
-                      Users selecting this theme will have this frame automatically applied with sticker tools disabled for exclusivity.
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3.5 Final Showcase Photostrip Composite Preview Image */}
-              <div className="space-y-3 bg-[#f8f7fc] border border-[#e2dced] p-3.5 rounded-2xl">
+              {/* Final Photostrip Preview Image (Showcase Display) */}
+              <div className="space-y-3 border-t border-[#f0ebf7] pt-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-[#F042FF]" />
-                    <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider">
-                      3.5 Final Showcase Preview Image (Photoshoot Showcase)
+                  <div>
+                    <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider block">
+                      3. Final Preview Image (Photostrip Showcase Composite)
+                    </span>
+                    <span className="text-[10px] text-[#625b82]">
+                      This complete photostrip image will be displayed in the Photoshoot Showcase section.
                     </span>
                   </div>
-                  <span className="text-[10px] font-mono font-bold bg-[#F042FF]/10 text-[#F042FF] px-2 py-0.5 rounded-md border border-[#F042FF]/20">
-                    300 DPI COMPOSITE
+                  <span className="bg-purple-50 text-[#7226FF] text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-purple-100">
+                    SHOWCASE DISPLAY
                   </span>
                 </div>
 
-                <p className="text-[11px] text-[#625b82] leading-relaxed">
-                  Upload or link the final rendered multi-shot photostrip preview composite image. This is displayed directly on the Homepage <strong>PHOTOSHOOT SHOWCASE</strong> and in the Full-Screen Lightbox Spec Inspector rather than a raw single-pose photo.
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
-                  {/* Image Preview Box */}
-                  <div className="sm:col-span-1">
-                    <label className="cursor-pointer block">
-                      <div className="w-full h-36 bg-white border-2 border-dashed border-[#e2dced] hover:border-[#F042FF] rounded-2xl flex flex-col items-center justify-center p-2 text-center transition-all overflow-hidden relative group">
-                        {formData.finalPreviewImage ? (
-                          <>
-                            <img 
-                              src={formData.finalPreviewImage} 
-                              alt="Final Photostrip Preview" 
-                              className="max-h-full max-w-full object-contain rounded-lg shadow-sm"
-                            />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold">
-                              <Upload className="w-4 h-4 mb-1" />
-                              <span>Replace Image</span>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-5 h-5 text-[#F042FF] mb-1.5" />
-                            <span className="text-[10px] font-bold text-[#010030]">Upload Final Strip</span>
-                            <span className="text-[9px] text-[#625b82]">PNG / JPG</span>
-                          </>
-                        )}
-                      </div>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              setFormData(prev => ({
-                                ...prev,
-                                finalPreviewImage: reader.result,
-                                finalPreviewImageFile: file
-                              }));
-                            };
-                            reader.readAsDataURL(file);
-                          }
+                <div className="bg-[#f8f7fc] border border-[#e2dced] rounded-2xl p-3 flex flex-col sm:flex-row items-center gap-4">
+                  {/* Preview Box */}
+                  <div className="w-24 h-36 rounded-xl border-2 border-dashed border-[#e2dced] bg-white overflow-hidden shrink-0 flex items-center justify-center shadow-2xs relative group">
+                    {formData.finalPreviewImage ? (
+                      <img 
+                        src={formData.finalPreviewImage} 
+                        alt="Final Showcase Preview" 
+                        className="w-full h-full object-contain p-1"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/photobooth-strip.png";
                         }}
-                        className="hidden"
                       />
-                    </label>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center p-2 text-center text-[#625b82]">
+                        <ImageIcon className="w-6 h-6 text-[#7226FF] mb-1 opacity-60" />
+                        <span className="text-[9px] font-bold">No Image</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Input Fields & Fast Select Options */}
-                  <div className="sm:col-span-2 space-y-2">
+                  {/* Input controls */}
+                  <div className="flex-1 w-full space-y-2.5">
                     <div>
-                      <label className="block text-[11px] font-bold text-[#010030] mb-1">
-                        Final Preview Image File URL / Local Path
+                      <label className="block text-xs font-bold text-[#010030] mb-1">
+                        Upload Final Photostrip Composite
                       </label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. /img/showcase/wonyoung-birthday-photostrip.png"
-                        value={formData.finalPreviewImage || ""}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          finalPreviewImage: e.target.value,
-                          finalPreviewImageFile: null
-                        }))}
-                        className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] text-xs font-mono"
-                      />
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-[#e2dced] hover:border-[#7226FF] rounded-xl text-xs font-semibold text-[#010030] transition-colors shadow-2xs">
+                        <Upload className="w-3.5 h-3.5 text-[#7226FF]" />
+                        <span>Choose Photostrip File...</span>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => handleFinalPreviewFileChange(e.target.files[0])}
+                          className="hidden"
+                        />
+                      </label>
+                      {formData.finalPreviewFile && (
+                        <span className="text-[10px] text-emerald-600 font-semibold ml-2">
+                          ✓ {formData.finalPreviewFile.name}
+                        </span>
+                      )}
                     </div>
 
                     <div>
-                      <span className="text-[10px] font-bold text-[#625b82] block mb-1">
-                        Quick Select Studio Photostrip Composites:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { label: "Wonyoung Birthday Strip", url: "/img/showcase/wonyoung-birthday-photostrip.png" },
-                          { label: "Hanni Bunny Strip", url: "/img/showcase/hanni-bunny-photostrip.png" },
-                          { label: "Karina Cyber Strip", url: "/img/showcase/karina-cyber-photostrip.png" },
-                          { label: "Jungkook Golden Strip", url: "/img/showcase/jungkook-golden-photostrip.png" },
-                          { label: "Classic Studio Strip", url: "/img/showcase/classic-studio-photostrip.png" }
-                        ].map((strip) => (
-                          <button
-                            key={strip.url}
-                            type="button"
-                            onClick={() => setFormData(prev => ({
-                              ...prev,
-                              finalPreviewImage: strip.url,
-                              finalPreviewImageFile: null
-                            }))}
-                            className={`text-[9px] px-2 py-1 rounded-md font-mono transition-all cursor-pointer ${
-                              formData.finalPreviewImage === strip.url
-                                ? "bg-[#7226FF] text-white font-bold"
-                                : "bg-white text-[#625b82] border border-[#e2dced] hover:bg-[#f0ecf8]"
-                            }`}
-                          >
-                            {strip.label}
-                          </button>
-                        ))}
+                      <label className="block text-xs font-bold text-[#010030] mb-1">
+                        Or Image URL / Path
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input 
+                          type="text"
+                          placeholder="/photobooth-strip.png or https://..."
+                          value={formData.finalPreviewImage}
+                          onChange={(e) => handleFinalPreviewUrlChange(e.target.value)}
+                          className="admin-ui flex-1 bg-white border border-[#e2dced] rounded-xl px-3 py-1.5 text-xs text-[#010030] font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleFinalPreviewUrlChange("/photobooth-strip.png")}
+                          className="admin-btn px-2.5 py-1.5 bg-[#f0ecf8] hover:bg-[#e4ddf4] text-[#7226FF] text-[10px] font-bold rounded-lg transition-colors shrink-0"
+                          title="Reset to default photostrip"
+                        >
+                          Default
+                        </button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* 4. Dynamic Pose Deck Editor & Guidance Captions */}
+              {/* Dynamic Pose Deck Editor & Guidance Captions */}
               <div className="space-y-3 border-t border-[#f0ebf7] pt-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider">
@@ -1805,7 +1386,7 @@ const PosesManager = () => {
                   disabled={submitting}
                   className="admin-btn bg-[#7226FF] hover:bg-[#5f1ee0] text-white font-semibold px-5 py-2 rounded-xl shadow-xs"
                 >
-                  {submitting ? "Saving Deck..." : (editingArtist ? "Save Campaign Changes" : "Publish Artist Campaign")}
+                  {submitting ? "Saving Deck..." : (editingArtist ? "Save Deck Changes" : "Publish Campaign")}
                 </button>
               </div>
             </form>
@@ -1851,7 +1432,7 @@ const PosesManager = () => {
             {/* Simulated Live Studio Camera Viewfinder */}
             <div className="relative w-full h-80 bg-slate-900 rounded-2xl border-2 border-[#010030] overflow-hidden flex items-center justify-center shadow-inner">
               
-              {/* Simulated Live User Webcam Stream */}
+              {/* Simulated Live User Webcam Stream (Abstract Studio Backdrop) */}
               <div className="absolute inset-0 bg-gradient-to-tr from-slate-800 via-indigo-950 to-slate-900 flex items-center justify-center opacity-80">
                 <div className="w-32 h-32 rounded-full border border-white/10 flex items-center justify-center">
                   <Camera className="w-8 h-8 text-white/20" />

@@ -351,7 +351,7 @@ const GallerySection = ({ tunerConfig }) => {
         {/* PHOTOSTRIP PREVIEW & COMMUNITY PRINTS GALLERY */}
         <div className="mb-24 relative z-10">
           <div className="gallery-header-block text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-[#0e0048] text-[#FFE5F1] font-mono font-bold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#2e109d] shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-[#010030] text-white font-mono text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#7226FF]/40 shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-[#F042FF]" />
               <span>FINISHED PREVIEWS & COMMUNITY PRINTS</span>
             </div>
@@ -362,8 +362,8 @@ const GallerySection = ({ tunerConfig }) => {
               Explore official studio editorial layouts alongside real user-submitted prints. Select any editorial style to launch directly into the studio or hype your favorite community prints!
             </p>
 
-            {/* PRIMARY ORIGIN / TAXONOMY TABS (Matching yellow design reference: clean dark indigo base with fine accent borders) */}
-            <div className="flex flex-wrap justify-center gap-2 mb-4">
+            {/* PRIMARY ORIGIN / TAXONOMY TABS */}
+            <div className="flex flex-wrap justify-center gap-2.5 mb-4">
               {[
                 { id: "all", label: `★ ALL CREATIONS (${totalApproved})`, icon: Sparkles },
                 { id: "editorial", label: `✦ STUDIO EDITORIAL (${editorialCount})`, icon: Award },
@@ -378,21 +378,17 @@ const GallerySection = ({ tunerConfig }) => {
                       playClickSound();
                       setOriginFilter(tab.id);
                     }}
-                    className={`inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider px-4 py-2 rounded-full transition-all duration-200 cursor-pointer border ${
-                      isSelected
-                        ? "bg-gradient-to-r from-[#160078] to-[#7226FF] text-white border-[#F042FF]/70 shadow-[0_2px_12px_rgba(240,66,255,0.3)] scale-[1.02] z-10 font-bold"
-                        : "bg-[#0e0048]/90 text-zinc-300 border-[#2e109d] hover:border-white/30 hover:text-white hover:bg-[#160078] font-medium"
-                    }`}
+                    className={`btn-studio-tab ${isSelected ? "btn-studio-tab-active" : ""}`}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-[#FFE5F1]" : "text-[#7226FF]"}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-[#F042FF]" : "text-[#7226FF]"}`} />
                     <span>{tab.label}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* SECONDARY FORMAT / LAYOUT FILTER CHIPS */}
-            <div className="flex flex-wrap justify-center items-center gap-1.5">
+            {/* SECONDARY FORMAT / LAYOUT FILTER TABS */}
+            <div className="flex flex-wrap justify-center items-center gap-2">
               <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest mr-1">
                 Format:
               </span>
@@ -402,25 +398,18 @@ const GallerySection = ({ tunerConfig }) => {
                 { id: "4-grid", label: "4-GRID STRIP" },
                 { id: "2x2", label: "2x2 SQUARE" },
                 { id: "2x3", label: "2x3 POSTCARD" }
-              ].map(tab => {
-                const isSelected = selectedLayoutFilter === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      playClickSound();
-                      setSelectedLayoutFilter(tab.id);
-                    }}
-                    className={`font-mono text-[10px] uppercase tracking-wider px-3 py-1 rounded-lg transition-all duration-150 cursor-pointer border ${
-                      isSelected
-                        ? "bg-white text-[#010030] font-bold border-white shadow-xs"
-                        : "bg-[#0e0048]/80 text-zinc-400 border-[#2e109d]/80 hover:border-white/20 hover:text-zinc-200 font-medium"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    playClickSound();
+                    setSelectedLayoutFilter(tab.id);
+                  }}
+                  className={`btn-studio-chip ${selectedLayoutFilter === tab.id ? "btn-studio-chip-active" : ""}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -536,13 +525,13 @@ const GallerySection = ({ tunerConfig }) => {
                                 playClickSound();
                                 navigate("/welcome");
                               }}
-                              className="snpshot-btn-primary text-[10px] font-mono font-bold px-3 py-1.5 shadow-md flex items-center gap-1"
+                              className="bg-[#010030] hover:bg-[#0e0048] text-white border border-[#7226FF] hover:border-[#F042FF] text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1 transition-all"
                             >
                               <span>USE STYLE</span>
-                              <ArrowRight className="w-3 h-3" />
+                              <ArrowRight className="w-3 h-3 text-[#F042FF]" />
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-white bg-[#010030]/90 px-2.5 py-1 rounded-lg border border-white/20">
+                            <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-white bg-[#010030]/90 px-2.5 py-1 rounded-full border border-[#7226FF]/30">
                               <Eye className="w-3 h-3 text-[#F042FF]" />
                               <span>INSPECT 300 DPI</span>
                             </span>
@@ -574,11 +563,7 @@ const GallerySection = ({ tunerConfig }) => {
                               handleLike(item.id);
                             }}
                             disabled={item.hasLiked}
-                            className={`flex items-center gap-1 font-mono text-[8px] font-bold border rounded-lg px-2 py-0.5 cursor-pointer transition-all ${
-                              item.hasLiked 
-                                ? "text-[#F042FF] bg-[#F042FF]/10 border-[#F042FF]" 
-                                : "text-[#010030] bg-white border-[#160078]/20 hover:border-[#F042FF] hover:text-[#F042FF]"
-                            }`}
+                            className={`btn-studio-like ${item.hasLiked ? "btn-studio-like-active" : ""}`}
                           >
                             <Heart className={`w-2.5 h-2.5 transition-transform ${item.hasLiked ? "fill-current scale-110 text-[#F042FF]" : ""}`} />
                             <span>{item.likes || 0}</span>
@@ -848,9 +833,9 @@ const GallerySection = ({ tunerConfig }) => {
                         <span className="text-[#625b82] text-[11px]">Est. Lab Dispatch: <strong>24-48 Hours</strong></span>
                         <button
                           onClick={handleConfirmOrder}
-                          className="snpshot-btn-primary text-xs font-mono font-bold px-4 py-2 flex items-center gap-1.5"
+                          className="btn-studio-primary text-xs font-mono font-bold px-4 py-2 flex items-center gap-1.5"
                         >
-                          <Printer className="w-3.5 h-3.5" />
+                          <Printer className="w-3.5 h-3.5 text-[#F042FF]" />
                           <span>Dispatch {orderQuantity} Print{orderQuantity > 1 ? "s" : ""}</span>
                         </button>
                       </div>
@@ -863,10 +848,10 @@ const GallerySection = ({ tunerConfig }) => {
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#f0ebf7]">
                 <button 
                   onClick={() => handleLike(selectedItem.id)}
-                  className={`flex items-center gap-2 font-mono text-xs font-bold border rounded-xl px-3.5 py-2 cursor-pointer transition-all ${
+                  className={`flex items-center gap-2 font-mono text-xs font-bold border rounded-xl px-4 py-2 cursor-pointer transition-all ${
                     selectedItem.hasLiked 
                       ? "text-[#F042FF] bg-[#F042FF]/10 border-[#F042FF]" 
-                      : "text-[#010030] bg-white border-[#e2dced] hover:border-[#F042FF] hover:text-[#F042FF]"
+                      : "text-[#010030] bg-[#f8f7fc] border-[#e2dced] hover:border-[#F042FF] hover:text-[#F042FF]"
                   }`}
                 >
                   <Heart className={`w-4 h-4 ${selectedItem.hasLiked ? "fill-current text-[#F042FF] scale-110" : ""}`} />
@@ -880,11 +865,11 @@ const GallerySection = ({ tunerConfig }) => {
                         setSelectedItem(null);
                         navigate("/welcome");
                       }}
-                      className="snpshot-btn-primary text-xs font-mono font-bold px-5 py-2.5 flex items-center gap-2 shadow-md"
+                      className="btn-studio-primary text-xs font-mono font-bold px-5 py-2.5 flex items-center gap-2 shadow-lg"
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-4 h-4 text-[#F042FF]" />
                       <span>Use Style in Booth</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-4 h-4 text-[#F042FF]" />
                     </button>
                   ) : (
                     <button
@@ -892,7 +877,7 @@ const GallerySection = ({ tunerConfig }) => {
                         playClickSound();
                         setIsPrintOrderOpen(!isPrintOrderOpen);
                       }}
-                      className="bg-[#0e0048] hover:bg-[#160078] text-[#FFE5F1] hover:text-white text-xs font-mono font-bold px-4 py-2.5 rounded-xl border border-[#2e109d] hover:border-[#F042FF]/60 flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+                      className="bg-[#010030] hover:bg-[#0e0048] border border-[#7226FF] hover:border-[#F042FF] text-white text-xs font-mono font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition-all"
                     >
                       <Printer className="w-4 h-4 text-[#F042FF]" />
                       <span>{isPrintOrderOpen ? "Close Order" : "Order Print Copy"}</span>
