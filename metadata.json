@@ -1,6 +1,6 @@
 {
   "name": "SNPSHOT Studio",
-  "description": "Interactive Self-Photo Booth & Digital Print Studio",
+  "description": "SNPSHOT Digital Self-Photo Booth Studio — Online WebRTC photostrips, studio filters, custom frames, digital stamps, and 300 DPI prints.",
   "requestFramePermissions": [
     "camera"
   ],

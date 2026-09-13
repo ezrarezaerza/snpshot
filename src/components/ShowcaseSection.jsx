@@ -4,53 +4,21 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { X, Sparkles, ZoomIn, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { 
+  Sparkles, 
+  ZoomIn, 
+  ChevronLeft, 
+  ChevronRight, 
+  X, 
+  Camera, 
+  ArrowRight,
+  CheckCircle2
+} from "lucide-react";
+import { playClickSound } from "../utils/audio";
+import { normalizeMediaUrl } from "../utils/blobClient";
 
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
-
-const defaultDesignThemes = [
-  {
-    id: "classic",
-    name: "Classic Studio",
-    color: "#F042FF",
-    desc: "High-contrast photostrip frames with solid borders and nostalgic digital stamps.",
-    bg: "linear-gradient(135deg, #020617, #0F3AE2)",
-    badge: "CLASSIC_POP",
-    image: "/photobooth-strip.png",
-    caption: "Studio Frame ✦"
-  },
-  {
-    id: "floral",
-    name: "Pastel Bloom",
-    color: "#FF00FF",
-    desc: "Soft flower power stamps with pastel gradients and refined hand-drawn borders.",
-    bg: "linear-gradient(135deg, #18001e, #2e083c)",
-    badge: "SOFT_PASTEL",
-    image: "/photobooth-strip.png",
-    caption: "Soft Floral Frame"
-  },
-  {
-    id: "vintage",
-    name: "Cinematic Film",
-    color: "#F59E0B",
-    desc: "Warm cinematic film grain with retro date stamps and nostalgic lighting.",
-    bg: "linear-gradient(135deg, #1a0f00, #2b1800)",
-    badge: "VINTAGE_FILM",
-    image: "/photobooth-strip.png",
-    caption: "Warm Grain Filter"
-  },
-  {
-    id: "modern",
-    name: "Neon Cyber",
-    color: "#10B981",
-    desc: "Vibrant neon reflections with custom digital overlays and star halo clusters.",
-    bg: "linear-gradient(135deg, #022c22, #064e3b)",
-    badge: "NEON_CYBER",
-    image: "/photobooth-strip.png",
-    caption: "Electric Cyan"
-  }
-];
 
 const ShowcaseSection = ({ tunerConfig }) => {
   const navigate = useNavigate();
@@ -61,47 +29,153 @@ const ShowcaseSection = ({ tunerConfig }) => {
   const modalRef = useRef(null);
   const modalContentRef = useRef(null);
   const modalImageRef = useRef(null);
-  const clickOriginRef = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
 
   const stickerLeft1Ref = useRef(null);
   const stickerRight1Ref = useRef(null);
   const stickerLeft2Ref = useRef(null);
   const stickerRight2Ref = useRef(null);
 
-  const [designThemes, setDesignThemes] = useState(defaultDesignThemes);
+  // Dynamic state strictly populated from backend database/API
+  const [allItems, setAllItems] = useState([]);
   const [activeZoomItem, setActiveZoomItem] = useState(null);
+  const [originRect, setOriginRect] = useState(null);
   const [isClosingModal, setIsClosingModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Fetch dynamic studio data and construct unified showcase cards
   useEffect(() => {
     const fetchShowcaseData = async () => {
       try {
         const res = await axios.get("/api/studio/data");
-        if (res.data && res.data.showcaseThemes && res.data.showcaseThemes.length > 0) {
-          // Ensure showcase images use final preview photostrips
-          const normalized = res.data.showcaseThemes.map(theme => ({
-            ...theme,
-            image: theme.image?.includes("/img/poses/Wonyoung") ? "/photobooth-strip.png" : (theme.image || "/photobooth-strip.png")
-          }));
-          setDesignThemes(normalized);
+        const data = res.data || {};
+        const unifiedItems = [];
+
+        // 1. Ingest Artist Collaboration Campaigns (only active ones configured in database)
+        if (data.artists && data.artists.length > 0) {
+          data.artists.forEach(art => {
+            if (art.status === "archived" || art.status === "inactive") return;
+            const fallbackPose = "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung1.png";
+            const rawStrip = art.finalPreviewImage || ((art.poses && art.poses.length > 0) ? art.poses[0] : (art.avatar || fallbackPose));
+            const previewStrip = normalizeMediaUrl(rawStrip);
+            
+            unifiedItems.push({
+              id: art.id,
+              type: "collab",
+              name: `${art.groupName || ""} ${art.name}`.trim(),
+              rawName: art.name,
+              role: art.role || "Featured Artist",
+              agencyName: art.agencyName || "Official Agency",
+              groupName: art.groupName || "Collab",
+              groupLogo: art.groupLogo || "✦",
+              color: art.color || "#F042FF",
+              desc: art.showcaseTagline || art.desc || `Official collab photostrip frame and pose guidance set with ${art.name}.`,
+              badge: art.showcaseBadge || (art.isFeatured ? "★ FEATURED COLLAB" : "✦ IDOL DROP"),
+              image: previewStrip,
+              caption: `${art.name} Official Strip ✦`,
+              layout: art.dedicatedFrame?.layout || "3-grid",
+              watermarkText: art.dedicatedFrame?.watermarkText || `${(art.groupName || "").toUpperCase()} ${art.name.toUpperCase()} ✦ OFFICIAL EVENT`,
+              posesGuidance: art.posesGuidance || [],
+              artistId: art.id,
+              dedicatedFrame: art.dedicatedFrame || null,
+              isCollab: true,
+              isFeatured: Boolean(art.isFeatured || art.isFeaturedOnShowcase)
+            });
+          });
         }
+
+        // 2. Ingest Showcase Themes (only active ones from database)
+        if (data.showcaseThemes && data.showcaseThemes.length > 0) {
+          data.showcaseThemes.forEach(theme => {
+            if (theme.active === false) return;
+            unifiedItems.push({
+              id: theme.id,
+              type: "theme",
+              name: theme.name,
+              color: theme.color || "#7226FF",
+              desc: theme.desc || "Curated aesthetic studio frame overlay.",
+              bg: theme.bg || "linear-gradient(135deg, #010030, #2e109d)",
+              badge: theme.badge || "THEME_PRESET",
+              image: normalizeMediaUrl(theme.image),
+              caption: theme.caption || theme.name,
+              layout: theme.overlayFrameId?.includes("2x2") ? "2x2" : theme.overlayFrameId?.includes("2x3") ? "2x3" : "4-grid",
+              watermarkText: `SNPSHOT STUDIO // ${theme.name.toUpperCase()}`,
+              isCollab: false
+            });
+          });
+        }
+
+        // 3. Ingest Promoted / Pinned Gallery Masterworks (only approved & explicitly promoted)
+        if (data.galleryItems && data.galleryItems.length > 0) {
+          data.galleryItems
+            .filter(g => (g.status === "approved" || !g.status) && (g.isPromotedToShowcase || g.isPinned))
+            .forEach(gal => {
+              unifiedItems.push({
+                id: gal.id,
+                type: "top_pick",
+                name: gal.caption || "Community Showcase Print",
+                creator: gal.creator,
+                color: gal.color || "#F042FF",
+                desc: `Created by ${gal.creator}. High-resolution 300 DPI verified studio composite.`,
+                badge: gal.badge || (gal.origin === "editorial" ? "STAFF PICK" : "TRENDING ★"),
+                image: normalizeMediaUrl(gal.imageSrc),
+                caption: gal.caption,
+                layout: gal.layout || "4-grid",
+                watermarkText: `SNPSHOT STUDIO // ${gal.creator.toUpperCase()}`,
+                likes: gal.likes || 0,
+                isCollab: false,
+                isTopPick: true
+              });
+            });
+        }
+
+        setAllItems(unifiedItems);
       } catch (err) {
-        console.error("Error fetching showcase themes:", err);
+        console.error("Error fetching dynamic showcase data:", err);
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchShowcaseData();
   }, []);
 
+  const displayedItems = allItems;
+
+  // Launch Photo Booth directly with selected showcase item
+  const handleLaunchBooth = (item) => {
+    playClickSound();
+    if (item.isCollab && item.artistId) {
+      navigate("/setup", { 
+        state: { 
+          category: "artist", 
+          artistId: item.artistId,
+          layout: item.layout,
+          presetFrameId: item.dedicatedFrame?.id || null
+        } 
+      });
+    } else {
+      navigate("/setup", { 
+        state: { 
+          category: "basic", 
+          layout: item.layout || "4-grid",
+          presetThemeId: item.id
+        } 
+      });
+    }
+  };
+
   // GSAP Smooth Horizontal Scroll with Prev/Next buttons
   const scrollCarousel = (direction) => {
+    playClickSound();
     if (carouselRef.current) {
-      const scrollAmount = 360;
+      const scrollAmount = 260;
       const targetScroll = direction === "left" 
-        ? carouselRef.current.scrollLeft - scrollAmount 
+        ? Math.max(0, carouselRef.current.scrollLeft - scrollAmount)
         : carouselRef.current.scrollLeft + scrollAmount;
       
       gsap.to(carouselRef.current, {
         scrollLeft: targetScroll,
-        duration: 0.6,
+        duration: 0.45,
         ease: "power2.out"
       });
     }
@@ -116,8 +190,8 @@ const ShowcaseSection = ({ tunerConfig }) => {
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
         e.preventDefault();
         gsap.to(carouselEl, {
-          scrollLeft: carouselEl.scrollLeft + e.deltaY * 1.5,
-          duration: 0.5,
+          scrollLeft: carouselEl.scrollLeft + e.deltaY * 1.4,
+          duration: 0.4,
           ease: "power2.out",
           overwrite: "auto"
         });
@@ -130,87 +204,95 @@ const ShowcaseSection = ({ tunerConfig }) => {
     };
   }, []);
 
-  // Modal open trigger with click coordinate tracking
-  const handleOpenZoomModal = (e, theme) => {
+  // Modal open trigger with GSAP origin-aware scale & fade animation
+  const handleOpenZoomModal = (item, e) => {
+    playClickSound();
     if (e && e.currentTarget) {
       const rect = e.currentTarget.getBoundingClientRect();
-      clickOriginRef.current = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2
-      };
-    } else if (e) {
-      clickOriginRef.current = {
-        x: e.clientX || window.innerWidth / 2,
-        y: e.clientY || window.innerHeight / 2
-      };
+      setOriginRect(rect);
+    } else {
+      setOriginRect(null);
     }
-    setActiveZoomItem(theme);
+    setActiveZoomItem(item);
   };
 
-  // Lock body scroll and animate from click position when lightbox opens
   useEffect(() => {
     if (activeZoomItem && modalRef.current && modalContentRef.current) {
       setIsClosingModal(false);
-      document.body.style.overflow = "hidden";
 
-      const originX = clickOriginRef.current.x;
-      const originY = clickOriginRef.current.y;
-      const viewportCenterX = window.innerWidth / 2;
-      const viewportCenterY = window.innerHeight / 2;
-      const deltaX = originX - viewportCenterX;
-      const deltaY = originY - viewportCenterY;
+      // Lock background smooth scroll (Lenis + standard body)
+      if (typeof window !== "undefined") {
+        if (window.lenis && typeof window.lenis.stop === "function") {
+          window.lenis.stop();
+        }
+        document.body.style.overflow = "hidden";
+      }
 
-      // Animate backdrop
+      // Animate backdrop fade
       gsap.fromTo(
         modalRef.current,
         { opacity: 0 },
-        { opacity: 1, duration: 0.3, ease: "power2.out" }
+        { opacity: 1, duration: 0.35, ease: "power2.out" }
       );
 
-      // Animate zoomed container smoothly expanding directly from the click origin
+      // Animate modal expanding outward from clicked card coordinates
+      let originTransform = "50% 50%";
+      let initialScale = 0.6;
+      if (originRect) {
+        const cx = originRect.left + originRect.width / 2;
+        const cy = originRect.top + originRect.height / 2;
+        const oxPercent = Math.max(0, Math.min(100, (cx / window.innerWidth) * 100));
+        const oyPercent = Math.max(0, Math.min(100, (cy / window.innerHeight) * 100));
+        originTransform = `${oxPercent.toFixed(1)}% ${oyPercent.toFixed(1)}%`;
+        initialScale = 0.3;
+      }
+
       gsap.fromTo(
         modalContentRef.current,
         { 
-          x: deltaX, 
-          y: deltaY, 
-          scale: 0.25, 
-          opacity: 0 
+          scale: initialScale, 
+          opacity: 0, 
+          transformOrigin: originTransform 
         },
         { 
-          x: 0, 
-          y: 0, 
           scale: 1, 
           opacity: 1, 
           duration: 0.45, 
-          ease: "back.out(1.15)",
-          clearProps: "transform"
+          ease: "back.out(1.15)" 
         }
       );
     }
 
     return () => {
-      document.body.style.overflow = "";
+      // Safety unlock if component unmounts with modal open
+      if (typeof window !== "undefined") {
+        if (window.lenis && typeof window.lenis.start === "function") {
+          window.lenis.start();
+        }
+        document.body.style.overflow = "";
+      }
     };
-  }, [activeZoomItem]);
+  }, [activeZoomItem, originRect]);
 
-  // Modal close trigger with GSAP animation back to origin
+  // Modal close trigger with smooth GSAP shrink-back animation
   const handleCloseZoomModal = () => {
     if (isClosingModal || !modalRef.current) return;
     setIsClosingModal(true);
 
-    const originX = clickOriginRef.current.x;
-    const originY = clickOriginRef.current.y;
-    const viewportCenterX = window.innerWidth / 2;
-    const viewportCenterY = window.innerHeight / 2;
-    const deltaX = originX - viewportCenterX;
-    const deltaY = originY - viewportCenterY;
+    let originTransform = "50% 50%";
+    if (originRect) {
+      const cx = originRect.left + originRect.width / 2;
+      const cy = originRect.top + originRect.height / 2;
+      const oxPercent = Math.max(0, Math.min(100, (cx / window.innerWidth) * 100));
+      const oyPercent = Math.max(0, Math.min(100, (cy / window.innerHeight) * 100));
+      originTransform = `${oxPercent.toFixed(1)}% ${oyPercent.toFixed(1)}%`;
+    }
 
     if (modalContentRef.current) {
       gsap.to(modalContentRef.current, {
-        x: deltaX,
-        y: deltaY,
-        scale: 0.3,
+        scale: 0.7,
         opacity: 0,
+        transformOrigin: originTransform,
         duration: 0.25,
         ease: "power2.in"
       });
@@ -221,26 +303,45 @@ const ShowcaseSection = ({ tunerConfig }) => {
       duration: 0.25,
       ease: "power2.inOut",
       onComplete: () => {
-        document.body.style.overflow = "";
+        // Unlock background smooth scroll
+        if (typeof window !== "undefined") {
+          if (window.lenis && typeof window.lenis.start === "function") {
+            window.lenis.start();
+          }
+          document.body.style.overflow = "";
+        }
         setActiveZoomItem(null);
+        setOriginRect(null);
         setIsClosingModal(false);
       }
     });
   };
 
-  // Keyboard shortcut listener for ESC key to close lightbox
+  // Keyboard navigation listener (ESC to close, ArrowLeft/ArrowRight to cycle)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === "Escape" && activeZoomItem) {
+      if (!activeZoomItem) return;
+
+      if (e.key === "Escape") {
         handleCloseZoomModal();
+      } else if (e.key === "ArrowLeft") {
+        const currentIndex = displayedItems.findIndex(i => i.id === activeZoomItem.id);
+        if (currentIndex > 0) {
+          setActiveZoomItem(displayedItems[currentIndex - 1]);
+        }
+      } else if (e.key === "ArrowRight") {
+        const currentIndex = displayedItems.findIndex(i => i.id === activeZoomItem.id);
+        if (currentIndex < displayedItems.length - 1) {
+          setActiveZoomItem(displayedItems[currentIndex + 1]);
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeZoomItem]);
+  }, [activeZoomItem, displayedItems]);
 
+  // GSAP Parallax Stickers and Scroll Reveal
   useEffect(() => {
-    // Parallax Stickers
     const scrollStickerLeft1 = gsap.to(stickerLeft1Ref.current, {
       yPercent: -45,
       rotate: "-=15",
@@ -286,7 +387,6 @@ const ShowcaseSection = ({ tunerConfig }) => {
       }
     });
 
-    // CHOOSE YOUR AESTHETIC background highlight drawing on scroll
     const highlightTrigger = gsap.fromTo(
       ".aesthetic-highlight-bar",
       { width: "0%" },
@@ -301,42 +401,27 @@ const ShowcaseSection = ({ tunerConfig }) => {
       }
     );
 
-    // Showcase Theme Cards Bidirectional Scroll-based Reveals with Stagger
     const duration = tunerConfig?.scrollRevealDuration ?? 0.8;
     const ease = tunerConfig?.scrollRevealEase ?? "back.out(1.2)";
 
-    let contentTrigger;
-    contentTrigger = ScrollTrigger.create({
+    let contentTrigger = ScrollTrigger.create({
       trigger: ".showcase-content-block",
       start: "top 85%",
       end: "bottom 15%",
       onEnter: () => {
         gsap.fromTo(".showcase-theme-card", 
-          { y: 50, opacity: 0, scale: 0.94 }, 
-          { y: 0, opacity: 1, scale: 1, duration: duration, ease: ease, stagger: 0.08, overwrite: "auto" }
+          { y: 40, opacity: 0, scale: 0.96 }, 
+          { y: 0, opacity: 1, scale: 1, duration: duration, ease: ease, stagger: 0.07, overwrite: "auto" }
         );
       },
       onEnterBack: () => {
         gsap.fromTo(".showcase-theme-card", 
-          { y: -50, opacity: 0, scale: 0.94 }, 
-          { y: 0, opacity: 1, scale: 1, duration: duration, ease: ease, stagger: 0.08, overwrite: "auto" }
-        );
-      },
-      onLeave: () => {
-        gsap.fromTo(".showcase-theme-card", 
-          { y: 0, opacity: 1, scale: 1 },
-          { y: -50, opacity: 0, scale: 0.94, duration: duration * 0.75, ease: "power2.in", stagger: 0.04, overwrite: "auto" }
-        );
-      },
-      onLeaveBack: () => {
-        gsap.fromTo(".showcase-theme-card", 
-          { y: 0, opacity: 1, scale: 1 },
-          { y: 50, opacity: 0, scale: 0.94, duration: duration * 0.75, ease: "power2.in", stagger: 0.04, overwrite: "auto" }
+          { y: -40, opacity: 0, scale: 0.96 }, 
+          { y: 0, opacity: 1, scale: 1, duration: duration, ease: ease, stagger: 0.07, overwrite: "auto" }
         );
       }
     });
 
-    // Bidirectional scroll-reveal for Header Block
     const headerBlock = showcaseParentRef.current?.querySelector(".showcase-header-block");
     let headerTrigger;
     if (headerBlock) {
@@ -346,26 +431,8 @@ const ShowcaseSection = ({ tunerConfig }) => {
         end: "bottom 10%",
         onEnter: () => {
           gsap.fromTo(headerBlock,
-            { y: 45, opacity: 0 },
+            { y: 40, opacity: 0 },
             { y: 0, opacity: 1, duration: duration, ease: "power2.out", overwrite: "auto" }
-          );
-        },
-        onEnterBack: () => {
-          gsap.fromTo(headerBlock,
-            { y: -45, opacity: 0 },
-            { y: 0, opacity: 1, duration: duration, ease: "power2.out", overwrite: "auto" }
-          );
-        },
-        onLeave: () => {
-          gsap.fromTo(headerBlock,
-            { y: 0, opacity: 1 },
-            { y: -45, opacity: 0, duration: duration * 0.75, ease: "power2.in", overwrite: "auto" }
-          );
-        },
-        onLeaveBack: () => {
-          gsap.fromTo(headerBlock,
-            { y: 0, opacity: 1 },
-            { y: 45, opacity: 0, duration: duration * 0.75, ease: "power2.in", overwrite: "auto" }
           );
         }
       });
@@ -382,190 +449,355 @@ const ShowcaseSection = ({ tunerConfig }) => {
     };
   }, [tunerConfig]);
 
+  // Helper to format aspect-ratio and dimension classes optimized to photostrip formats with snug fit
+  const getFormatSpecs = (layout) => {
+    switch (layout) {
+      case "3-grid":
+        return {
+          cardWidth: "w-[200px] sm:w-[220px]",
+          imageHeight: "h-[320px] sm:h-[340px]",
+          label: "3-Grid Strip (1:3)",
+          badge: "3-CUT"
+        };
+      case "4-grid":
+        return {
+          cardWidth: "w-[200px] sm:w-[220px]",
+          imageHeight: "h-[350px] sm:h-[380px]",
+          label: "4-Grid Strip (1:4)",
+          badge: "4-CUT"
+        };
+      case "2x2":
+        return {
+          cardWidth: "w-[220px] sm:w-[245px]",
+          imageHeight: "h-[220px] sm:h-[245px]",
+          label: "2x2 Square (1:1)",
+          badge: "2x2 GRID"
+        };
+      case "2x3":
+        return {
+          cardWidth: "w-[220px] sm:w-[245px]",
+          imageHeight: "h-[280px] sm:h-[310px]",
+          label: "2x3 Postcard (2:3)",
+          badge: "POSTCARD"
+        };
+      default:
+        return {
+          cardWidth: "w-[200px] sm:w-[220px]",
+          imageHeight: "h-[330px] sm:h-[350px]",
+          label: "Photostrip",
+          badge: "STRIP"
+        };
+    }
+  };
+
   return (
-    <section ref={showcaseParentRef} className="px-6 py-24 relative overflow-hidden bg-[#FAF6F9] text-[#010030] border-y border-[#160078]/10">
+    <section 
+      id="showcase-section"
+      ref={showcaseParentRef} 
+      className="px-4 sm:px-6 py-20 md:py-28 relative overflow-hidden bg-[#FAF6F9] text-[#010030] border-y border-[#160078]/10 select-none"
+    >
       {/* Scrapbook stickers floating absolutely */}
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden z-0 opacity-100">
-        <div ref={stickerLeft1Ref} className="absolute top-[8%] left-[4%] bg-white text-[#160078] text-[10px] font-black border border-[#160078]/20 px-3 py-1.5 rounded-full rotate-[-12deg] uppercase tracking-wider hidden lg:block shadow-md">
-          ★ Custom Stamp Set ★
+        <div ref={stickerLeft1Ref} className="absolute top-[8%] left-[4%] bg-white text-[#160078] text-[10px] font-black border border-[#160078]/20 px-3 py-1.5 rounded-full rotate-[-12deg] uppercase tracking-wider hidden lg:block shadow-sm">
+          ★ Studio Collab Drop ★
         </div>
-        <div ref={stickerRight1Ref} className="absolute top-[20%] right-[3%] bg-[#160078] text-white text-[10px] font-mono border border-[#7226FF]/40 px-2.5 py-1 rounded-md rotate-[8deg] uppercase hidden lg:block shadow-md">
-          ID: SNPSHOT_STUDIO
+        <div ref={stickerRight1Ref} className="absolute top-[18%] right-[3%] bg-[#160078] text-white text-[10px] font-mono border border-[#7226FF]/40 px-2.5 py-1 rounded-md rotate-[8deg] uppercase hidden lg:block shadow-sm">
+          300 DPI HIGH-RES PRINT
         </div>
-        <div ref={stickerLeft2Ref} className="absolute bottom-[25%] left-[6%] bg-white text-[#160078] text-xs font-black border border-[#160078]/20 px-3 py-1.5 rounded-md rotate-[15deg] hidden lg:block shadow-md">
-          ✦ Studio Quality Prints
+        <div ref={stickerLeft2Ref} className="absolute bottom-[20%] left-[5%] bg-white text-[#160078] text-xs font-black border border-[#160078]/20 px-3 py-1.5 rounded-md rotate-[15deg] hidden lg:block shadow-sm">
+          ✦ Official Photostrip Sets
         </div>
-        <div ref={stickerRight2Ref} className="absolute bottom-[40%] right-[4%] bg-gradient-to-r from-[#F042FF] to-[#7226FF] text-white text-[10px] font-display font-black border border-white/20 px-3 py-1.5 rounded-full rotate-[-6deg] uppercase hidden lg:block shadow-md">
-          ✦ Self Photo Booth ✦
+        <div ref={stickerRight2Ref} className="absolute bottom-[35%] right-[4%] bg-gradient-to-r from-[#F042FF] to-[#7226FF] text-white text-[10px] font-display font-black border border-white/20 px-3 py-1.5 rounded-full rotate-[-6deg] uppercase hidden lg:block shadow-sm">
+          ★ DIGITAL PHOTO BOOTH ★
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10">
         
-        {/* HEADER */}
-        <div className="showcase-header-block text-center mb-12 relative">
-          <div className="inline-flex items-center gap-2 bg-[#010030] text-white font-mono text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#7226FF]/40 shadow-sm">
+        {/* HEADER BLOCK (Cleaned up, category tabs removed) */}
+        <div className="showcase-header-block text-center mb-8 relative">
+          <div className="inline-flex items-center gap-2 bg-[#0f0054]/90 backdrop-blur-md text-[#FFE5F1] font-mono text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#F042FF]/40 shadow-[0_4px_20px_rgba(240,66,255,0.18)]">
             <Sparkles className="w-3.5 h-3.5 text-[#F042FF]" />
-            <span>THEMES & FRAME OVERLAYS</span>
+            <span>THEMES, IDOL COLLABS & FRAME OVERLAYS</span>
           </div>
-          <h2 className="font-display font-black text-4xl md:text-6xl text-[#010030] tracking-tight uppercase leading-none">
+
+          <h2 className="font-display font-black text-4xl sm:text-5xl md:text-6xl text-[#010030] tracking-tight uppercase leading-none">
             PHOTOSHOOT{" "}
             <span className="relative inline-block px-1">
               <span className="relative z-10 bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#160078] bg-clip-text text-transparent">SHOWCASE</span>
               <span className="absolute bottom-1 md:bottom-2 left-0 h-3 md:h-5 bg-[#F042FF]/20 -rotate-1 z-0 rounded-sm aesthetic-highlight-bar origin-left"></span>
             </span>
           </h2>
+
           <p className="font-sans text-sm md:text-base text-[#160078]/80 max-w-2xl mx-auto mt-4 leading-relaxed font-medium">
-            Explore our curated theme collection and frame overlay references. Click any photostrip composite to inspect it in full screen!
+            Explore our curated theme collection, active K-Pop idol partnership drops, and official photostrip frame references. Click any strip to inspect full specs or launch your photoshoot session immediately!
           </p>
         </div>
 
         {/* FRAME DESIGN SHOWCASE (GSAP Horizontal Smooth Track) */}
-        <div ref={showcaseSectionRef} className="showcase-content-block mb-8 relative">
+        <div ref={showcaseSectionRef} className="showcase-content-block mb-4 relative group/carousel">
           
-          {/* Refined Modern Navigation Controls */}
-          <div className="flex items-center justify-between mb-4 px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono font-bold text-[#010030]/60 uppercase tracking-wider">
-                Browse Photostrips
-              </span>
-              <span className="bg-[#f0ecf8] text-[#7226FF] text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
-                {designThemes.length} STYLES
-              </span>
-            </div>
+          {/* Subtle Navigation Header & Controls */}
+          <div className="flex items-center justify-between mb-4 px-2">
+            <span className="font-mono text-xs font-bold text-[#160078]/70 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Showing {displayedItems.length} curated photostrip references</span>
+            </span>
 
-            <div className="flex items-center gap-2.5">
+            {/* High-Contrast Prev / Next Control Pill */}
+            <div className="flex items-center gap-2">
               <button 
                 onClick={() => scrollCarousel("left")}
-                aria-label="Previous Photostrip"
-                className="w-11 h-11 rounded-full bg-white hover:bg-[#7226FF] text-[#010030] hover:text-white border border-[#2e109d]/20 hover:border-[#7226FF] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-[0_8px_20px_rgba(114,38,255,0.3)] active:scale-95 cursor-pointer group"
+                className="h-9 px-3 rounded-full border border-[#160078]/25 bg-white text-[#010030] hover:bg-[#160078] hover:text-white hover:border-[#7226FF] flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
                 title="Scroll Left"
+                aria-label="Scroll Left"
               >
-                <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.5} />
+                <ChevronLeft className="w-4 h-4 text-[#7226FF] group-hover:text-white" />
+                <span className="hidden sm:inline">PREV</span>
               </button>
               <button 
                 onClick={() => scrollCarousel("right")}
-                aria-label="Next Photostrip"
-                className="w-11 h-11 rounded-full bg-white hover:bg-[#7226FF] text-[#010030] hover:text-white border border-[#2e109d]/20 hover:border-[#7226FF] flex items-center justify-center transition-all duration-200 shadow-md hover:shadow-[0_8px_20px_rgba(114,38,255,0.3)] active:scale-95 cursor-pointer group"
+                className="h-9 px-3 rounded-full border border-[#160078]/25 bg-white text-[#010030] hover:bg-[#160078] hover:text-white hover:border-[#7226FF] flex items-center gap-1.5 text-xs font-mono font-bold transition-all duration-200 cursor-pointer shadow-sm active:scale-95"
                 title="Scroll Right"
+                aria-label="Scroll Right"
               >
-                <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-0.5" strokeWidth={2.5} />
+                <span className="hidden sm:inline">NEXT</span>
+                <ChevronRight className="w-4 h-4 text-[#F042FF] group-hover:text-white" />
               </button>
             </div>
           </div>
 
+          {/* Floating Side Arrow Controls for Instant Navigation */}
+          <button 
+            type="button"
+            onClick={() => scrollCarousel("left")}
+            className="absolute left-[-16px] md:left-[-22px] top-[48%] -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 border-2 border-[#160078]/20 text-[#010030] hover:bg-[#160078] hover:text-white hover:border-[#F042FF] shadow-[0_4px_16px_rgba(22,0,120,0.15)] flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 hover:scale-105"
+            title="Scroll Previous"
+            aria-label="Scroll Previous"
+          >
+            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => scrollCarousel("right")}
+            className="absolute right-[-16px] md:right-[-22px] top-[48%] -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-white/95 border-2 border-[#160078]/20 text-[#010030] hover:bg-[#160078] hover:text-white hover:border-[#F042FF] shadow-[0_4px_16px_rgba(22,0,120,0.15)] flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-90 hover:scale-105"
+            title="Scroll Next"
+            aria-label="Scroll Next"
+          >
+            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+          </button>
+
           {/* Smooth horizontal track */}
           <div 
             ref={carouselRef}
-            className="web3-showcase-container gap-6 overflow-x-auto pb-8 pt-2 scrollbar-none flex items-stretch select-none"
+            className="web3-showcase-container gap-4 sm:gap-5 overflow-x-auto pb-8 pt-2 px-1 scrollbar-none flex items-stretch select-none"
             style={{ scrollBehavior: "smooth" }}
           >
-            {designThemes.map((theme, index) => (
-              <div 
-                key={theme.id || index}
-                className="showcase-theme-card flex-none w-[280px] sm:w-[320px] p-4 rounded-[24px] border border-[#160078]/15 bg-white shadow-[0_15px_35px_rgba(22,0,120,0.06)] transition-all duration-300 hover:border-[#F042FF] hover:shadow-[0_20px_45px_rgba(240,66,255,0.22)] relative flex flex-col justify-between"
-              >
-                {/* Clean Full Uncropped Photostrip Container */}
+            {displayedItems.map((item, index) => {
+              const formatSpecs = getFormatSpecs(item.layout);
+
+              return (
                 <div 
-                  onClick={(e) => handleOpenZoomModal(e, theme)}
-                  className="gallery__item-imginner relative cursor-zoom-in overflow-hidden rounded-2xl bg-gradient-to-b from-[#FAF6F9] to-[#F3EBFC] border border-[#160078]/12 p-3 flex items-center justify-center min-h-[400px] group/img shadow-inner transition-transform duration-300 hover:scale-[1.01]"
-                  title="Click to view full screen composite preview"
+                  key={item.id}
+                  className={`showcase-theme-card flex-none ${formatSpecs.cardWidth} p-3 rounded-[22px] border border-[#160078]/15 bg-white shadow-[0_8px_24px_rgba(22,0,120,0.06)] transition-all duration-300 hover:border-[#F042FF] hover:shadow-[0_16px_36px_rgba(240,66,255,0.18)] relative flex flex-col justify-between group`}
                 >
-                  <img 
-                    src={theme.image || "/photobooth-strip.png"} 
-                    alt={theme.name} 
-                    className="w-full h-auto object-contain max-h-[520px] rounded-xl shadow-[0_8px_25px_rgba(1,0,48,0.15)] transition-transform duration-500 group-hover/img:scale-[1.03] block"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "/photobooth-strip.png";
-                    }}
-                  />
+                  {/* Top Badge & Format Bar */}
+                  <div className="flex justify-between items-center mb-2">
+                    {item.layout ? (
+                      <span className="font-mono text-[9px] font-bold text-[#7226FF] bg-[#7226FF]/10 px-2 py-0.5 rounded uppercase">
+                        {formatSpecs.badge}
+                      </span>
+                    ) : <span />}
 
-                  {/* Hover Overlay Zoom Indicator */}
-                  <div className="absolute inset-0 bg-[#010030]/50 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 rounded-xl flex flex-col items-center justify-center gap-2 text-white pointer-events-none backdrop-blur-[2px]">
-                    <div className="p-3.5 bg-[#7226FF] rounded-full text-white shadow-xl transform group-hover/img:scale-110 transition-transform">
-                      <ZoomIn className="w-6 h-6" />
+                    <span className="font-mono text-[9px] font-black text-white bg-gradient-to-r from-[#F042FF] to-[#7226FF] px-2 py-0.5 border border-white/30 rounded-full shadow-xs tracking-wider">
+                      {item.badge}
+                    </span>
+                  </div>
+
+                  {/* Clean Full Uncropped Photostrip Container matching Native Layout */}
+                  <div 
+                    onClick={(e) => handleOpenZoomModal(item, e)}
+                    className={`gallery__item-imginner relative cursor-zoom-in overflow-hidden rounded-xl bg-gradient-to-b from-[#FAF6F9] to-[#F3EBFC] border border-[#160078]/10 p-1.5 flex items-center justify-center ${formatSpecs.imageHeight} group/img shadow-inner transition-transform duration-300 hover:scale-[1.01]`}
+                    title="Click to view full screen high resolution & specs"
+                  >
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-full h-full object-contain rounded-lg drop-shadow-sm transition-transform duration-500 group-hover/img:scale-[1.02] block"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+
+                    {/* Hover Overlay Zoom Indicator */}
+                    <div className="absolute inset-0 bg-[#010030]/50 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 rounded-lg flex flex-col items-center justify-center gap-1.5 text-white pointer-events-none backdrop-blur-[2px]">
+                      <div className="p-2 bg-[#F042FF] rounded-full text-white shadow-md transform group-hover/img:scale-110 transition-transform">
+                        <ZoomIn className="w-4 h-4" />
+                      </div>
+                      <span className="font-mono text-[8px] font-bold uppercase tracking-widest bg-[#010030]/90 px-2 py-0.5 rounded-full border border-white/20">
+                        INSPECT 300 DPI
+                      </span>
                     </div>
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-widest bg-[#010030]/90 px-3 py-1 rounded-full border border-white/20">
-                      FULL PREVIEW INSPECTOR
-                    </span>
                   </div>
-                </div>
 
-                {/* Clean Theme Info Header */}
-                <div className="border-t border-[#160078]/10 pt-3 mt-3">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-mono text-[9px] font-black uppercase text-[#160078]/70 bg-[#160078]/5 px-2 py-0.5 border border-[#160078]/15 rounded">
-                      STYLE_0{index + 1}
-                    </span>
-                    <span className="font-mono text-[9px] font-black text-white bg-gradient-to-r from-[#F042FF] to-[#7226FF] px-2.5 py-0.5 border border-white/30 rounded-full shadow-[0_2px_8px_rgba(240,66,255,0.3)] tracking-wider">
-                      {theme.badge || "FEATURED"}
-                    </span>
+                  {/* Theme / Collab Info Header */}
+                  <div className="border-t border-[#160078]/10 pt-2.5 mt-2.5 space-y-1.5">
+                    <div>
+                      <h3 className="font-display font-black text-sm text-[#010030] uppercase tracking-tight line-clamp-1">
+                        {item.name}
+                      </h3>
+                      <p className="text-[11px] text-[#160078]/70 line-clamp-2 leading-snug mt-0.5 font-medium">
+                        {item.desc}
+                      </p>
+                    </div>
+
+                    {/* Action Launch Bar - Full Width Primary Button */}
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => handleLaunchBooth(item)}
+                        className="btn-studio-primary w-full py-2 px-3 text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-[#FFE5F1]" />
+                        <span>{item.isCollab ? "Shoot with Collab" : "Launch Theme"}</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
                   </div>
-                  <h3 className="font-display font-black text-lg text-[#010030] uppercase tracking-tight text-center">
-                    {theme.name}
-                  </h3>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
       </div>
 
-      {/* FULL-SCREEN GSAP LIGHTBOX RENDERED VIA PORTAL TO BODY (Eliminates ancestor transform positioning bugs) */}
-      {activeZoomItem && createPortal(
+      {/* FULL-SCREEN GSAP LIGHTBOX / ZOOM MODAL MOUNTED DIRECTLY TO DOCUMENT.BODY VIA PORTAL */}
+      {activeZoomItem && typeof document !== "undefined" && createPortal(
         <div 
           ref={modalRef}
           onClick={handleCloseZoomModal}
-          className="fixed inset-0 z-[99999] bg-[#010030]/90 backdrop-blur-xl flex flex-col items-center justify-center p-4 sm:p-8 select-none"
-          style={{ top: 0, left: 0, width: "100vw", height: "100vh" }}
+          className="fixed inset-0 z-[99999] bg-[#010030]/92 backdrop-blur-xl flex flex-col items-center justify-center p-3 sm:p-6 select-none"
         >
-          {/* Top Bar with Title, Badge and Close Action */}
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-4xl flex justify-between items-center mb-4 px-2 text-white"
-          >
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-xs font-bold bg-[#F042FF] text-white px-3 py-1 rounded-full border border-white/20 shadow-md">
-                {activeZoomItem.badge || "SHOWCASE"}
-              </span>
-              <h3 className="font-display font-black text-xl sm:text-2xl text-white tracking-tight uppercase">
-                {activeZoomItem.name}
-              </h3>
-            </div>
-
-            <button 
-              onClick={handleCloseZoomModal}
-              className="p-2.5 rounded-full bg-white/10 hover:bg-[#F042FF] text-white transition-all border border-white/20 shadow-lg cursor-pointer group"
-              title="Close (ESC)"
-            >
-              <X className="w-6 h-6 group-hover:scale-110 transition-transform" />
-            </button>
-          </div>
-
-          {/* Main Zoomed High-Resolution Image Container */}
+          {/* Main Zoomed Container Card */}
           <div 
             ref={modalContentRef}
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl max-h-[82vh] flex items-center justify-center p-3 rounded-2xl bg-zinc-950/80 border border-[#F042FF]/30 shadow-[0_0_60px_rgba(240,66,255,0.35)] overflow-hidden"
+            className="w-full max-w-5xl max-h-[92vh] flex flex-col md:flex-row rounded-3xl bg-zinc-950/95 border border-[#F042FF]/30 shadow-[0_0_50px_rgba(240,66,255,0.25)] overflow-hidden text-white"
           >
-            <img 
-              ref={modalImageRef}
-              src={activeZoomItem.image || "/photobooth-strip.png"} 
-              alt={activeZoomItem.name} 
-              className="max-h-[76vh] w-auto max-w-full object-contain rounded-xl shadow-2xl block"
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = "/photobooth-strip.png";
-              }}
-            />
-          </div>
+            {/* Left: Uncropped Native Photostrip Display */}
+            <div className="flex-1 p-4 sm:p-6 flex items-center justify-center bg-black/50 overflow-hidden relative min-h-[320px] md:min-h-[500px]">
+              <img 
+                ref={modalImageRef}
+                src={activeZoomItem.image} 
+                alt={activeZoomItem.name} 
+                className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-2xl block"
+              />
 
-          {/* Bottom Instruction Hint */}
-          <div className="mt-4 text-center font-mono text-[11px] text-zinc-400 tracking-wider flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-[#F042FF]" />
-            <span>CLICK ANYWHERE OR PRESS <kbd className="px-1.5 py-0.5 bg-white/10 rounded border border-white/20 text-white font-bold">ESC</kbd> TO CLOSE PREVIEW</span>
+              {/* Watermark Overlay Stamp */}
+              <div className="absolute top-4 left-4 bg-black/70 border border-white/20 px-3 py-1 rounded-full text-[10px] font-mono text-[#F042FF] flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>300 DPI PRINT QUALITY</span>
+              </div>
+            </div>
+
+            {/* Right: Rich Details & Direct Launch CTA */}
+            <div className="w-full md:w-[380px] p-6 bg-gradient-to-b from-zinc-900 to-zinc-950 flex flex-col justify-between border-t md:border-t-0 md:border-l border-white/10 space-y-4">
+              
+              <div>
+                {/* Header Action Bar */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-mono text-xs font-bold bg-[#F042FF] text-white px-3 py-1 rounded-full border border-white/20 shadow-xs">
+                    {activeZoomItem.badge}
+                  </span>
+
+                  <button 
+                    onClick={handleCloseZoomModal}
+                    className="p-2 rounded-full bg-white/10 hover:bg-[#F042FF] text-white transition-all border border-white/20 cursor-pointer group"
+                    title="Close (ESC)"
+                  >
+                    <X className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  </button>
+                </div>
+
+                {/* Collab Badge Header */}
+                {activeZoomItem.isCollab && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-[#F042FF] font-bold mb-1">
+                    <span>{activeZoomItem.groupLogo || "✦"}</span>
+                    <span>{activeZoomItem.groupName}</span>
+                    <span className="text-zinc-500">•</span>
+                    <span className="text-zinc-400">{activeZoomItem.agencyName}</span>
+                  </div>
+                )}
+
+                <h3 className="font-display font-black text-2xl text-white tracking-tight uppercase">
+                  {activeZoomItem.name}
+                </h3>
+
+                <p className="text-xs text-zinc-300 mt-2 leading-relaxed">
+                  {activeZoomItem.desc}
+                </p>
+
+                {/* Specs Box */}
+                <div className="mt-4 p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Layout Format:</span>
+                    <span className="font-bold text-[#F042FF] uppercase">{getFormatSpecs(activeZoomItem.layout).label}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span className="text-zinc-400">Resolution:</span>
+                    <span className="font-bold text-white">300 DPI Canvas</span>
+                  </div>
+
+                  {activeZoomItem.watermarkText && (
+                    <div className="pt-1.5 border-t border-white/10">
+                      <span className="text-zinc-400 block text-[10px] mb-0.5">Frame Watermark Stamp:</span>
+                      <span className="text-[10px] text-purple-300 font-bold bg-purple-950/60 p-1.5 rounded border border-purple-800/40 block break-all">
+                        {activeZoomItem.watermarkText}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pose Guidance (if Collab) */}
+                {activeZoomItem.posesGuidance && activeZoomItem.posesGuidance.length > 0 && (
+                  <div className="mt-4 space-y-1.5">
+                    <span className="text-[11px] font-mono text-zinc-400 font-bold block uppercase tracking-wider">
+                      ✦ Included Pose Deck
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {activeZoomItem.posesGuidance.map((pose, idx) => (
+                        <span key={idx} className="text-[10px] bg-white/10 border border-white/15 px-2 py-0.5 rounded-md text-zinc-200">
+                          {idx + 1}. {pose}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Launch Action */}
+              <div className="pt-4 border-t border-white/10 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleCloseZoomModal();
+                    handleLaunchBooth(activeZoomItem);
+                  }}
+                  className="btn-studio-primary w-full py-3 text-sm flex items-center justify-center gap-2"
+                >
+                  <Camera className="w-4 h-4 text-[#FFE5F1]" />
+                  <span>Start Photoshoot Now</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+
+                <div className="text-center font-mono text-[10px] text-zinc-400 flex items-center justify-center gap-2">
+                  <span>USE <kbd className="px-1 py-0.5 bg-white/10 rounded border border-white/20 text-white font-bold">←</kbd> <kbd className="px-1 py-0.5 bg-white/10 rounded border border-white/20 text-white font-bold">→</kbd> OR <kbd className="px-1 py-0.5 bg-white/10 rounded border border-white/20 text-white font-bold">ESC</kbd></span>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>,
         document.body
@@ -575,4 +807,3 @@ const ShowcaseSection = ({ tunerConfig }) => {
 };
 
 export default ShowcaseSection;
-

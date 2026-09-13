@@ -1,32 +1,22 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import axios from "axios";
-import { Camera, RefreshCw, Zap, Sliders, Play, Layout, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Camera, RefreshCw, Zap, Play, Layout, Image as ImageIcon, Sparkles, ChevronLeft, Clock, RotateCcw, Check, Film, Smile, Heart } from "lucide-react";
 import Navbar from "./Navbar";
 import "../App.css";
 import { playShutterSound, playClickSound, playBeepSound } from "../utils/audio";
+import { normalizeMediaUrl } from "../utils/blobClient";
 
-const DEFAULT_BOOTH_FILTERS = [
-  { id: "none", name: "Normal", filterStr: "none" },
-  { id: "warm-grain", name: "Warm Grain", badge: "POPULAR", filterStr: "brightness(105%) contrast(110%) saturate(115%) sepia(25%)" },
-  { id: "pastel-glow", name: "Pastel Glow", badge: "FEATURED", filterStr: "brightness(112%) contrast(95%) saturate(108%) sepia(10%) hue-rotate(-10deg) blur(0.3px)" },
-  { id: "cinematic-film", name: "Cinematic Film", badge: "NEW", filterStr: "contrast(120%) saturate(90%) sepia(35%) hue-rotate(10deg)" },
-  { id: "bw-high-contrast", name: "Monochrome Noir", badge: "CLASSIC", filterStr: "brightness(102%) contrast(135%) saturate(0%)" },
-  { id: "cyberpunk-neon", name: "Cyberpunk Neon", badge: "SPECIAL", filterStr: "brightness(108%) contrast(125%) saturate(145%) hue-rotate(45deg)" }
+const CLASSIC_POSE_GUIDES = [
+  { emoji: "😊", label: "Center Smile", tip: "Look straight into camera lens & natural warm smile" },
+  { emoji: "✌️", label: "Peace Sign", tip: "Hold a classic V-sign by your cheek or chin" },
+  { emoji: "🫰", label: "Finger Heart", tip: "K-pop finger heart or double-hand heart pose" },
+  { emoji: "😉", label: "Playful Wink", tip: "Wink or tilted head candid expression" },
+  { emoji: "🫶", label: "Cheek Heart", tip: "Half-heart against cheek or over the eye" },
+  { emoji: "✨", label: "Free Pose", tip: "Expressive candid pose, look away, or big laugh!" },
+  { emoji: "🌸", label: "Flower Cup", tip: "Cup chin in hands for flower cup pose" },
+  { emoji: "😎", label: "Chic Look", tip: "Cool editorial gaze with chin slightly down" }
 ];
-
-const getCssFilterString = (f) => {
-  if (!f || f.id === "none") return "none";
-  if (f.filterStr) return f.filterStr;
-  const parts = [];
-  if (f.brightness !== undefined && f.brightness !== 100) parts.push(`brightness(${f.brightness}%)`);
-  if (f.contrast !== undefined && f.contrast !== 100) parts.push(`contrast(${f.contrast}%)`);
-  if (f.saturation !== undefined && f.saturation !== 100) parts.push(`saturate(${f.saturation}%)`);
-  if (f.sepia !== undefined && f.sepia > 0) parts.push(`sepia(${f.sepia}%)`);
-  if (f.hueRotate !== undefined && f.hueRotate !== 0) parts.push(`hue-rotate(${f.hueRotate}deg)`);
-  if (f.blur !== undefined && f.blur > 0) parts.push(`blur(${f.blur}px)`);
-  return parts.length > 0 ? parts.join(" ") : "none";
-};
 
 const PhotoBooth = ({ setCapturedImages }) => {
   const navigate = useNavigate();
@@ -35,9 +25,11 @@ const PhotoBooth = ({ setCapturedImages }) => {
   // Extract configuration from location state
   const { 
     count: photoCount = 4, 
-    layout = 'grid', 
+    layout = '4-grid', 
     category = 'basic', 
     artist = null,
+    dedicatedFrame = null,
+    dedicatedFrameId = null,
     presetFrameId = null
   } = location.state || {};
 
@@ -45,43 +37,38 @@ const PhotoBooth = ({ setCapturedImages }) => {
   const canvasRef = useRef(null);
   
   const [capturedImages, setImages] = useState([]);
-  const [filter, setFilter] = useState("none");
-  const [availableFilters, setAvailableFilters] = useState(DEFAULT_BOOTH_FILTERS);
   const [countdown, setCountdown] = useState(null);
   const [capturing, setCapturing] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [countdownSeconds, setCountdownSeconds] = useState(5);
 
   // Custom states for Live Camera Session & Guided Overlay
   const [currentShotIndex, setCurrentShotIndex] = useState(0);
   const [isFlashing, setIsFlashing] = useState(false);
   const totalShots = category === "artist" ? 8 : (photoCount + 2); // 8 shots for artist collab, otherwise photoCount + 2
 
+  // Track layout selection analytics & load system settings
   useEffect(() => {
-    const loadFilters = async () => {
+    // 1. Log layout selection in studio analytics
+    axios.post("/api/creator/analytics/track", {
+      eventType: "layout_select",
+      layoutId: layout || "3-grid"
+    }).catch(() => {});
+
+    // 2. Fetch system settings for custom countdown duration
+    const loadSettings = async () => {
       try {
-        const res = await axios.get("/api/studio/data");
-        if (res.data && Array.isArray(res.data.filters)) {
-          const active = res.data.filters.filter(f => f.active !== false);
-          if (active.length > 0) {
-            const mapped = [
-              { id: "none", name: "Normal", filterStr: "none" },
-              ...active.map(f => ({
-                id: f.id,
-                name: f.name,
-                badge: f.badge,
-                filterStr: getCssFilterString(f)
-              }))
-            ];
-            setAvailableFilters(mapped);
-          }
+        const res = await axios.get("/api/creator/settings");
+        if (res.data?.camera?.defaultCountdown) {
+          setCountdownSeconds(Number(res.data.camera.defaultCountdown) || 5);
         }
-      } catch (err) {
-        console.warn("Failed to fetch studio filters for booth, using default list:", err);
+      } catch (e) {
+        console.warn("Using default booth settings:", e);
       }
     };
-    loadFilters();
-  }, []);
+    loadSettings();
+  }, [layout]);
 
   // Web Audio Context Synthesized Beeps for countdown & capture
   const playBeep = (frequency = 800, duration = 120) => {
@@ -247,7 +234,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
           setTimeout(() => {
             navigate("/preview", { 
-              state: { photoCount, layout, category, artist, initialFilter: filter, presetFrameId }
+              state: { photoCount, layout, category, artist, dedicatedFrame, dedicatedFrameId, initialFilter: "none", presetFrameId }
             });
           }, 400);
         } catch (error) {
@@ -257,7 +244,7 @@ const PhotoBooth = ({ setCapturedImages }) => {
       }
 
       setCurrentShotIndex(photosTaken);
-      let timeLeft = 5; // Guided 5-second countdown
+      let timeLeft = countdownSeconds || 5; // Configured countdown duration from system settings
       setCountdown(timeLeft);
       playBeepSound(); // programmatically synthesized retro self-timer beep
 
@@ -280,6 +267,8 @@ const PhotoBooth = ({ setCapturedImages }) => {
           if (imageUrl) {
             newCapturedImages.push(imageUrl);
             setImages((prevImages) => [...prevImages, imageUrl]);
+            // Track photo capture in studio analytics
+            axios.post("/api/creator/analytics/track", { eventType: "photo_capture" }).catch(() => {});
           }
           photosTaken += 1;
           
@@ -294,6 +283,27 @@ const PhotoBooth = ({ setCapturedImages }) => {
 
     captureSequence();
   };
+
+  const handleResetImages = () => {
+    if (capturing) return;
+    setImages([]);
+    setCurrentShotIndex(0);
+    playClickSound();
+  };
+
+  // Keyboard shortcut: Spacebar triggers camera capture
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.code === "Space" && !capturing && cameraReady) {
+        e.preventDefault();
+        playClickSound();
+        startCountdown();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [capturing, cameraReady, countdownSeconds, totalShots]);
 
   const capturePhoto = () => {
     const video = videoRef.current;
@@ -349,328 +359,501 @@ const PhotoBooth = ({ setCapturedImages }) => {
   };
 
   return (
-    <div className="web3-home-container min-h-screen relative w-full overflow-hidden crt-overlay" style={{ paddingBottom: "80px", overflowY: "auto" }}>
+    <div className="web3-home-container min-h-screen relative w-full overflow-hidden crt-overlay" style={{ paddingBottom: "24px", overflowY: "auto", overflowX: "hidden" }}>
       {/* Dynamic Grid Background line */}
       <div className="web3-grid-overlay" />
 
       {/* Navigation Header */}
       <Navbar />
 
-      <div id="content" className="content max-w-4xl mx-auto px-4 pt-20 relative z-10">
-        
-        <div className="text-center mb-8">
-          <div className="y2k-subtitle mb-2">✦ PHOTOBOOTH SHUTTER STATION ✦</div>
-          <h1 className="text-3xl md:text-4xl font-display font-black text-white uppercase tracking-tight">
-            SAY
-            <div className="y2k-highlight ml-2">CHEESE!</div>
-          </h1>
-        </div>
+      <div id="content" className="content max-w-7xl mx-auto px-3 sm:px-6 pt-16 sm:pt-20 relative z-10">
 
-        {/* Dynamic Countdown Display */}
-        {countdown !== null && (
-          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none select-none">
-            <h2 
-              key={countdown}
-              className="text-scan-glow font-display font-black"
-              style={{
-                fontSize: "12rem",
-                color: "#ffffff",
-                textShadow: "0 0 20px #F042FF, 0 0 40px #7226FF, 0 0 60px #8A2BE2",
-                animation: "neonPulse 0.9s ease-out forwards",
-                textAlign: "center"
-              }}
+        {/* Header Bar with Single-Line Headline (matching Welcome.jsx style) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full mb-3 sm:mb-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="y2k-subtitle text-xs py-1.5 px-4 whitespace-nowrap shrink-0">
+              ✦ PHOTOBOOTH SHUTTER STATION ✦
+            </div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-black text-white uppercase tracking-tight flex items-center gap-2 m-0 leading-none">
+              <span>SAY</span>
+              <span className="y2k-highlight my-0 leading-none">CHEESE!</span>
+            </h1>
+          </div>
+
+          {/* Quick Navigation & Stream Status */}
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-purple-500/30 bg-[#16023d]/80 font-mono text-[11px]">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-zinc-400">STREAM:</span>
+              <span className="text-purple-300 font-bold">1080P HD</span>
+            </div>
+            <Link
+              to="/welcome"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#2e109d] bg-[#0c0333]/90 hover:bg-[#16023d] hover:border-[#F042FF]/50 text-zinc-300 hover:text-white font-mono text-[11px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
+              title="Return to layout & idol selection"
             >
-              {countdown}
-            </h2>
-          </div>
-        )}
-
-        {/* Active Session Status Bar */}
-        <div className="web3-glass-card p-3.5 mb-6 flex justify-between items-center border-zinc-800/80 bg-zinc-950/65">
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="w-2 h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
-            <span className="text-zinc-400">SESSION:</span>
-            <span className="text-white font-bold uppercase">
-              {category === "artist" ? `Collab with ${artist?.name}` : "Classic Photo Strip"}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 font-mono text-xs">
-            <span className="bg-[#F042FF]/15 border border-[#F042FF]/40 text-[#F042FF] px-2.5 py-1 rounded">
-              SHOT: {capturing ? `${currentShotIndex + 1} / ${totalShots}` : `${capturedImages.length} / ${totalShots}`}
-            </span>
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>BACK TO STUDIO</span>
+            </Link>
           </div>
         </div>
 
-        {/* Main Interface Block */}
-        <div className="flex flex-col items-center gap-6">
+        {/* 2-Column Studio Cockpit Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 lg:gap-4 xl:gap-5 w-full items-start">
           
-          {/* CAMERA FEED PORTAL */}
-          <div className="w-full relative bg-zinc-950 p-1.5 rounded-lg border border-zinc-800 shadow-[0_12px_40px_rgba(0,0,0,0.8)] overflow-hidden">
-            
-            {/* Screen Flash Overlay */}
-            {isFlashing && (
-              <div className="absolute inset-0 bg-white z-50 animate-pulse" style={{ animationDuration: "150ms" }} />
-            )}
+          {/* LEFT COLUMN: LIVE FEED CAMERA VIEWFINDER (FOCAL POINT) */}
+          <div className="lg:col-span-7 xl:col-span-7 flex flex-col gap-2.5">
+            <div className="w-full relative bg-[#060020] p-1.5 sm:p-2 rounded-2xl border border-[#2e109d] shadow-[0_12px_40px_rgba(1,0,48,0.9)] overflow-hidden group/cam">
+              
+              {/* Screen Flash Overlay */}
+              {isFlashing && (
+                <div className="absolute inset-0 bg-white z-50 animate-pulse pointer-events-none" style={{ animationDuration: "150ms" }} />
+              )}
 
-            {/* Offline/Error HUD */}
-            {cameraError && (
-              <div className="absolute inset-0 bg-zinc-950/95 flex flex-col items-center justify-center text-center p-6 z-40 border border-red-500/30">
-                <Camera className="w-12 h-12 text-red-500 mb-3" />
-                <h3 className="font-display font-black text-sm text-red-500 uppercase tracking-widest mb-1.5">CAMERA OFFLINE</h3>
-                <p className="font-sans text-[11px] text-zinc-400 max-w-md leading-relaxed mb-5">{cameraError}</p>
-                <div className="flex gap-3">
-                  <button 
-                    onClick={startCamera}
-                    className="btn-studio-primary py-2.5 px-5 text-xs font-mono"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" /> TRY AGAIN
-                  </button>
-                  <a 
-                    href={window.location.href} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="btn-studio-tab py-2.5 px-5 text-xs font-mono inline-flex items-center gap-1.5"
-                  >
-                    NEW TAB ↗
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {/* CONDITIONAL CAM STACK */}
-            {category === "artist" && artist ? (
-              <div className="relative w-full aspect-[4/3] rounded overflow-hidden">
-                {/* HUD Viewfinder details */}
-                <div className="hud-corner hud-tl" />
-                <div className="hud-corner hud-tr" />
-                <div className="hud-corner hud-bl" />
-                <div className="hud-corner hud-br" />
-                <div className="hud-crosshair" />
-
-                {/* Layer 1: Mirrored Live Stream */}
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline 
-                  muted
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ 
-                    filter, 
-                    transform: "scaleX(-1)",
-                    opacity: cameraError ? 0.15 : 1,
-                    zIndex: 1,
-                    borderRadius: "0px" // Strict sharp corners inside booth preview
-                  }} 
-                />
-
-                {/* Layer 2: Artist Transparent Overlay */}
-                <img
-                  id="active-artist-pose"
-                  src={artist.poses[category === "artist" ? Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1) : currentShotIndex] || artist.avatar}
-                  alt={artist.name}
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                  style={{
-                    zIndex: 2,
-                    borderRadius: "0px",
-                    transition: "opacity 0.25s ease-in-out"
-                  }}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/25 pointer-events-none z-10" />
-
-                {/* Indicator Labels */}
-                <div className="absolute top-3 left-3 bg-black/60 border border-zinc-800 text-white font-mono text-[9px] px-2 py-0.5 rounded tracking-widest uppercase z-20">
-                  🔴 LIVE FEED
-                </div>
-
-                <div 
-                  className="absolute top-3 right-3 text-white font-mono text-[9px] px-2 py-0.5 rounded tracking-widest uppercase z-20"
-                  style={{ backgroundColor: artist.color || "#F042FF", boxShadow: `0 0 10px ${artist.color}` }}
-                >
-                  ✦ PARTNER: {artist.name.toUpperCase()} {`POSE_${Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1) + 1}`}
-                </div>
-
-                {/* Live Action Pose prompt overlay */}
-                <div className="absolute bottom-3 left-3 right-3 bg-black/75 border border-[#F042FF]/30 text-[#F042FF] font-mono text-[10px] text-center py-2 px-4 rounded-md tracking-wider z-20">
-                  POSITION YOURSELF ON THE LEFT SIDE TO POSE WITH {artist.name.toUpperCase()}
-                </div>
-              </div>
-            ) : (
-              /* Basic stream overlay */
-              <div className="relative w-full aspect-[4/3] rounded overflow-hidden">
-                <div className="hud-corner hud-tl" />
-                <div className="hud-corner hud-tr" />
-                <div className="hud-corner hud-bl" />
-                <div className="hud-corner hud-br" />
-                <div className="hud-crosshair" />
-
-                <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  playsInline 
-                  muted
-                  className="absolute inset-0 w-full h-full object-cover"
-                  style={{ 
-                    filter, 
-                    transform: "scaleX(-1)",
-                    opacity: cameraError ? 0.15 : 1,
-                    borderRadius: "0px" // Strict sharp film corners
-                  }} 
-                />
-                
-                <div className="absolute top-3 left-3 bg-black/60 border border-zinc-800 text-[#F042FF] font-mono text-[9px] px-2 py-0.5 rounded tracking-widest uppercase">
-                  🔴 LIVE VIEWFINDER
-                </div>
-              </div>
-            )}
-            
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-
-          {/* ACTIVE POSE ROADMAP AT THE BOTTOM (ARTIST MODE) */}
-          {category === "artist" && artist && artist.poses && artist.poses.length > 0 && (
-            <div className="web3-glass-card p-4 w-full border-zinc-800/80">
-              <div className="flex justify-between items-center mb-3 font-mono text-[10px]">
-                <span className="text-zinc-400 uppercase tracking-widest">POSE SEQUENCE</span>
-                <span style={{ color: artist.color }}>
-                  ACTIVE: {Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1) + 1} OF {artist.poses.length}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                {artist.poses.map((poseUrl, idx) => {
-                  const activePoseIdx = Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1);
-                  const isPast = idx < activePoseIdx;
-                  const isActive = idx === activePoseIdx;
-                  
-                  return (
-                    <div 
-                      key={idx}
-                      className={`relative rounded-lg p-1.5 flex flex-col items-center border transition-all duration-300 ${
-                        isActive 
-                          ? "border-[#F042FF] bg-[#F042FF]/10 scale-[1.03]" 
-                          : "border-zinc-800 bg-zinc-950/40 opacity-60"
-                      }`}
+              {/* Offline/Error HUD */}
+              {cameraError && (
+                <div className="absolute inset-0 bg-zinc-950/95 flex flex-col items-center justify-center text-center p-6 z-40 border border-red-500/30">
+                  <Camera className="w-12 h-12 text-red-500 mb-3" />
+                  <h3 className="font-display font-black text-sm text-red-500 uppercase tracking-widest mb-1.5">CAMERA OFFLINE</h3>
+                  <p className="font-sans text-[11px] text-zinc-400 max-w-md leading-relaxed mb-5">{cameraError}</p>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={startCamera}
+                      className="btn-studio-primary text-xs py-2 px-4"
                     >
-                      <div className="w-full aspect-[4/3] bg-zinc-900 rounded overflow-hidden flex items-center justify-center relative">
-                        <img 
-                          src={poseUrl} 
-                          alt={`Pose ${idx + 1}`}
-                          referrerPolicy="no-referrer"
-                          crossOrigin="anonymous"
-                          className="max-w-full max-h-full object-contain"
-                        />
-                        {isPast && (
-                          <div className="absolute inset-0 bg-emerald-500/80 flex items-center justify-center text-white font-mono text-[10px] font-bold">
-                            ✓ READY
-                          </div>
-                        )}
-                        {isActive && (
-                          <div 
-                            className="absolute bottom-1 right-1 text-white font-mono text-[8px] px-1 py-0.2 rounded"
-                            style={{ backgroundColor: artist.color }}
-                          >
-                            LIVE
-                          </div>
-                        )}
-                      </div>
-                      <span className="font-mono text-[9px] text-zinc-500 mt-2">POSE_0{idx + 1}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* FILM STRIP: RECENT CAPTURES RECTANGULAR ROW */}
-          <div className="w-full">
-            <div className="flex justify-between items-center mb-2.5 font-mono text-xs text-zinc-500">
-              <span className="uppercase tracking-widest">CAPTURED FRAMES</span>
-              <span>{capturedImages.length} taken (choose best {photoCount} on next screen)</span>
-            </div>
-
-            <div className="grid grid-cols-6 gap-3 p-3 bg-zinc-950/80 rounded-xl border border-zinc-800/80 shadow-inner">
-              {Array.from({ length: totalShots }).map((_, index) => {
-                const capturedImg = capturedImages[index];
-                return (
-                  <div 
-                    key={index}
-                    className="relative aspect-[3/4] overflow-hidden border transition-all duration-300"
-                    style={{
-                      borderRadius: "0px", // Strict 0px sharp corners to mimic real film prints
-                      borderColor: capturedImg ? "#F042FF" : "rgba(255,255,255,0.06)",
-                      background: capturedImg ? "#0a0a0a" : "rgba(0,0,0,0.4)",
-                      boxShadow: capturedImg ? "0 0 10px rgba(240, 66, 255, 0.25)" : "none"
-                    }}
-                  >
-                    {capturedImg ? (
-                      <img
-                        src={capturedImg}
-                        alt={`Capture ${index}`}
-                        className="absolute inset-0 w-full h-full object-cover photobooth-print-image"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center font-mono text-[10px] text-zinc-700 font-bold">
-                        0{index + 1}
-                      </div>
-                    )}
+                      <RefreshCw className="w-3.5 h-3.5" /> TRY AGAIN
+                    </button>
+                    <a 
+                      href={window.location.href} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="btn-studio-secondary text-xs"
+                    >
+                      NEW TAB ↗
+                    </a>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              )}
 
-          {/* FILTER CONSOLE SELECTOR */}
-          <div className="web3-glass-card p-5 w-full">
-            <div className="flex items-center justify-between pb-2 mb-3 border-b border-zinc-800 font-mono text-xs text-[#F042FF]">
-              <div className="flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5" /> CHOOSE CAMERA FILTER
-              </div>
-              <span className="text-[10px] text-zinc-400 font-normal">
-                {availableFilters.length} STUDIO PRESETS
-              </span>
-            </div>
-            
-            <div className="flex flex-wrap gap-2 justify-center">
-              {availableFilters.map((filt) => {
-                const isSelected = filter === filt.filterStr || (filt.id === "none" && filter === "none");
-                return (
-                  <button
-                    key={filt.id}
-                    onClick={() => { setFilter(filt.filterStr); playClickSound(); }}
-                    disabled={capturing}
-                    className={isSelected ? "btn-studio-tab-active" : "btn-studio-tab"}
+              {/* CONDITIONAL CAM STACK */}
+              {category === "artist" && artist ? (
+                <div className="relative w-full aspect-[4/3] max-h-[min(510px,62vh)] rounded-xl overflow-hidden bg-black mx-auto">
+                  {/* HUD Viewfinder details */}
+                  <div className="hud-corner hud-tl" />
+                  <div className="hud-corner hud-tr" />
+                  <div className="hud-corner hud-bl" />
+                  <div className="hud-corner hud-br" />
+                  <div className="hud-crosshair" />
+
+                  {/* Layer 1: Mirrored Live Stream */}
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ 
+                      transform: "scaleX(-1)",
+                      opacity: cameraError ? 0.15 : 1,
+                      zIndex: 1,
+                      borderRadius: "0px"
+                    }} 
+                  />
+
+                  {/* Layer 2: Artist Transparent Overlay */}
+                  <img
+                    id="active-artist-pose"
+                    src={normalizeMediaUrl((artist.poses && artist.poses.length > 0) ? artist.poses[Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1)] : (artist.avatar || ""))}
+                    alt={artist.name}
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    style={{
+                      zIndex: 2,
+                      borderRadius: "0px",
+                      transition: "opacity 0.25s ease-in-out"
+                    }}
+                  />
+
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/35 pointer-events-none z-10" />
+
+                  {/* Top HUD Indicators */}
+                  <div className="absolute top-3 left-3 flex items-center gap-2 z-20">
+                    <div className="bg-black/75 backdrop-blur-sm border border-[#2e109d] text-white font-mono text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase flex items-center gap-1.5 shadow-md">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                      LIVE FEED
+                    </div>
+                    <div className="hidden sm:block bg-black/60 border border-zinc-800 text-zinc-300 font-mono text-[9px] px-2 py-1 rounded-md">
+                      {countdownSeconds}s TIMER
+                    </div>
+                  </div>
+
+                  <div 
+                    className="absolute top-3 right-3 text-white font-mono text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase z-20 font-bold flex items-center gap-1.5 shadow-md"
+                    style={{ backgroundColor: artist.color || "#F042FF", boxShadow: `0 0 14px ${artist.color || "#F042FF"}90` }}
                   >
-                    {filt.badge && (
-                      <span className="mr-1 text-[9px] px-1.5 py-0.2 rounded bg-[#F042FF]/20 text-[#FFE5F1] font-mono">
-                        {filt.badge}
-                      </span>
-                    )}
-                    {filt.name}
-                  </button>
-                );
-              })}
+                    ✦ PARTNER: {artist.name.toUpperCase()} {(artist.poses && artist.poses.length > 0) ? `POSE_${Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1) + 1}` : ""}
+                  </div>
+
+                  {/* Live Action Pose prompt overlay */}
+                  <div className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm border border-[#F042FF]/40 text-[#F042FF] font-mono text-[10px] sm:text-[11px] text-center py-2 px-4 rounded-lg tracking-wider z-20 shadow-lg font-bold">
+                    {artist.posesGuidance && artist.posesGuidance[Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1)] 
+                      ? artist.posesGuidance[Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1)].toUpperCase()
+                      : `POSITION YOURSELF ON THE LEFT SIDE TO POSE WITH ${artist.name.toUpperCase()}`
+                    }
+                  </div>
+
+                  {/* Subtle Top-Center Viewfinder Countdown HUD (Non-obstructing, translucent) */}
+                  {countdown !== null && (
+                    <div className="absolute top-2.5 sm:top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none flex items-center justify-center">
+                      <div className="flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.4),0_0_12px_rgba(240,66,255,0.25)]">
+                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
+                        <span 
+                          key={countdown} 
+                          className="font-display font-black text-xl sm:text-2xl text-white/90 tracking-tight drop-shadow-[0_0_8px_rgba(240,66,255,0.6)] leading-none"
+                        >
+                          {countdown}
+                        </span>
+                        <span className="font-mono text-[8px] sm:text-[9px] text-purple-200/80 uppercase tracking-widest font-bold">
+                          SEC
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Basic stream overlay */
+                <div className="relative w-full aspect-[4/3] max-h-[min(510px,62vh)] rounded-xl overflow-hidden bg-black mx-auto">
+                  <div className="hud-corner hud-tl" />
+                  <div className="hud-corner hud-tr" />
+                  <div className="hud-corner hud-bl" />
+                  <div className="hud-corner hud-br" />
+                  <div className="hud-crosshair" />
+
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    playsInline 
+                    muted
+                    className="absolute inset-0 w-full h-full object-cover"
+                    style={{ 
+                      transform: "scaleX(-1)",
+                      opacity: cameraError ? 0.15 : 1,
+                      borderRadius: "0px"
+                    }} 
+                  />
+                  
+                  <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm border border-[#2e109d] text-[#F042FF] font-mono text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md tracking-widest uppercase flex items-center gap-1.5 shadow-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                    LIVE VIEWFINDER
+                  </div>
+
+                  <div className="absolute bottom-3 left-3 right-3 bg-black/80 backdrop-blur-sm border border-[#2e109d] text-zinc-200 font-mono text-[10px] sm:text-[11px] text-center py-2 px-4 rounded-lg tracking-wider z-20 flex items-center justify-center gap-2">
+                    <span className="text-sm sm:text-base">{CLASSIC_POSE_GUIDES[currentShotIndex % CLASSIC_POSE_GUIDES.length]?.emoji || "✨"}</span>
+                    <span className="font-bold text-[#F042FF] uppercase">{CLASSIC_POSE_GUIDES[currentShotIndex % CLASSIC_POSE_GUIDES.length]?.label || "Studio Pose"}</span>
+                    <span className="text-zinc-400 hidden sm:inline">— {CLASSIC_POSE_GUIDES[currentShotIndex % CLASSIC_POSE_GUIDES.length]?.tip || "Center yourself for crisp studio shots"}</span>
+                  </div>
+
+                  {/* Subtle Top-Center Viewfinder Countdown HUD (Non-obstructing, translucent) */}
+                  {countdown !== null && (
+                    <div className="absolute top-2.5 sm:top-3 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none flex items-center justify-center">
+                      <div className="flex items-center gap-2 px-3.5 py-1 sm:px-4 sm:py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.4),0_0_12px_rgba(240,66,255,0.25)]">
+                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
+                        <span 
+                          key={countdown} 
+                          className="font-display font-black text-xl sm:text-2xl text-white/90 tracking-tight drop-shadow-[0_0_8px_rgba(240,66,255,0.6)] leading-none"
+                        >
+                          {countdown}
+                        </span>
+                        <span className="font-mono text-[8px] sm:text-[9px] text-purple-200/80 uppercase tracking-widest font-bold">
+                          SEC
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              <canvas ref={canvasRef} className="hidden" />
             </div>
           </div>
 
-          {/* BIG SHUTTER CAPTURE FAB TRIGGER */}
-          <div className="w-full">
-            <button 
-              onClick={() => { startCountdown(); playClickSound(); }} 
-              disabled={capturing || !cameraReady}
-              className="btn-studio-primary w-full py-4 px-6 rounded-2xl text-base tracking-wider cursor-pointer shadow-[0_10px_30px_rgba(1,0,48,0.7)] hover:border-[#F042FF] disabled:opacity-50 disabled:cursor-not-allowed"
+          {/* RIGHT COLUMN: STUDIO CONTROL CONSOLE & ROADMAP */}
+          <div className="lg:col-span-5 xl:col-span-5 flex flex-col gap-2 sm:gap-2.5 min-w-0 max-w-full">
+            
+            {/* 1. Active Session & Shutter Timer Card */}
+            <div 
+              className="web3-glass-card p-3 flex flex-col gap-2 border-[#2e109d] bg-[#0c0333]/90 shadow-md rounded-xl"
             >
-              <span>
-                {!cameraReady 
-                  ? "⌛ STARTING CAMERA..." 
-                  : capturing 
-                    ? "CAPTURING PHOTOS... STAY STILL" 
-                    : `✧ TAKE PHOTOS (${totalShots} SHOTS) ✧`
-                }
-              </span>
-            </button>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 font-mono text-xs flex-wrap">
+                  <span className="w-2 h-2 rounded-full bg-[#F042FF] animate-ping shrink-0" />
+                  <span className="text-zinc-400 font-medium">SESSION:</span>
+                  <span className="text-white font-bold uppercase truncate max-w-[150px] sm:max-w-[200px]">
+                    {category === "artist" ? `Collab with ${artist?.name || 'Artist'}` : "Classic Strip"}
+                  </span>
+                  {category === "artist" && (
+                    <span className="text-[9px] bg-purple-500/20 text-purple-200 border border-purple-500/30 px-2 py-0.5 rounded font-bold uppercase shrink-0">
+                      🔒 {dedicatedFrame?.name || `${artist?.name || 'Collab'} Frame`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 font-mono text-xs shrink-0">
+                  <span className="bg-[#F042FF]/15 border border-[#F042FF]/40 text-[#F042FF] font-bold px-2.5 py-0.5 rounded text-[11px]">
+                    SHOT: {capturing ? `${currentShotIndex + 1} / ${totalShots}` : `${capturedImages.length} / ${totalShots}`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Timer Selector Toolbar */}
+              <div className="flex items-center justify-between pt-1.5 border-t border-zinc-800/80 font-mono text-[10px]">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <Clock className="w-3 h-3 text-purple-400" />
+                  <span>SELF-TIMER:</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[3, 5, 10].map((sec) => (
+                    <button
+                      key={sec}
+                      type="button"
+                      disabled={capturing}
+                      onClick={() => {
+                        setCountdownSeconds(sec);
+                        playClickSound();
+                      }}
+                      className={`px-2.5 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                        countdownSeconds === sec
+                          ? "bg-gradient-to-r from-[#7226FF] to-[#F042FF] text-white shadow-[0_0_8px_rgba(240,66,255,0.4)]"
+                          : "bg-zinc-900/80 text-zinc-400 hover:text-white border border-zinc-800 hover:border-purple-500/40"
+                      }`}
+                      title={`Set camera countdown to ${sec} seconds`}
+                    >
+                      {sec}S
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Pose Sequence (Artist Mode) */}
+            {category === "artist" && artist && artist.poses && artist.poses.length > 0 && (
+              <div 
+                className="web3-glass-card p-3 w-full border-[#2e109d] bg-[#0c0333]/85 shadow-md overflow-hidden rounded-xl"
+              >
+                <div className="flex justify-between items-center mb-1.5 font-mono text-[10px]">
+                  <div className="flex items-center gap-1.5 text-zinc-300 uppercase tracking-widest font-bold">
+                    <Sparkles className="w-3 h-3 text-[#F042FF]" />
+                    <span>ARTIST POSE SEQUENCE</span>
+                  </div>
+                  <span style={{ color: artist.color || "#F042FF" }} className="font-bold">
+                    ACTIVE: {Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1) + 1} OF {artist.poses.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+                  {artist.poses.map((poseUrl, idx) => {
+                    const activePoseIdx = Math.min(Math.floor(currentShotIndex / 2), artist.poses.length - 1);
+                    const isPast = idx < activePoseIdx;
+                    const isActive = idx === activePoseIdx;
+                    
+                    return (
+                      <div 
+                        key={idx}
+                        className={`relative rounded-lg p-1 flex flex-col items-center border transition-all duration-300 ${
+                          isActive 
+                            ? "border-[#F042FF] bg-[#F042FF]/15 shadow-[0_0_12px_rgba(240,66,255,0.35)] scale-[1.02]" 
+                            : isPast
+                              ? "border-emerald-500/40 bg-emerald-950/20 opacity-85"
+                              : "border-zinc-800/80 bg-zinc-950/40 opacity-70"
+                        }`}
+                      >
+                        <div className="w-full aspect-[4/3] bg-zinc-900 rounded overflow-hidden flex items-center justify-center relative">
+                          <img 
+                            src={normalizeMediaUrl(poseUrl)} 
+                            alt={`Pose ${idx + 1}`}
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
+                            className="w-full h-full object-contain"
+                          />
+                          {isPast && (
+                            <div className="absolute inset-0 bg-emerald-500/80 flex items-center justify-center text-white font-mono text-[8px] font-bold">
+                              ✓ READY
+                            </div>
+                          )}
+                          {isActive && (
+                            <div 
+                              className="absolute bottom-1 right-1 text-white font-mono text-[7px] px-1 py-0.2 rounded font-bold shadow-sm"
+                              style={{ backgroundColor: artist.color || "#F042FF" }}
+                            >
+                              LIVE
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-mono text-[8px] text-zinc-400 mt-1 font-semibold">POSE_0{idx + 1}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2b. Classic Studio Pose Sequence (Original Mode) */}
+            {category !== "artist" && (
+              <div 
+                className="web3-glass-card p-3 w-full border-[#2e109d] bg-[#0c0333]/85 shadow-md overflow-hidden rounded-xl"
+              >
+                <div className="flex justify-between items-center mb-1.5 font-mono text-[10px]">
+                  <div className="flex items-center gap-1.5 text-zinc-300 uppercase tracking-widest font-bold">
+                    <Smile className="w-3 h-3 text-[#F042FF]" />
+                    <span>POSE INSPIRATION ROADMAP</span>
+                  </div>
+                  <span className="text-[#F042FF] font-bold">
+                    {capturing ? `SHOT 0${currentShotIndex + 1} OF 0${totalShots}` : `${totalShots} SHOT SET`}
+                  </span>
+                </div>
+
+                <div className={`grid gap-1 sm:gap-1.5 ${totalShots <= 6 ? 'grid-cols-3 sm:grid-cols-6' : 'grid-cols-4 sm:grid-cols-8'}`}>
+                  {Array.from({ length: totalShots }).map((_, idx) => {
+                    const guide = CLASSIC_POSE_GUIDES[idx % CLASSIC_POSE_GUIDES.length];
+                    const isTaken = idx < capturedImages.length;
+                    const isActive = capturing && idx === currentShotIndex;
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`rounded-lg p-1.5 flex flex-col items-center text-center border transition-all duration-200 ${
+                          isActive
+                            ? "border-[#F042FF] bg-[#F042FF]/20 shadow-[0_0_12px_rgba(240,66,255,0.4)] scale-105"
+                            : isTaken
+                              ? "border-emerald-500/40 bg-emerald-950/25 text-emerald-300"
+                              : "border-zinc-800/80 bg-zinc-950/40 text-zinc-400"
+                        }`}
+                        title={guide.tip}
+                      >
+                        <span className="text-base sm:text-lg mb-0.5 leading-none">{guide.emoji}</span>
+                        <span className={`font-mono text-[8px] font-bold truncate max-w-full leading-tight ${isActive ? 'text-white' : isTaken ? 'text-emerald-300' : 'text-zinc-400'}`}>
+                          {guide.label}
+                        </span>
+                        <div className="mt-1">
+                          {isTaken ? (
+                            <span className="text-[7px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded border border-emerald-500/30">
+                              ✓ DONE
+                            </span>
+                          ) : isActive ? (
+                            <span className="text-[7px] font-mono font-bold text-white bg-[#F042FF] px-1 py-0.2 rounded animate-pulse">
+                              NOW
+                            </span>
+                          ) : (
+                            <span className="text-[7px] font-mono text-zinc-600">
+                              0{idx + 1}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-2 pt-1.5 border-t border-zinc-800/80 flex items-center justify-between text-[9px] font-mono text-zinc-400">
+                  <span className="flex items-center gap-1 text-purple-300">
+                    <Sparkles className="w-2.5 h-2.5 text-[#F042FF]" /> Filters & frames customized on next canvas step
+                  </span>
+                  <span className="text-zinc-500">PRO-STUDIO</span>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Filmstrip: Captured Frames Buffer (Aspect ratio matches 4:3 camera view, no overflow) */}
+            <div 
+              className="web3-glass-card p-3 w-full border-[#2e109d] bg-[#0c0333]/85 shadow-md overflow-hidden rounded-xl"
+            >
+              <div className="flex justify-between items-center mb-1.5 font-mono text-[10px]">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <ImageIcon className="w-3 h-3 text-purple-400" />
+                  <span className="uppercase tracking-widest font-bold">FILMSTRIP BUFFER</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#F042FF] font-bold">{capturedImages.length} of {totalShots} taken</span>
+                  {capturedImages.length > 0 && !capturing && (
+                    <button
+                      type="button"
+                      onClick={handleResetImages}
+                      className="text-[9px] text-zinc-400 hover:text-red-400 flex items-center gap-0.5 border border-zinc-800 hover:border-red-500/40 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                      title="Clear taken shots to start over"
+                    >
+                      <RotateCcw className="w-2.5 h-2.5" /> RETAKE
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Perforated Film Roll Edge */}
+              <div className="p-2 bg-[#060020] rounded-lg border border-zinc-800/80 shadow-inner overflow-hidden w-full max-w-full">
+                <div className={`grid gap-2 w-full max-w-full ${totalShots <= 4 ? 'grid-cols-4' : totalShots === 6 ? 'grid-cols-3 sm:grid-cols-3' : 'grid-cols-4'}`}>
+                  {Array.from({ length: totalShots }).map((_, index) => {
+                    const capturedImg = capturedImages[index];
+                    const isLatest = index === capturedImages.length - 1 && capturedImages.length > 0;
+                    return (
+                      <div 
+                        key={index}
+                        className={`relative w-full aspect-[4/3] rounded-md overflow-hidden border transition-all duration-300 ${
+                          capturedImg 
+                            ? "border-[#F042FF] bg-black shadow-[0_0_8px_rgba(240,66,255,0.3)]" 
+                            : "border-white/10 bg-black/60"
+                        }`}
+                      >
+                        {capturedImg ? (
+                          <>
+                            <img
+                              src={capturedImg}
+                              alt={`Capture ${index + 1}`}
+                              className="w-full h-full object-cover photobooth-print-image"
+                            />
+                            <div className="absolute top-1 left-1 bg-black/80 backdrop-blur-xs text-white font-mono text-[7px] px-1 rounded-xs font-bold leading-tight shadow border border-white/10">
+                              0{index + 1}
+                            </div>
+                            {isLatest && (
+                              <div className="absolute bottom-1 right-1 bg-[#F042FF] text-white font-mono text-[6.5px] px-1 rounded-xs font-bold uppercase leading-tight shadow-sm animate-pulse">
+                                NEW
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center font-mono text-[8.5px] text-zinc-600 font-bold">
+                            <span>0{index + 1}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Big Shutter Capture CTA Trigger & Keyboard Hint */}
+            <div className="w-full pt-1 flex flex-col gap-1">
+              <div className="shutter-outer">
+                <div className="shutter-pulse-ring" />
+                <button 
+                  onClick={() => { startCountdown(); playClickSound(); }} 
+                  disabled={capturing || !cameraReady}
+                  className="btn-studio-primary w-full py-3 sm:py-3.5 text-sm sm:text-base relative z-10 font-display font-black tracking-wider flex items-center justify-center gap-2 shadow-[0_4px_24px_rgba(240,66,255,0.4)] cursor-pointer"
+                  style={{ borderRadius: "12px" }}
+                >
+                  {!cameraReady 
+                    ? "⌛ STARTING CAMERA..." 
+                    : capturing 
+                      ? `CAPTURING SHOT ${currentShotIndex + 1} OF ${totalShots}...` 
+                      : `✧ TAKE PHOTOS (${totalShots} SHOTS) ✧`
+                  }
+                </button>
+              </div>
+              <div className="text-center font-mono text-[10px] text-zinc-400 flex items-center justify-center gap-1.5">
+                <span className="px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-[9px] text-zinc-300">SPACE</span>
+                <span>or CLICK to capture</span>
+              </div>
+            </div>
+
           </div>
 
         </div>

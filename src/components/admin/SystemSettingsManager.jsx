@@ -24,16 +24,43 @@ import {
   Sparkles,
   Zap,
   Image,
-  Layers
+  Layers,
+  Cloud,
+  Database,
+  UploadCloud,
+  Radio,
+  ExternalLink,
+  ArrowUpRight,
+  Cpu,
+  Globe
 } from "lucide-react";
+import { 
+  checkStorageStatus, 
+  uploadAsset, 
+  listStoredAssets,
+  migrateLocalSeeds,
+  triggerStorageMaintenance
+} from "../../utils/blobClient";
 
 const SystemSettingsManager = () => {
-  const [activeSubTab, setActiveSubTab] = useState("camera"); // "camera", "export", "security"
+  const [activeSubTab, setActiveSubTab] = useState("camera"); // "camera", "export", "security", "storage"
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [showPasskey, setShowPasskey] = useState(false);
+
+  // Storage Engine State
+  const [storageStatus, setStorageStatus] = useState(null);
+  const [storageLoading, setStorageLoading] = useState(false);
+  const [probeResult, setProbeResult] = useState(null);
+  const [probeLoading, setProbeLoading] = useState(false);
+  const [storedBlobs, setStoredBlobs] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState("all");
+  const [migrationLoading, setMigrationLoading] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+  const [maintLoading, setMaintLoading] = useState(false);
+  const [maintResult, setMaintResult] = useState(null);
 
   // Settings state
   const [cameraSettings, setCameraSettings] = useState({
@@ -191,6 +218,116 @@ const SystemSettingsManager = () => {
     }
   };
 
+  const fetchStorageInfo = async () => {
+    setStorageLoading(true);
+    try {
+      const status = await checkStorageStatus();
+      setStorageStatus(status);
+      const listData = await listStoredAssets(selectedFolder === 'all' ? '' : selectedFolder);
+      if (listData && listData.blobs) {
+        setStoredBlobs(listData.blobs);
+      }
+    } catch (err) {
+      console.error("Storage fetch error:", err);
+    } finally {
+      setStorageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeSubTab === "storage") {
+      fetchStorageInfo();
+    }
+  }, [activeSubTab, selectedFolder]);
+
+  const handleTestProbe = async () => {
+    setProbeLoading(true);
+    setProbeResult(null);
+    try {
+      // Create a 1x1 test pixel or simple canvas blob
+      const canvas = document.createElement("canvas");
+      canvas.width = 120;
+      canvas.height = 120;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#7226FF";
+      ctx.fillRect(0, 0, 120, 120);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText("SNPSHOT", 28, 50);
+      ctx.fillText("PROBE", 38, 75);
+
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      const uploadRes = await uploadAsset({
+        file: blob,
+        folder: "temp",
+        filename: `storage-probe-${Date.now()}.png`
+      });
+
+      setProbeResult({
+        success: true,
+        data: uploadRes,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      fetchStorageInfo();
+    } catch (err) {
+      setProbeResult({
+        success: false,
+        error: err.message,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    } finally {
+      setProbeLoading(false);
+    }
+  };
+
+  const handleRunMigration = async (targetFolder = "all") => {
+    setMigrationLoading(true);
+    setMigrationResult(null);
+    try {
+      const res = await migrateLocalSeeds(targetFolder);
+      setMigrationResult({
+        success: res.success,
+        message: res.message,
+        migrated: res.migrated || [],
+        errors: res.errors || [],
+        timestamp: new Date().toLocaleTimeString()
+      });
+      fetchStorageInfo();
+    } catch (err) {
+      setMigrationResult({
+        success: false,
+        message: err.message,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    } finally {
+      setMigrationLoading(false);
+    }
+  };
+
+  const handleRunStorageMaintenance = async () => {
+    setMaintLoading(true);
+    setMaintResult(null);
+    try {
+      const res = await triggerStorageMaintenance();
+      setMaintResult({
+        success: res.success,
+        freedFormatted: res.freedFormatted,
+        purgedTempFiles: res.purgedTempFiles,
+        message: res.status,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      fetchStorageInfo();
+    } catch (err) {
+      setMaintResult({
+        success: false,
+        message: err.message,
+        timestamp: new Date().toLocaleTimeString()
+      });
+    } finally {
+      setMaintLoading(false);
+    }
+  };
+
   if (loading && !saving) {
     return (
       <div className="p-12 text-center">
@@ -258,7 +395,8 @@ const SystemSettingsManager = () => {
         {[
           { id: "camera", label: "Studio Camera & Shutter (Phase 10A)", icon: Camera },
           { id: "export", label: "High-Res Canvas & Print (Phase 10B)", icon: Download },
-          { id: "security", label: "Security & Backup Suite (Phase 10C)", icon: Shield }
+          { id: "security", label: "Security & Backup Suite (Phase 10C)", icon: Shield },
+          { id: "storage", label: "Vercel Blob Storage Engine (Phase 1)", icon: Cloud }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -691,6 +829,317 @@ const SystemSettingsManager = () => {
               </button>
             </div>
 
+          </div>
+
+        </div>
+      )}
+
+      {/* SUB-TAB 4: VERCEL BLOB & STORAGE ENGINE (PHASE 1) */}
+      {activeSubTab === "storage" && (
+        <div className="bg-white p-6 rounded-2xl border border-[#e2dced] shadow-xs space-y-6 animate-fadeIn">
+          
+          <div className="border-b border-[#e2dced] pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="font-bold text-base text-[#010030] flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-[#7226FF]" />
+                <span>Vercel Blob Storage Engine & CDN Pipeline</span>
+              </h2>
+              <p className="text-xs text-[#625b82]">
+                Monitor storage architecture, verify cloud token availability, and test direct upload probe latency.
+              </p>
+            </div>
+
+            <button
+              onClick={fetchStorageInfo}
+              disabled={storageLoading}
+              className="admin-btn px-3 py-1.5 border border-[#e2dced] bg-[#f8f6fc] hover:bg-[#f0ecf8] text-[#010030] font-bold text-xs rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#7226FF] ${storageLoading ? "animate-spin" : ""}`} />
+              <span>Refresh Storage Status</span>
+            </button>
+          </div>
+
+          {/* Storage Engine Status Dashboard Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            {/* Active Provider Card */}
+            <div className="p-4 rounded-xl border border-[#e2dced] bg-[#f8f6fc] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Active Storage Engine</span>
+                <Database className="w-4 h-4 text-[#7226FF]" />
+              </div>
+              <div className="text-sm font-black text-[#010030]">
+                {storageStatus?.provider === 'vercel-blob' ? (
+                  <span className="text-emerald-700 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Vercel Edge Blob Storage
+                  </span>
+                ) : (
+                  <span className="text-amber-700 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    Local Filesystem Fallback
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#625b82]">
+                {storageStatus?.storageMode || "Checking environment..."}
+              </p>
+            </div>
+
+            {/* Token Status Card */}
+            <div className="p-4 rounded-xl border border-[#e2dced] bg-[#f8f6fc] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Auth Token Config</span>
+                <Key className="w-4 h-4 text-[#7226FF]" />
+              </div>
+              <div className="text-sm font-black text-[#010030]">
+                {storageStatus?.isBlobConfigured ? (
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-xs font-bold">
+                    ACTIVE ({storageStatus.tokenPrefix})
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md text-xs font-bold">
+                    NOT SET (Fallback Active)
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#625b82]">
+                Declare <code className="bg-white px-1 py-0.5 rounded border border-[#e2dced] text-[#7226FF]">BLOB_READ_WRITE_TOKEN</code> in Vercel.
+              </p>
+            </div>
+
+            {/* Total Stored Media Assets */}
+            <div className="p-4 rounded-xl border border-[#e2dced] bg-[#f8f6fc] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Indexed Assets</span>
+                <Layers className="w-4 h-4 text-[#7226FF]" />
+              </div>
+              <div className="text-xl font-black text-[#010030]">
+                {storedBlobs.length} <span className="text-xs font-normal text-[#625b82]">Items</span>
+              </div>
+              <p className="text-[11px] text-[#625b82]">
+                Across poses, frames, stickers, themes & gallery
+              </p>
+            </div>
+
+          </div>
+
+          {/* Phase 4 & Phase 5: Seed Migration & Maintenance Operations */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Seed Migration Card */}
+            <div className="p-5 rounded-2xl border border-[#e2dced] bg-[#f8f6fc] space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-[#010030] flex items-center gap-1.5 uppercase tracking-wider">
+                    <ArrowUpRight className="w-4 h-4 text-[#7226FF]" />
+                    <span>Phase 4 // Seed Migration Suite</span>
+                  </h3>
+                  <p className="text-[11px] text-[#625b82] mt-0.5">
+                    Sync local file seeds (poses, frames, stickers, themes) into Vercel Blob cloud bucket.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-white rounded-xl border border-[#e2dced] text-xs space-y-2">
+                <div className="flex items-center justify-between text-[#625b82]">
+                  <span>Local Assets Ready:</span>
+                  <span className="font-mono font-bold text-[#010030]">
+                    {storageStatus?.localStats?.totalFiles || 0} files ({storageStatus?.localStats?.formattedSize || '0 MB'})
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[#625b82]">
+                  <span>Target Cloud Provider:</span>
+                  <span className="font-mono font-bold text-[#7226FF]">
+                    {storageStatus?.isBlobConfigured ? 'Vercel Edge Blob' : 'Local Fallback'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleRunMigration("all")}
+                  disabled={migrationLoading || !storageStatus?.isBlobConfigured}
+                  className="admin-btn flex-1 px-3 py-2 bg-[#7226FF] hover:bg-[#5f1ce0] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <ArrowUpRight className={`w-3.5 h-3.5 ${migrationLoading ? "animate-spin" : ""}`} />
+                  <span>{migrationLoading ? "Migrating Assets..." : "Migrate All Seed Assets"}</span>
+                </button>
+              </div>
+
+              {migrationResult && (
+                <div className={`p-3 rounded-xl border text-xs font-mono ${migrationResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-red-50 border-red-200 text-red-900"}`}>
+                  <div className="font-bold flex items-center justify-between">
+                    <span>{migrationResult.success ? "Migration Succeeded" : "Migration Notice"}</span>
+                    <span className="text-[10px] opacity-70">{migrationResult.timestamp}</span>
+                  </div>
+                  <p className="mt-1 text-[11px]">{migrationResult.message}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Storage Maintenance & Edge Delivery Card */}
+            <div className="p-5 rounded-2xl border border-[#e2dced] bg-[#f8f6fc] space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-[#010030] flex items-center gap-1.5 uppercase tracking-wider">
+                    <Globe className="w-4 h-4 text-[#7226FF]" />
+                    <span>Phase 5 // Edge CDN & Cache Maintenance</span>
+                  </h3>
+                  <p className="text-[11px] text-[#625b82] mt-0.5">
+                    Purge temporary upload buffers, optimize delivery cache headers, and inspect Edge CDN health.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-white rounded-xl border border-[#e2dced] text-xs space-y-2">
+                <div className="flex items-center justify-between text-[#625b82]">
+                  <span>Edge CDN Cache-Control:</span>
+                  <span className="font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                    max-age=31536000 (1 Year Immutable)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-[#625b82]">
+                  <span>CDN Routing:</span>
+                  <span className="font-mono font-bold text-[#010030]">
+                    {storageStatus?.edgeCdn?.globalDistribution || 'Vercel Anycast Edge'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRunStorageMaintenance}
+                  disabled={maintLoading}
+                  className="admin-btn flex-1 px-3 py-2 bg-[#010030] hover:bg-[#0e0048] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  <Cpu className={`w-3.5 h-3.5 ${maintLoading ? "animate-spin" : ""}`} />
+                  <span>{maintLoading ? "Running Optimization..." : "Execute Cache & Storage Sweep"}</span>
+                </button>
+              </div>
+
+              {maintResult && (
+                <div className="p-3 rounded-xl border bg-emerald-50 border-emerald-200 text-emerald-900 text-xs font-mono">
+                  <div className="font-bold flex items-center justify-between">
+                    <span>Routine Completed</span>
+                    <span className="text-[10px] opacity-70">{maintResult.timestamp}</span>
+                  </div>
+                  <p className="mt-1 text-[11px]">
+                    Purged {maintResult.purgedTempFiles} stale artifacts ({maintResult.freedFormatted} freed).
+                  </p>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Test Probe Tool */}
+          <div className="p-5 rounded-2xl border border-[#2e109d]/20 bg-gradient-to-br from-[#010030]/5 to-[#7226FF]/5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-[#010030] flex items-center gap-2">
+                  <UploadCloud className="w-4 h-4 text-[#7226FF]" />
+                  <span>Interactive Pipeline Probe</span>
+                </h3>
+                <p className="text-xs text-[#625b82]">
+                  Synthesizes a 120×120px micro-asset and tests end-to-end upload and persistence resolution.
+                </p>
+              </div>
+
+              <button
+                onClick={handleTestProbe}
+                disabled={probeLoading}
+                className="admin-btn px-4 py-2 bg-[#7226FF] hover:bg-[#5f1ce0] text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-2 disabled:opacity-50"
+              >
+                <Radio className={`w-3.5 h-3.5 ${probeLoading ? "animate-pulse" : ""}`} />
+                <span>{probeLoading ? "Executing Probe..." : "Run Storage Probe"}</span>
+              </button>
+            </div>
+
+            {probeResult && (
+              <div className={`p-4 rounded-xl border text-xs ${probeResult.success ? "bg-emerald-50 border-emerald-200 text-emerald-900" : "bg-red-50 border-red-200 text-red-900"}`}>
+                <div className="flex items-center justify-between font-bold mb-1">
+                  <span className="flex items-center gap-1.5">
+                    {probeResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertTriangle className="w-4 h-4 text-red-600" />}
+                    <span>{probeResult.success ? "Probe Successfully Executed & Stored" : "Probe Failed"}</span>
+                  </span>
+                  <span className="text-[10px] font-mono opacity-70">{probeResult.timestamp}</span>
+                </div>
+                {probeResult.success ? (
+                  <div className="space-y-1 font-mono text-[11px] mt-2">
+                    <div><span className="font-bold">Provider:</span> {probeResult.data.provider}</div>
+                    <div><span className="font-bold">Public URL:</span> <a href={probeResult.data.url} target="_blank" rel="noreferrer" className="underline text-[#7226FF]">{probeResult.data.url}</a></div>
+                    <div><span className="font-bold">Size:</span> {probeResult.data.size} bytes | <span className="font-bold">MIME:</span> {probeResult.data.contentType}</div>
+                  </div>
+                ) : (
+                  <p className="font-mono text-[11px] mt-1">{probeResult.error}</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Stored Assets Browser */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="text-xs font-bold text-[#010030] uppercase tracking-wider">
+                Asset Repository Browser ({storedBlobs.length})
+              </h3>
+
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
+                {["all", "poses", "themes", "frames", "stickers", "gallery", "temp"].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setSelectedFolder(f)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-colors cursor-pointer ${
+                      selectedFolder === f
+                        ? "bg-[#010030] text-white"
+                        : "bg-[#f8f6fc] text-[#625b82] hover:bg-[#e2dced]"
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="max-h-64 overflow-y-auto border border-[#e2dced] rounded-xl divide-y divide-[#e2dced]">
+              {storedBlobs.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#625b82]">
+                  No assets stored in folder &quot;{selectedFolder}&quot;.
+                </div>
+              ) : (
+                storedBlobs.map((blob, idx) => (
+                  <div key={idx} className="p-2.5 hover:bg-[#f8f6fc] transition-colors flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-[#f0ecf8] border border-[#e2dced] overflow-hidden shrink-0 flex items-center justify-center">
+                        <img 
+                          src={blob.url} 
+                          alt="asset" 
+                          className="w-full h-full object-contain"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#010030] truncate">{blob.pathname || blob.url}</p>
+                        <p className="text-[10px] text-[#625b82] font-mono">
+                          {blob.size ? `${(blob.size / 1024).toFixed(1)} KB` : "Stored"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href={blob.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-1.5 text-[#7226FF] hover:bg-[#f0ecf8] rounded-lg transition-colors cursor-pointer shrink-0"
+                      title="Open asset"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
         </div>

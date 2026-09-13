@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import gsap from "gsap";
@@ -176,6 +177,34 @@ const GallerySection = ({ tunerConfig }) => {
     setSelectedItem(filteredItems[nextIndex]);
   }, [currentIndex, filteredItems]);
 
+  // Scroll locking when Lightbox is active
+  useEffect(() => {
+    if (selectedItem) {
+      if (typeof window !== "undefined") {
+        if (window.lenis && typeof window.lenis.stop === "function") {
+          window.lenis.stop();
+        }
+        document.body.style.overflow = "hidden";
+      }
+    } else {
+      if (typeof window !== "undefined") {
+        if (window.lenis && typeof window.lenis.start === "function") {
+          window.lenis.start();
+        }
+        document.body.style.overflow = "";
+      }
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        if (window.lenis && typeof window.lenis.start === "function") {
+          window.lenis.start();
+        }
+        document.body.style.overflow = "";
+      }
+    };
+  }, [selectedItem]);
+
   // Keyboard navigation listener for Lightbox
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -351,7 +380,7 @@ const GallerySection = ({ tunerConfig }) => {
         {/* PHOTOSTRIP PREVIEW & COMMUNITY PRINTS GALLERY */}
         <div className="mb-24 relative z-10">
           <div className="gallery-header-block text-center mb-10">
-            <div className="inline-flex items-center gap-2 bg-[#010030] text-white font-mono text-[11px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#7226FF]/40 shadow-sm">
+            <div className="inline-flex items-center gap-2 bg-[#0f0054]/90 backdrop-blur-md text-[#FFE5F1] font-mono text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 border border-[#F042FF]/40 shadow-[0_4px_20px_rgba(240,66,255,0.18)]">
               <Sparkles className="w-3.5 h-3.5 text-[#F042FF]" />
               <span>FINISHED PREVIEWS & COMMUNITY PRINTS</span>
             </div>
@@ -378,9 +407,9 @@ const GallerySection = ({ tunerConfig }) => {
                       playClickSound();
                       setOriginFilter(tab.id);
                     }}
-                    className={`btn-studio-tab ${isSelected ? "btn-studio-tab-active" : ""}`}
+                    className={isSelected ? "btn-filter-pill-active" : "btn-filter-pill"}
                   >
-                    <Icon className={`w-3.5 h-3.5 ${isSelected ? "text-[#F042FF]" : "text-[#7226FF]"}`} />
+                    <Icon className="w-3.5 h-3.5 text-[#F042FF]" />
                     <span>{tab.label}</span>
                   </button>
                 );
@@ -405,7 +434,7 @@ const GallerySection = ({ tunerConfig }) => {
                     playClickSound();
                     setSelectedLayoutFilter(tab.id);
                   }}
-                  className={`btn-studio-chip ${selectedLayoutFilter === tab.id ? "btn-studio-chip-active" : ""}`}
+                  className={selectedLayoutFilter === tab.id ? "btn-format-chip-active" : "btn-format-chip"}
                 >
                   {tab.label}
                 </button>
@@ -466,7 +495,7 @@ const GallerySection = ({ tunerConfig }) => {
                         setIsPrintOrderOpen(false);
                         setOrderSuccess(false);
                       }}
-                      className={`gallery-parallax-card relative flex flex-col justify-between bg-[#FAF6F9] border p-3 shadow-[0_14px_32px_rgba(0,0,0,0.4)] rounded-2xl transition-all duration-300 hover:scale-105 hover:z-20 cursor-pointer group ${
+                      className={`gallery-parallax-card relative flex flex-col justify-between bg-[#FAF6F9] border p-3 shadow-[0_14px_32px_rgba(0,0,0,0.4)] rounded-2xl transition-all duration-300 hover:z-20 cursor-pointer group ${
                         isEditorial
                           ? "border-[#F042FF]/60 hover:border-[#F042FF] hover:shadow-[0_0_30px_rgba(240,66,255,0.35)]"
                           : "border-[#160078]/20 hover:border-[#7226FF]"
@@ -513,7 +542,7 @@ const GallerySection = ({ tunerConfig }) => {
                           src={item.imageSrc} 
                           alt={item.caption} 
                           referrerPolicy="no-referrer" 
-                          className="w-full h-full object-cover rounded-sm group-hover:scale-102 transition-transform duration-300"
+                          className="w-full h-full object-cover rounded-sm transition-opacity duration-300"
                         />
 
                         {/* Interactive Overlay on Hover */}
@@ -523,15 +552,15 @@ const GallerySection = ({ tunerConfig }) => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 playClickSound();
-                                navigate("/welcome");
+                                navigate("/setup");
                               }}
-                              className="bg-[#010030] hover:bg-[#0e0048] text-white border border-[#7226FF] hover:border-[#F042FF] text-[10px] font-mono font-bold px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1 transition-all"
+                              className="btn-studio-primary text-[10px] py-1.5 px-3 shadow-md flex items-center gap-1"
                             >
                               <span>USE STYLE</span>
-                              <ArrowRight className="w-3 h-3 text-[#F042FF]" />
+                              <ArrowRight className="w-3 h-3" />
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-white bg-[#010030]/90 px-2.5 py-1 rounded-full border border-[#7226FF]/30">
+                            <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold text-white bg-[#010030]/90 px-2.5 py-1 rounded-full border border-white/20">
                               <Eye className="w-3 h-3 text-[#F042FF]" />
                               <span>INSPECT 300 DPI</span>
                             </span>
@@ -563,7 +592,8 @@ const GallerySection = ({ tunerConfig }) => {
                               handleLike(item.id);
                             }}
                             disabled={item.hasLiked}
-                            className={`btn-studio-like ${item.hasLiked ? "btn-studio-like-active" : ""}`}
+                            className={`btn-micro-like ${item.hasLiked ? "liked" : ""}`}
+                            title={item.hasLiked ? "Liked" : "Hype creation"}
                           >
                             <Heart className={`w-2.5 h-2.5 transition-transform ${item.hasLiked ? "fill-current scale-110 text-[#F042FF]" : ""}`} />
                             <span>{item.likes || 0}</span>
@@ -580,9 +610,9 @@ const GallerySection = ({ tunerConfig }) => {
         </div>
 
         {/* HIGH-RES LIGHTBOX MODAL WITH DEEP INSPECTION & 300 DPI ZOOM */}
-        {selectedItem && (
+        {selectedItem && typeof document !== "undefined" && createPortal(
           <div 
-            className="fixed inset-0 z-50 bg-[#010030]/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 select-none"
+            className="fixed inset-0 z-[99999] bg-[#010030]/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 select-none"
             onClick={() => {
               setSelectedItem(null);
               setIsPrintOrderOpen(false);
@@ -599,10 +629,10 @@ const GallerySection = ({ tunerConfig }) => {
                   e.stopPropagation();
                   navigateLightbox("prev");
                 }}
-                className="absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#010030] border border-[#F042FF]/50 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer z-30"
+                className="carousel-control-btn absolute left-2 sm:-left-6 top-1/2 -translate-y-1/2 w-10 h-10 z-30"
                 title="Previous creation (← Left Arrow)"
               >
-                <ChevronLeft className="w-5 h-5 text-[#F042FF]" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
 
               <button
@@ -610,10 +640,10 @@ const GallerySection = ({ tunerConfig }) => {
                   e.stopPropagation();
                   navigateLightbox("next");
                 }}
-                className="absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#010030] border border-[#F042FF]/50 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform cursor-pointer z-30"
+                className="carousel-control-btn absolute right-2 sm:-right-6 top-1/2 -translate-y-1/2 w-10 h-10 z-30"
                 title="Next creation (→ Right Arrow)"
               >
-                <ChevronRight className="w-5 h-5 text-[#F042FF]" />
+                <ChevronRight className="w-5 h-5" />
               </button>
 
               {/* Modal Header */}
@@ -833,9 +863,9 @@ const GallerySection = ({ tunerConfig }) => {
                         <span className="text-[#625b82] text-[11px]">Est. Lab Dispatch: <strong>24-48 Hours</strong></span>
                         <button
                           onClick={handleConfirmOrder}
-                          className="btn-studio-primary text-xs font-mono font-bold px-4 py-2 flex items-center gap-1.5"
+                          className="btn-studio-primary text-xs py-2 px-4 flex items-center gap-1.5"
                         >
-                          <Printer className="w-3.5 h-3.5 text-[#F042FF]" />
+                          <Printer className="w-3.5 h-3.5" />
                           <span>Dispatch {orderQuantity} Print{orderQuantity > 1 ? "s" : ""}</span>
                         </button>
                       </div>
@@ -848,13 +878,9 @@ const GallerySection = ({ tunerConfig }) => {
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#f0ebf7]">
                 <button 
                   onClick={() => handleLike(selectedItem.id)}
-                  className={`flex items-center gap-2 font-mono text-xs font-bold border rounded-xl px-4 py-2 cursor-pointer transition-all ${
-                    selectedItem.hasLiked 
-                      ? "text-[#F042FF] bg-[#F042FF]/10 border-[#F042FF]" 
-                      : "text-[#010030] bg-[#f8f7fc] border-[#e2dced] hover:border-[#F042FF] hover:text-[#F042FF]"
-                  }`}
+                  className={`btn-filter-pill ${selectedItem.hasLiked ? "btn-filter-pill-active" : ""}`}
                 >
-                  <Heart className={`w-4 h-4 ${selectedItem.hasLiked ? "fill-current text-[#F042FF] scale-110" : ""}`} />
+                  <Heart className={`w-3.5 h-3.5 ${selectedItem.hasLiked ? "fill-current text-[#F042FF] scale-110" : "text-[#F042FF]"}`} />
                   <span>{selectedItem.likes || 0} Hypes</span>
                 </button>
 
@@ -863,13 +889,13 @@ const GallerySection = ({ tunerConfig }) => {
                     <button
                       onClick={() => {
                         setSelectedItem(null);
-                        navigate("/welcome");
+                        navigate("/setup");
                       }}
-                      className="btn-studio-primary text-xs font-mono font-bold px-5 py-2.5 flex items-center gap-2 shadow-lg"
+                      className="btn-studio-primary text-xs py-2.5 px-6 flex items-center gap-2"
                     >
-                      <Sparkles className="w-4 h-4 text-[#F042FF]" />
+                      <Sparkles className="w-4 h-4 text-[#FFE5F1]" />
                       <span>Use Style in Booth</span>
-                      <ArrowRight className="w-4 h-4 text-[#F042FF]" />
+                      <ArrowRight className="w-4 h-4" />
                     </button>
                   ) : (
                     <button
@@ -877,7 +903,7 @@ const GallerySection = ({ tunerConfig }) => {
                         playClickSound();
                         setIsPrintOrderOpen(!isPrintOrderOpen);
                       }}
-                      className="bg-[#010030] hover:bg-[#0e0048] border border-[#7226FF] hover:border-[#F042FF] text-white text-xs font-mono font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition-all"
+                      className="btn-studio-secondary text-xs py-2.5 px-5 flex items-center gap-2"
                     >
                       <Printer className="w-4 h-4 text-[#F042FF]" />
                       <span>{isPrintOrderOpen ? "Close Order" : "Order Print Copy"}</span>
@@ -886,7 +912,8 @@ const GallerySection = ({ tunerConfig }) => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
       </div>

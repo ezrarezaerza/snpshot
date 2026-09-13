@@ -74,41 +74,38 @@
 }
 
 .y2k-navbar-links a:not(.web3-nav-link-active), .navbar a:not(.web3-nav-link-active) {
-  font-family: "JetBrains Mono", monospace !important;
+  font-family: "Work Sans", sans-serif;
   text-decoration: none;
   color: #ffffff !important;
-  font-weight: 700;
-  padding: 8px 18px !important;
-  border-radius: 10px !important;
-  transition: all 0.2s ease;
-  font-size: 0.85rem;
-  border: 1px solid transparent !important;
+  font-weight: 600;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  transition: all 0.25s ease;
+  font-size: 0.95rem;
+  border: none !important;
   box-shadow: none !important;
 }
 
 .y2k-navbar-links a:hover, .navbar a:hover {
-  background-color: rgba(240, 66, 255, 0.15) !important;
-  border-color: rgba(240, 66, 255, 0.4) !important;
+  background-color: rgba(240, 66, 255, 0.2) !important;
   color: #FFE5F1 !important;
 }
 
-/* Primary Contact Button */
+/* Primary Contact Button using Gradient 2 */
 .y2k-navbar-contact, .navbar .y2k-navbar-contact {
-  background: linear-gradient(135deg, #160078 0%, #7226FF 50%, #F042FF 100%) !important;
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
   color: #ffffff !important;
-  padding: 8px 20px !important;
-  border-radius: 10px !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 700 !important;
-  font-size: 0.85rem !important;
-  border: 1px solid rgba(240, 66, 255, 0.5) !important;
-  box-shadow: 0 4px 14px rgba(240, 66, 255, 0.25) !important;
+  padding: 10px 22px !important;
+  border-radius: 999px !important;
+  font-family: "Fugaz One", cursive, sans-serif !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.4) !important;
   text-transform: uppercase;
 }
 
 .y2k-navbar-contact:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(240, 66, 255, 0.4) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.6) !important;
 }
 
 /* Typography Titles using Fugaz One */
@@ -134,37 +131,37 @@
 }
 
 .y2k-subtitle {
-  font-family: "JetBrains Mono", monospace !important;
-  font-size: 0.75rem;
+  font-family: "Work Sans", sans-serif;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #FFE5F1 !important;
-  background: rgba(240, 66, 255, 0.12) !important;
-  border: 1px solid rgba(240, 66, 255, 0.35) !important;
-  padding: 4px 12px !important;
-  border-radius: 8px !important;
+  background: rgba(240, 66, 255, 0.2) !important;
+  border: 1px solid rgba(240, 66, 255, 0.4) !important;
+  padding: 6px 16px !important;
+  border-radius: 999px !important;
   display: inline-block;
-  letter-spacing: 0.06em !important;
+  letter-spacing: 0.05em !important;
   text-transform: uppercase;
+  box-shadow: 0 4px 12px rgba(240, 66, 255, 0.2) !important;
 }
 
 /* Solid Cards with Accent Borders */
 .paradise-card, .privacy-container, .contact-form, .cyber-glass {
-  background: #0f0054 !important;
+  background: #080026 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  border: 1.5px solid #2e109d !important;
+  border: 1.5px solid #361099 !important;
   border-radius: 28px !important;
-  box-shadow: 0 20px 50px rgba(1, 0, 48, 0.5) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(240, 66, 255, 0.15) !important;
   color: #ffffff !important;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
   position: relative;
   z-index: 10;
 }
 
 .paradise-card:hover, .cyber-glass:hover {
-  transform: translateY(-6px) scale(1.015) !important;
-  border-color: #F042FF !important;
-  box-shadow: 0 24px 60px rgba(240, 66, 255, 0.35) !important;
+  border-color: rgba(240, 66, 255, 0.5) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(240, 66, 255, 0.15) !important;
 }
 
 .card-title {
@@ -184,87 +181,108 @@
   line-height: 1.6;
 }
 
-/* Modernized Button Base Rules (excludes admin UI) */
-button:not(.admin-btn):not(.admin-ui *):not(.admin-container *), 
-.paradise-button {
-  font-family: "JetBrains Mono", monospace;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-sizing: border-box;
-}
-
-/* Secondary Button Style */
-.secondary-btn, button.secondary {
-  background: #010030 !important;
-  color: #d4d4d8 !important;
-  border: 1px solid rgba(114, 38, 255, 0.4) !important;
-  border-radius: 12px !important;
+/* Primary Buttons with Gradient 2 */
+.y2k-button, .paradise-button {
   font-family: "JetBrains Mono", monospace !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  box-shadow: 0 4px 15px rgba(1, 0, 48, 0.3) !important;
+  border-radius: 999px !important;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  padding: 12px 28px !important;
+  font-size: 0.85rem !important;
+  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  background: linear-gradient(135deg, #160078 0%, #7226FF 50%, #F042FF 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(240, 66, 255, 0.5) !important;
+  box-shadow: 0 4px 18px rgba(114, 38, 255, 0.35) !important;
+}
+
+.y2k-button:hover, .paradise-button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.5) !important;
+  border-color: #FFE5F1 !important;
+  background: linear-gradient(135deg, #7226FF 0%, #F042FF 100%) !important;
+}
+
+.y2k-button:active, .paradise-button:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 10px rgba(240, 66, 255, 0.25) !important;
+}
+
+/* Secondary Button Style */
+.secondary-btn, button.secondary {
+  background: rgba(1, 0, 48, 0.6) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+  padding: 10px 20px !important;
+  box-shadow: 0 2px 10px rgba(1, 0, 48, 0.3) !important;
   transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
 }
 
 .secondary-btn:hover, button.secondary:hover {
-  background: #0e0048 !important;
-  color: #ffffff !important;
-  border-color: #F042FF !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 20px rgba(114, 38, 255, 0.3) !important;
+  background: rgba(22, 0, 120, 0.6) !important;
+  border-color: rgba(240, 66, 255, 0.5) !important;
+  color: #FFE5F1 !important;
+  transform: translateY(-1px) !important;
 }
 
 /* Setup / Count selection buttons */
 .count-button {
-  background: #010030 !important;
-  color: #a1a1aa !important;
-  border: 1px solid rgba(114, 38, 255, 0.3) !important;
-  box-shadow: 0 4px 15px rgba(1, 0, 48, 0.3) !important;
-  border-radius: 14px !important;
-  padding: 14px 12px !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 700 !important;
-  transition: all 0.2s ease !important;
-  cursor: pointer;
+  background: rgba(22, 0, 120, 0.4) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.3) !important;
+  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.3) !important;
+  border-radius: 20px !important;
+  padding: 18px !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  transition: all 0.25s ease !important;
 }
 
 .count-button.selected {
-  background: #160078 !important;
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
   color: #ffffff !important;
-  border: 1.5px solid #F042FF !important;
-  box-shadow: 0 0 16px rgba(240, 66, 255, 0.25) !important;
+  border: 1.5px solid #FFE5F1 !important;
+  box-shadow: 0 10px 30px rgba(240, 66, 255, 0.5) !important;
 }
 
 .count-button:hover:not(.selected) {
-  background: #0e0048 !important;
-  border-color: #7226FF !important;
-  color: #ffffff !important;
-  transform: translateY(-1px) !important;
+  background: rgba(240, 66, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.35) !important;
 }
 
 /* Camera control / circular buttons */
 .camera-ctrl {
-  background: #010030 !important;
-  color: #d4d4d8 !important;
-  border: 1px solid rgba(114, 38, 255, 0.35) !important;
-  box-shadow: 0 2px 10px rgba(1, 0, 48, 0.4) !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 700 !important;
-  border-radius: 9999px !important;
+  background: rgba(22, 0, 120, 0.8) !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(240, 66, 255, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(1, 0, 48, 0.4) !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
   transition: all 0.2s ease !important;
-  cursor: pointer;
 }
 
 .camera-ctrl:hover {
-  background: #0e0048 !important;
-  border-color: #F042FF !important;
+  background: linear-gradient(135deg, #F042FF, #7226FF) !important;
   color: #ffffff !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 15px rgba(114, 38, 255, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 25px rgba(240, 66, 255, 0.5) !important;
 }
 
 /* Inputs with Glassmorphic Style (exclude .admin-ui) */
@@ -326,18 +344,25 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border-radius: 14px;
 }
 
 .shutter-pulse-ring {
   position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  border-radius: 50%;
-  border: 2px solid #F042FF;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 14px;
+  border: 1.5px solid #F042FF;
   animation: shutterPulseRing 2.2s infinite cubic-bezier(0.25, 0, 0, 1);
   pointer-events: none;
+}
+
+@keyframes shutterPulseRing {
+  0% { transform: scale(0.99); opacity: 0.8; }
+  100% { transform: scale(1.025); opacity: 0; }
 }
 
 /* Photobooth print styles */
@@ -387,24 +412,21 @@ footer, .paradise-footer {
 }
 
 footer a, .paradise-footer a {
-  color: #010030 !important;
-  background: #ffffff !important;
-  border: 1px solid rgba(22, 0, 120, 0.2) !important;
-  padding: 8px 16px !important;
-  border-radius: 10px !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 700 !important;
-  font-size: 0.75rem !important;
-  box-shadow: 0 2px 8px rgba(1, 0, 48, 0.04) !important;
+  color: #FFE5F1 !important;
+  background: rgba(22, 0, 120, 0.6) !important;
+  border: 1px solid rgba(240, 66, 255, 0.3) !important;
+  padding: 10px 20px !important;
+  border-radius: 999px !important;
+  font-family: "Work Sans", sans-serif !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
   text-decoration: none !important;
   transition: all 0.2s ease !important;
 }
 
 footer a:hover, .paradise-footer a:hover {
-  background: #0e0048 !important;
+  background: linear-gradient(135deg, #F042FF, #7226FF) !important;
   color: #ffffff !important;
-  border-color: #7226FF !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 12px rgba(114, 38, 255, 0.2) !important;
+  border-color: #F042FF !important;
 }
 

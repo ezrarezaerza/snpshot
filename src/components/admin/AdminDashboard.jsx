@@ -37,7 +37,7 @@ const AdminDashboard = () => {
 
   const navItems = [
     { id: "frames", label: "Frame Layouts", icon: Layers },
-    { id: "poses", label: "Pose Campaigns", icon: Sparkles },
+    { id: "poses", label: "Artist Campaigns Studio", icon: Sparkles },
     { id: "stickers", label: "Digital Stamps", icon: ImageIcon },
     { id: "gallery", label: "Community Gallery", icon: ShieldCheck },
     { id: "showcase", label: "Design Showcase & Themes", icon: Globe },
@@ -218,7 +218,7 @@ const AdminDashboard = () => {
                 </span>
                 <span className="text-xs font-bold text-[#625b82] uppercase tracking-wider font-mono">
                   {activeTab === "frames" && "Frame Layouts & Border Presets"}
-                  {activeTab === "poses" && "Pose Campaign Management"}
+                  {activeTab === "poses" && "Artist Campaigns Studio & Event Collabs"}
                   {activeTab === "stickers" && "Digital Stamps & Overlay Suite"}
                   {activeTab === "gallery" && "Community Gallery & Print Moderation"}
                   {activeTab === "showcase" && "Design Showcase & Homepage Themes"}
@@ -234,7 +234,7 @@ const AdminDashboard = () => {
                   <>FRAME LAYOUTS <span className="bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#160078] bg-clip-text text-transparent">CATALOG</span></>
                 )}
                 {activeTab === "poses" && (
-                  <>POSE CAMPAIGNS <span className="bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#160078] bg-clip-text text-transparent">STUDIO</span></>
+                  <>ARTIST CAMPAIGNS <span className="bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#160078] bg-clip-text text-transparent">STUDIO</span></>
                 )}
                 {activeTab === "stickers" && (
                   <>DIGITAL STAMPS <span className="bg-gradient-to-r from-[#F042FF] via-[#7226FF] to-[#160078] bg-clip-text text-transparent">LIBRARY</span></>
@@ -262,7 +262,9 @@ const AdminDashboard = () => {
                 )}
               </h2>
               <p className="text-xs text-[#4a4365] max-w-3xl">
-                {activeTab === "gallery" 
+                {activeTab === "poses"
+                  ? "Manage exclusive idol partnerships, pose guidance decks, dedicated event frames, and featured homepage showcase drops."
+                  : activeTab === "gallery" 
                   ? "Audit community photostrip submissions, inspect 300 DPI CMYK print quality, manage flag reasons, and export print-ready batch packages."
                   : activeTab === "filters"
                   ? "Configure real-time CSS aesthetic filters (Warm Grain, Pastel Glow, Cinematic Film), border geometry, gap spacing, and test live in the split-screen bench."

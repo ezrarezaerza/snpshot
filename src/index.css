@@ -162,23 +162,25 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border-radius: 14px;
 }
 
 .shutter-pulse-ring {
   position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
-  border-radius: 50%;
-  border: 2px solid #F042FF;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 14px;
+  border: 1.5px solid #F042FF;
   animation: shutterPulseRing 2.2s infinite cubic-bezier(0.25, 0, 0, 1);
   pointer-events: none;
 }
 
 @keyframes shutterPulseRing {
-  0% { transform: scale(0.9); opacity: 1; }
-  100% { transform: scale(1.35); opacity: 0; }
+  0% { transform: scale(0.99); opacity: 0.8; }
+  100% { transform: scale(1.025); opacity: 0; }
 }
 
 /* Sharp corners for photobooth strip layouts */
@@ -201,6 +203,26 @@ body {
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
+  background: #FFE5F1;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #F042FF rgba(1, 0, 48, 0.8);
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(1, 0, 48, 0.6);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #F042FF, #7226FF);
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #FFE5F1;
 }
 
@@ -260,13 +282,13 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background-image: 
-    linear-gradient(rgba(240, 66, 255, 0.15) 1.5px, transparent 1.5px),
-    linear-gradient(90deg, rgba(240, 66, 255, 0.15) 1.5px, transparent 1.5px);
-  background-size: 50px 50px;
+    linear-gradient(rgba(240, 66, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 66, 255, 0.1) 1px, transparent 1px);
+  background-size: 48px 48px;
   background-position: center top;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.55;
+  opacity: 0.35;
 }
 
 /* Massive stacked typography block style using Fugaz One */
@@ -281,22 +303,22 @@ body {
   white-space: nowrap;
 }
 
-/* Solid modern cards */
+/* Solid modern bento cards with distinct separation from background grid */
 .web3-glass-card {
-  background: #0f0054 !important;
+  background: #070022 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  border: 1.5px solid #2e109d !important;
-  border-radius: 32px !important;
-  box-shadow: 0 20px 50px rgba(1, 0, 48, 0.5) !important;
+  border: 1.5px solid #361099 !important;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 1px 1px rgba(240, 66, 255, 0.15) !important;
   color: #ffffff !important;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease !important;
+  position: relative;
 }
 
 .web3-glass-card:hover {
-  transform: translateY(-6px) scale(1.02) !important;
-  border-color: #F042FF !important;
-  box-shadow: 0 20px 50px rgba(240, 66, 255, 0.35) !important;
+  border-color: rgba(240, 66, 255, 0.5) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 20px rgba(240, 66, 255, 0.15) !important;
 }
 
 /* Section transition canvas */
@@ -323,212 +345,222 @@ body {
 
 .web3-chunky-card:hover {
   background: #1f0088 !important;
-  transform: translateY(-4px) !important;
-  box-shadow: 0 20px 45px rgba(240, 66, 255, 0.35) !important;
   border-color: #F042FF !important;
+  box-shadow: 0 20px 45px rgba(240, 66, 255, 0.35) !important;
 }
 
 /* -----------------------------------------------------
-   MODERN & ELEGANT STUDIO BUTTON DESIGN SYSTEM
+   MODERN & ELEGANT BUTTON SYSTEM & TOKEN NORMALIZATION
    ----------------------------------------------------- */
 
-/* Tier 1: Primary Studio Action (Solid Dark with Crisp Accent Border) */
+/* Primary Action Button (Booth Launch, Major CTAs) */
 .btn-studio-primary {
-  background: #010030;
-  color: #ffffff;
-  border: 1.5px solid #7226FF;
-  border-radius: 14px;
-  font-family: "JetBrains Mono", monospace;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 12px 24px;
-  font-size: 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 20px rgba(1, 0, 48, 0.4);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.btn-studio-primary:hover {
-  background: #0e0048;
-  border-color: #F042FF;
-  box-shadow: 0 8px 25px rgba(114, 38, 255, 0.35);
-  transform: translateY(-2px);
-}
-
-.btn-studio-primary:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(114, 38, 255, 0.2);
-}
-
-/* Tier 2: Studio Filter Tab (Inspired by the Clean Yellow Reference) */
-.btn-studio-tab {
-  background: #010030;
-  color: #d4d4d8;
-  border: 1px solid rgba(114, 38, 255, 0.35);
-  border-radius: 9999px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 8px 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-studio-tab:hover {
-  border-color: #7226FF;
-  color: #ffffff;
-  background: #0e0048;
-  transform: translateY(-1px);
-}
-
-.btn-studio-tab-active {
-  background: #160078 !important;
+  background: linear-gradient(135deg, #160078 0%, #7226FF 100%) !important;
   color: #ffffff !important;
-  border-color: #F042FF !important;
-  box-shadow: 0 0 16px rgba(240, 66, 255, 0.25) !important;
-}
-
-/* Tier 3: Format Chip Selector */
-.btn-studio-chip {
-  background: rgba(1, 0, 48, 0.7);
-  color: #a1a1aa;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 9999px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 5px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-studio-chip:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  background: rgba(22, 0, 120, 0.4);
-}
-
-.btn-studio-chip-active {
-  background: #ffffff !important;
-  color: #010030 !important;
-  border-color: #ffffff !important;
-  box-shadow: 0 2px 8px rgba(255, 255, 255, 0.25) !important;
-}
-
-/* Tier 4: Interactive Micro Counter / Like Button */
-.btn-studio-like {
-  background: #010030;
-  border: 1px solid rgba(114, 38, 255, 0.25);
-  color: #d4d4d8;
-  border-radius: 9999px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 8px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.btn-studio-like:hover {
-  border-color: #F042FF;
-  color: #F042FF;
-  background: rgba(240, 66, 255, 0.08);
-}
-
-.btn-studio-like-active {
-  background: rgba(240, 66, 255, 0.12) !important;
-  border-color: #F042FF !important;
-  color: #F042FF !important;
-}
-
-/* Legacy Utility Adapter (Clean & Modernized) */
-.y2k-button {
-  background: #010030;
-  color: #ffffff;
-  border: 1.5px solid #7226FF;
-  border-radius: 12px;
-  font-family: "JetBrains Mono", monospace;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 10px 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.y2k-button:hover {
-  background: #0e0048;
-  border-color: #F042FF;
-  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.25);
-}
-
-/* Modern Outline Style Button */
-.web3-btn-pill-outline {
-  background-color: transparent !important;
-  color: #ffffff !important;
-  border: 1.5px solid rgba(114, 38, 255, 0.5) !important;
+  border: 1px solid rgba(240, 66, 255, 0.5) !important;
   border-radius: 12px !important;
   font-family: "JetBrains Mono", monospace !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
-  padding: 10px 22px !important;
-  box-shadow: 0 4px 15px rgba(1, 0, 48, 0.3) !important;
-  transition: all 0.2s ease !important;
+  padding: 10px 20px !important;
+  font-size: 0.8rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: 0 4px 16px rgba(114, 38, 255, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
 }
 
-.web3-btn-pill-outline:hover {
-  background: rgba(114, 38, 255, 0.15) !important;
+.btn-studio-primary:hover {
+  background: linear-gradient(135deg, #7226FF 0%, #9933FF 100%) !important;
   border-color: #F042FF !important;
-  color: #ffffff !important;
-  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 24px rgba(240, 66, 255, 0.45) !important;
+  transform: translateY(-1.5px) !important;
 }
 
-/* Carousel Control Buttons override */
-.web3-home-container .carousel-control-btn {
-  width: 30px !important;
-  height: 30px !important;
+.btn-studio-primary:active {
+  transform: translateY(0px) !important;
+  box-shadow: 0 2px 8px rgba(240, 66, 255, 0.25) !important;
+}
+
+/* Secondary / Outline Button */
+.btn-studio-secondary {
+  background: rgba(1, 0, 48, 0.6) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 10px 18px !important;
+  font-size: 0.8rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.btn-studio-secondary:hover {
+  background: rgba(22, 0, 120, 0.6) !important;
+  border-color: rgba(240, 66, 255, 0.5) !important;
+  color: #FFE5F1 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Taxonomy / Filter Pill Tabs (Yellow-style reference) */
+.btn-filter-pill {
+  background: rgba(1, 0, 48, 0.75) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 8px 18px !important;
+  font-size: 0.75rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 8px rgba(1, 0, 48, 0.3) !important;
+}
+
+.btn-filter-pill:hover {
+  background: rgba(22, 0, 120, 0.8) !important;
+  border-color: rgba(240, 66, 255, 0.45) !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-filter-pill-active {
+  background: linear-gradient(135deg, #1c0556 0%, #3e1291 100%) !important;
+  color: #ffffff !important;
+  border: 1.5px solid #F042FF !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+  padding: 8px 18px !important;
+  font-size: 0.75rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  box-shadow: 0 0 16px rgba(240, 66, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  cursor: pointer !important;
+}
+
+/* Compact Sub-Filter / Format Chips */
+.btn-format-chip {
+  background: rgba(1, 0, 48, 0.6) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 4px 12px !important;
+  font-size: 0.68rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  transition: all 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+.btn-format-chip:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #f1f5f9 !important;
+  background: rgba(22, 0, 120, 0.4) !important;
+}
+
+.btn-format-chip-active {
+  background: #ffffff !important;
+  color: #010030 !important;
+  border: 1px solid #ffffff !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 4px 12px !important;
+  font-size: 0.68rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.3) !important;
+  cursor: pointer !important;
+}
+
+/* Micro Inline Action (e.g. ♡ Likes on Polaroid Cards) */
+.btn-micro-like {
+  background: #ffffff !important;
+  color: #010030 !important;
+  border: 1px solid rgba(22, 0, 120, 0.15) !important;
+  border-radius: 999px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 700 !important;
+  font-size: 0.65rem !important;
+  padding: 2px 7px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  line-height: 1 !important;
+}
+
+.btn-micro-like:hover:not(:disabled) {
+  border-color: #F042FF !important;
+  color: #F042FF !important;
+  background: #FFF5FA !important;
+}
+
+.btn-micro-like:disabled, .btn-micro-like.liked {
+  background: rgba(240, 66, 255, 0.1) !important;
+  color: #F042FF !important;
+  border-color: rgba(240, 66, 255, 0.4) !important;
+  cursor: default !important;
+}
+
+/* Carousel and Circular Icon Controls */
+.carousel-control-btn {
+  width: 36px !important;
+  height: 36px !important;
   padding: 0 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 50% !important;
-  border: 1px solid rgba(22, 0, 120, 0.2) !important;
-  background: #ffffff !important;
-  color: #010030 !important;
-  box-shadow: none !important;
-  filter: none !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(1, 0, 48, 0.8) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(1, 0, 48, 0.4) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  cursor: pointer !important;
 }
 
-.web3-home-container .carousel-control-btn:hover {
-  background: #F042FF !important;
-  color: #ffffff !important;
+.carousel-control-btn:hover {
+  background: #160078 !important;
+  color: #FFE5F1 !important;
   border-color: #F042FF !important;
-  transform: translateY(-1px) !important;
-  box-shadow: none !important;
-  filter: none !important;
+  box-shadow: 0 6px 18px rgba(240, 66, 255, 0.3) !important;
+}
+
+.carousel-control-btn:active {
+  background: #2e109d !important;
 }
 
 /* Modern Web3 Navigation override */
@@ -644,36 +676,34 @@ body {
 
 /* Precise responsive navbar elements */
 header button, .y2k-navbar button {
-  background: #010030 !important;
+  background: linear-gradient(135deg, #FFE5F1 0%, #F042FF 50%, #7226FF 100%) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(114, 38, 255, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
   border-radius: 999px !important;
-  font-family: "JetBrains Mono", monospace !important;
-  font-weight: 700 !important;
+  font-family: "Fugaz One", cursive, sans-serif !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  padding: 7px 16px !important;
-  font-size: 0.75rem !important;
+  letter-spacing: 0.03em !important;
+  padding: 8px 18px !important;
+  font-size: 0.8rem !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
-  box-shadow: 0 2px 10px rgba(1, 0, 48, 0.4) !important;
+  box-shadow: 0 4px 15px rgba(240, 66, 255, 0.35) !important;
   transition: all 0.2s ease !important;
   width: auto !important;
   height: auto !important;
 }
 
 header button:hover, .y2k-navbar button:hover {
-  background: #0e0048 !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 4px 15px rgba(114, 38, 255, 0.3) !important;
-  border-color: #F042FF !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 25px rgba(240, 66, 255, 0.55) !important;
+  border-color: #FFE5F1 !important;
 }
 
 header button:active, .y2k-navbar button:active {
   transform: translateY(0px) !important;
-  box-shadow: 0 1px 5px rgba(114, 38, 255, 0.2) !important;
+  box-shadow: 0 2px 10px rgba(240, 66, 255, 0.2) !important;
 }
 
 /* Mobile menu toggle button */
@@ -693,7 +723,6 @@ header button.mobile-toggle-btn, .y2k-navbar button.mobile-toggle-btn {
 
 header button.mobile-toggle-btn:hover, .y2k-navbar button.mobile-toggle-btn:hover {
   background: rgba(240, 66, 255, 0.3) !important;
-  transform: scale(1.05) !important;
   box-shadow: none !important;
 }
 

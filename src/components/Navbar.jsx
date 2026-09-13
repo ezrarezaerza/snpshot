@@ -206,9 +206,9 @@ export default function Navbar({ onLogout }) {
             </span>
 
             <span 
-              onClick={() => handleNavClick("/welcome")}
+              onClick={() => handleNavClick("/setup")}
               className={`dropdown__button font-display font-black text-lg sm:text-2xl md:text-3xl uppercase tracking-wider cursor-pointer transition-colors ${
-                ["/welcome", "/photobooth", "/preview"].includes(location.pathname) 
+                ["/setup", "/welcome", "/photobooth", "/preview"].includes(location.pathname) 
                   ? "text-[#F042FF] underline decoration-2 underline-offset-8" 
                   : "text-white/80 hover:text-white"
               }`}

@@ -59,7 +59,9 @@ const createMembers = () => {
       { id: "wonyoung", name: "Wonyoung", role: "Vocalist / Center", color: "#ff8fc6" },
       { id: "yujin", name: "Yujin", role: "Leader / Vocalist", color: "#4d96ff" },
       { id: "rei", name: "Rei", role: "Rapper / Vocalist", color: "#6bcbf5" },
-      { id: "gaeul", name: "Gaeul", role: "Main Dancer / Rapper", color: "#b983ff" }
+      { id: "gaeul", name: "Gaeul", role: "Main Dancer / Rapper", color: "#b983ff" },
+      { id: "liz", name: "Liz", role: "Main Vocalist", color: "#ffb03b" },
+      { id: "leeseo", name: "Leeseo", role: "Vocalist / Maknae", color: "#ff70a6" }
     ],
     newjeans: [
       { id: "hanni", name: "Hanni", role: "Main Vocalist / Dancer", color: "#ff92a9" },
@@ -121,14 +123,15 @@ const createMembers = () => {
     membersByGroupProcessed[groupId] = members.map((member, index) => {
       if (member.id === "wonyoung") {
         const wonyoungPoses = [
-          "/img/poses/Wonyoung1.png",
-          "/img/poses/Wonyoung2.png",
-          "/img/poses/Wonyoung3.png",
-          "/img/poses/Wonyoung4.png"
+          "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung1.png",
+          "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung2.png",
+          "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung3.png",
+          "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung4.png"
         ];
         return {
           ...member,
-          avatar: "/img/poses/Wonyoung1.png",
+          avatar: wonyoungPoses[0],
+          finalPreviewImage: "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fshowcase%2FIVE-Wonyoung_Birthday-Photostrip-1.png",
           poses: wonyoungPoses
         };
       }
@@ -146,6 +149,7 @@ const createMembers = () => {
       return {
         ...member,
         avatar: memberPoses[0], // Main avatar is their first pose
+        finalPreviewImage: memberPoses[0],
         poses: memberPoses
       };
     });

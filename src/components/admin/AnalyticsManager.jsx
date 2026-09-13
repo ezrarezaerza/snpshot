@@ -17,16 +17,36 @@ import {
   Sliders, 
   Filter,
   ArrowDownRight,
-  ShieldCheck
+  ShieldCheck,
+  Users,
+  Search,
+  ArrowUpRight,
+  Heart,
+  Grid,
+  ExternalLink,
+  Award,
+  Flame,
+  Check,
+  Image as ImageIcon
 } from "lucide-react";
 
 const AnalyticsManager = () => {
-  const [activeSubTab, setActiveSubTab] = useState("funnel"); // "funnel", "distribution", "health"
+  const [activeSubTab, setActiveSubTab] = useState("funnel"); // "funnel", "campaigns", "frames", "distribution", "health"
   const [timeframe, setTimeframe] = useState("today"); // "today", "last7d", "last30d", "allTime"
   const [loading, setLoading] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [analyticsData, setAnalyticsData] = useState(null);
   const [statusMessage, setStatusMessage] = useState("");
+
+  // Campaign search & filters
+  const [campaignSearch, setCampaignSearch] = useState("");
+  const [campaignStatusFilter, setCampaignStatusFilter] = useState("all"); // "all", "active", "featured"
+  const [campaignSort, setCampaignSort] = useState("sessions"); // "sessions", "engagement", "poses"
+
+  // Frame search & filters
+  const [frameSearch, setFrameSearch] = useState("");
+  const [frameLayoutFilter, setFrameLayoutFilter] = useState("all"); // "all", "3-grid", "4-grid", "2x2", "2x3"
+  const [frameSort, setFrameSort] = useState("usage"); // "usage", "prints", "conversion"
 
   const fetchAnalytics = async () => {
     setLoading(true);
@@ -101,6 +121,8 @@ const AnalyticsManager = () => {
 
   const handleExportCSV = () => {
     if (!analyticsData) return;
+    const { kpis, funnel, layouts, filters, framesAnalysis = [], campaignsAnalysis = [] } = analyticsData;
+
     const rows = [
       ["SNPSHOT Studio Analytics Report"],
       ["Generated At", new Date().toISOString()],
@@ -113,12 +135,22 @@ const AnalyticsManager = () => {
       ["Completion Rate (%)", kpis.completionRate],
       ["Avg Render Latency (ms)", kpis.avgRenderLatencyMs],
       ["Export Success Rate (%)", kpis.exportSuccessRate],
+      ["Total Frames in Catalog", kpis.totalFramesInCatalog || framesAnalysis.length],
+      ["Total Campaigns in Catalog", kpis.totalCampaignsInCatalog || campaignsAnalysis.length],
       [""],
       ["Pipeline Funnel"],
       ["Step", "Count", "Conversion %"],
       ...funnel.map(f => [f.step, f.count, f.conversion + "%"]),
       [""],
-      ["Layout Formats"],
+      ["Artist Campaign Analysis"],
+      ["Campaign Name", "Group / Agency", "Poses Count", "Sessions", "Photos Captured", "Downloads", "Engagement Rate %", "Likes", "Status"],
+      ...campaignsAnalysis.map(c => [c.name, `${c.groupName} (${c.agencyName})`, c.posesCount, c.sessionCount, c.photosCaptured, c.downloads, c.engagementRate + "%", c.communityLikes, c.status]),
+      [""],
+      ["Frame Layout & Theme Analysis"],
+      ["Frame Name", "Layout Format", "Type", "Usage Count", "Share %", "High-Res Prints", "Conversion %", "DPI Standard", "Status"],
+      ...framesAnalysis.map(f => [f.name, f.layout, f.type, f.usageCount, f.sharePercentage + "%", f.printCount, f.conversionRate + "%", f.dpi + " DPI", f.active ? "Active" : "Inactive"]),
+      [""],
+      ["Layout Formats Market Share"],
       ["Layout Name", "Count", "Percentage %"],
       ...layouts.map(l => [l.name, l.count, l.percentage + "%"]),
       [""],
@@ -127,11 +159,11 @@ const AnalyticsManager = () => {
       ...filters.map(f => [f.name, f.uses, f.percentage + "%"])
     ];
 
-    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+    const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(",")).join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `snpshot-analytics-${Date.now()}.csv`);
+    link.setAttribute("download", `snpshot-studio-analytics-${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -146,8 +178,40 @@ const AnalyticsManager = () => {
     );
   }
 
-  const { kpis, funnel, layouts, filters, decorations, timeframeData, engineLogs } = analyticsData;
+  const { kpis, funnel, layouts, filters, decorations, timeframeData, engineLogs, framesAnalysis = [], campaignsAnalysis = [] } = analyticsData;
   const currentTimeframeKPIs = timeframeData?.[timeframe] || kpis;
+
+  // Filtered campaigns
+  const filteredCampaigns = campaignsAnalysis
+    .filter(c => {
+      const matchSearch = c.name.toLowerCase().includes(campaignSearch.toLowerCase()) || 
+                          c.groupName.toLowerCase().includes(campaignSearch.toLowerCase()) ||
+                          c.agencyName.toLowerCase().includes(campaignSearch.toLowerCase());
+      const matchStatus = campaignStatusFilter === "all" ? true :
+                          campaignStatusFilter === "active" ? c.status === "active" :
+                          campaignStatusFilter === "featured" ? Boolean(c.isFeatured) : true;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => {
+      if (campaignSort === "sessions") return b.sessionCount - a.sessionCount;
+      if (campaignSort === "engagement") return b.engagementRate - a.engagementRate;
+      if (campaignSort === "poses") return b.posesCount - a.posesCount;
+      return 0;
+    });
+
+  // Filtered frames
+  const filteredFrames = framesAnalysis
+    .filter(f => {
+      const matchSearch = f.name.toLowerCase().includes(frameSearch.toLowerCase());
+      const matchLayout = frameLayoutFilter === "all" ? true : f.layout === frameLayoutFilter;
+      return matchSearch && matchLayout;
+    })
+    .sort((a, b) => {
+      if (frameSort === "usage") return b.usageCount - a.usageCount;
+      if (frameSort === "prints") return b.printCount - a.printCount;
+      if (frameSort === "conversion") return b.conversionRate - a.conversionRate;
+      return 0;
+    });
 
   return (
     <div className="space-y-6">
@@ -159,8 +223,8 @@ const AnalyticsManager = () => {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase bg-[#7226FF]/10 text-[#7226FF] font-bold">
               Module 09 // Studio Analytics
             </span>
-            <span className="text-xs text-[#625b82] font-mono">
-              Live Tracker
+            <span className="text-xs text-[#625b82] font-mono flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Live Telemetry
             </span>
           </div>
           <h1 className="text-xl font-black text-[#010030] tracking-tight">
@@ -207,7 +271,9 @@ const AnalyticsManager = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#f8f6fc] p-2 rounded-2xl border border-[#e2dced]">
         <div className="flex items-center gap-1 overflow-x-auto">
           {[
-            { id: "funnel", label: "Session KPIs & 4-Step Funnel", icon: TrendingUp },
+            { id: "funnel", label: "Session KPIs & Funnel", icon: TrendingUp },
+            { id: "campaigns", label: `Campaign Analysis (${campaignsAnalysis.length})`, icon: Award },
+            { id: "frames", label: `Frame Analysis (${framesAnalysis.length})`, icon: Layers },
             { id: "distribution", label: "Layouts, Filters & Assets", icon: BarChart3 },
             { id: "health", label: "Engine Health & Latency", icon: Activity }
           ].map((tab) => {
@@ -252,7 +318,7 @@ const AnalyticsManager = () => {
         </div>
       </div>
 
-      {/* SUB-TAB 1: SESSION KPIS & 4-STEP FUNNEL (PHASE 9A) */}
+      {/* SUB-TAB 1: SESSION KPIS & 4-STEP FUNNEL */}
       {activeSubTab === "funnel" && (
         <div className="space-y-6">
           
@@ -261,11 +327,11 @@ const AnalyticsManager = () => {
             <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold">Active Sessions</span>
-                <UsersIcon className="w-4 h-4 text-[#7226FF]" />
+                <Users className="w-4 h-4 text-[#7226FF]" />
               </div>
               <div className="text-3xl font-black text-[#010030] tracking-tight">{currentTimeframeKPIs.activeSessions.toLocaleString()}</div>
               <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-                ↑ +12% from previous period
+                ↑ Dynamic database telemetry
               </span>
             </div>
 
@@ -276,7 +342,7 @@ const AnalyticsManager = () => {
               </div>
               <div className="text-3xl font-black text-[#010030] tracking-tight">{currentTimeframeKPIs.photosCaptured.toLocaleString()}</div>
               <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-                ↑ ~4.1 photos / session
+                ↑ ~3.8 captures / session
               </span>
             </div>
 
@@ -287,7 +353,7 @@ const AnalyticsManager = () => {
               </div>
               <div className="text-3xl font-black text-[#010030] tracking-tight">{currentTimeframeKPIs.downloadsCompleted.toLocaleString()}</div>
               <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-                ↑ 300 DPI High-Res Exports
+                ↑ 300 DPI High-Res Prints
               </span>
             </div>
 
@@ -298,8 +364,35 @@ const AnalyticsManager = () => {
               </div>
               <div className="text-3xl font-black text-[#010030] tracking-tight">{currentTimeframeKPIs.completionRate}%</div>
               <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1 mt-1">
-                Step 01 → Step 04 Success
+                Step 01 → Step 04 Conversion
               </span>
+            </div>
+          </div>
+
+          {/* Real Gallery & Community Activity Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block">Published Community Prints</span>
+                <span className="text-2xl font-black text-[#010030]">{kpis.totalCommunityPrints} prints</span>
+              </div>
+              <ImageIcon className="w-8 h-8 text-[#7226FF]/30" />
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block">300 DPI Print Verified</span>
+                <span className="text-2xl font-black text-emerald-600">{kpis.verifiedDpiPrints} Verified</span>
+              </div>
+              <ShieldCheck className="w-8 h-8 text-emerald-500/30" />
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block">Total Community Likes</span>
+                <span className="text-2xl font-black text-[#F042FF]">{kpis.totalLikes?.toLocaleString()} likes</span>
+              </div>
+              <Heart className="w-8 h-8 text-[#F042FF]/30" />
             </div>
           </div>
 
@@ -362,7 +455,360 @@ const AnalyticsManager = () => {
         </div>
       )}
 
-      {/* SUB-TAB 2: LAYOUTS, FILTERS & DECORATION USAGE (PHASE 9B) */}
+      {/* SUB-TAB 2: POSE CAMPAIGN ANALYSIS */}
+      {activeSubTab === "campaigns" && (
+        <div className="space-y-6">
+          
+          {/* Campaign Overview Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Total Campaigns</span>
+              <span className="text-3xl font-black text-[#010030]">{campaignsAnalysis.length}</span>
+              <span className="text-[10px] text-[#625b82] font-bold mt-1 block">Registered Artist Collabs</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Active Collabs</span>
+              <span className="text-3xl font-black text-emerald-600">{campaignsAnalysis.filter(c => c.status === "active").length}</span>
+              <span className="text-[10px] text-emerald-600 font-bold mt-1 block">Live in Photo Booth</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Total Pose Inventory</span>
+              <span className="text-3xl font-black text-[#7226FF]">{campaignsAnalysis.reduce((acc, c) => acc + (c.posesCount || 0), 0)} poses</span>
+              <span className="text-[10px] text-[#625b82] font-bold mt-1 block">Guidance & Templates</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Avg Engagement</span>
+              <span className="text-3xl font-black text-[#F042FF]">
+                {campaignsAnalysis.length > 0 ? (campaignsAnalysis.reduce((acc, c) => acc + c.engagementRate, 0) / campaignsAnalysis.length).toFixed(1) : 0}%
+              </span>
+              <span className="text-[10px] text-emerald-600 font-bold mt-1 block">Session to Export Rate</span>
+            </div>
+          </div>
+
+          {/* Search, Filter & Sort Controls */}
+          <div className="bg-white p-4 rounded-2xl border border-[#e2dced] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search campaign, artist name, group, or agency..."
+                value={campaignSearch}
+                onChange={(e) => setCampaignSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[#f8f6fc] text-xs font-mono rounded-xl border border-[#e2dced] focus:border-[#7226FF] outline-none text-[#010030]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 bg-[#f8f6fc] p-1 rounded-xl border border-[#e2dced]">
+                <span className="text-[10px] font-mono text-[#625b82] px-2 font-bold uppercase">Status:</span>
+                {[
+                  { id: "all", label: "All" },
+                  { id: "active", label: "Active" },
+                  { id: "featured", label: "Featured" }
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    onClick={() => setCampaignStatusFilter(st.id)}
+                    className={`admin-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                      campaignStatusFilter === st.id ? "bg-[#7226FF] text-white" : "text-[#010030] hover:bg-[#e2dced]"
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#f8f6fc] p-1 rounded-xl border border-[#e2dced]">
+                <span className="text-[10px] font-mono text-[#625b82] px-2 font-bold uppercase">Sort:</span>
+                {[
+                  { id: "sessions", label: "Sessions" },
+                  { id: "engagement", label: "Engagement" },
+                  { id: "poses", label: "Poses" }
+                ].map((so) => (
+                  <button
+                    key={so.id}
+                    onClick={() => setCampaignSort(so.id)}
+                    className={`admin-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                      campaignSort === so.id ? "bg-[#010030] text-white" : "text-[#010030] hover:bg-[#e2dced]"
+                    }`}
+                  >
+                    {so.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Campaign Analytics Leaderboard & Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredCampaigns.map((camp, idx) => (
+              <div key={camp.id} className="bg-white p-5 rounded-2xl border border-[#e2dced] shadow-xs space-y-4 hover:border-[#7226FF] transition-all">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-[#0e0048] border border-[#2e109d] shrink-0">
+                      {camp.avatar ? (
+                        <img src={camp.avatar} alt={camp.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-black text-white text-base">
+                          {camp.name.charAt(0)}
+                        </div>
+                      )}
+                      {camp.isFeatured && (
+                        <span className="absolute top-0 right-0 bg-[#F042FF] text-[8px] font-black text-[#010030] px-1 rounded-bl">
+                          HOT
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-sm text-[#010030]">{camp.name}</h3>
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase bg-[#7226FF]/10 text-[#7226FF]">
+                          {camp.groupName}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-[#625b82] font-mono">
+                        {camp.agencyName} • {camp.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end">
+                    <span className="text-xs font-black text-[#7226FF]">#{idx + 1} Rank</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono uppercase font-bold mt-1 ${
+                      camp.status === "active" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-zinc-100 text-zinc-600"
+                    }`}>
+                      {camp.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Campaign Metric Bars */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#e2dced]/60">
+                  <div className="p-2 bg-[#f8f6fc] rounded-xl text-center">
+                    <span className="text-[10px] font-mono text-[#625b82] block font-bold">Sessions</span>
+                    <span className="text-sm font-black text-[#010030]">{camp.sessionCount.toLocaleString()}</span>
+                    <span className="text-[9px] text-[#7226FF] font-bold block">{camp.sharePercentage}% share</span>
+                  </div>
+
+                  <div className="p-2 bg-[#f8f6fc] rounded-xl text-center">
+                    <span className="text-[10px] font-mono text-[#625b82] block font-bold">Captures</span>
+                    <span className="text-sm font-black text-[#010030]">{camp.photosCaptured.toLocaleString()}</span>
+                    <span className="text-[9px] text-emerald-600 font-bold block">{camp.posesCount} poses</span>
+                  </div>
+
+                  <div className="p-2 bg-[#f8f6fc] rounded-xl text-center">
+                    <span className="text-[10px] font-mono text-[#625b82] block font-bold">Engagement</span>
+                    <span className="text-sm font-black text-[#F042FF]">{camp.engagementRate}%</span>
+                    <span className="text-[9px] text-amber-600 font-bold block">{camp.communityLikes} likes</span>
+                  </div>
+                </div>
+
+                {/* Share bar */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[10px] font-mono text-[#625b82]">
+                    <span>Studio Session Adoption</span>
+                    <span className="font-bold text-[#010030]">{camp.sharePercentage}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-[#f0ecf8] rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-[#7226FF] to-[#F042FF] rounded-full"
+                      style={{ width: `${Math.max(5, camp.sharePercentage * 2.5)}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filteredCampaigns.length === 0 && (
+            <div className="bg-white p-8 rounded-2xl border border-[#e2dced] text-center text-xs text-[#625b82]">
+              No artist campaigns match your search criteria.
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* SUB-TAB 3: FRAME LAYOUT & THEME ANALYSIS */}
+      {activeSubTab === "frames" && (
+        <div className="space-y-6">
+          
+          {/* Frame Overview Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Total Frames</span>
+              <span className="text-3xl font-black text-[#010030]">{framesAnalysis.length}</span>
+              <span className="text-[10px] text-[#625b82] font-bold mt-1 block">In Design Catalog</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Active Frames</span>
+              <span className="text-3xl font-black text-emerald-600">{framesAnalysis.filter(f => f.active).length}</span>
+              <span className="text-[10px] text-emerald-600 font-bold mt-1 block">Live in Photo Booth</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Total Prints Made</span>
+              <span className="text-3xl font-black text-[#7226FF]">
+                {framesAnalysis.reduce((acc, f) => acc + (f.printCount || 0), 0).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-[#625b82] font-bold mt-1 block">300 DPI Photostrips</span>
+            </div>
+
+            <div className="p-4 bg-white rounded-2xl border border-[#e2dced] shadow-xs">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-[#625b82] font-bold block mb-1">Avg Frame Conversion</span>
+              <span className="text-3xl font-black text-[#F042FF]">
+                {framesAnalysis.length > 0 ? (framesAnalysis.reduce((acc, f) => acc + f.conversionRate, 0) / framesAnalysis.length).toFixed(1) : 0}%
+              </span>
+              <span className="text-[10px] text-emerald-600 font-bold mt-1 block">Select to Download</span>
+            </div>
+          </div>
+
+          {/* Search, Filter & Sort Controls */}
+          <div className="bg-white p-4 rounded-2xl border border-[#e2dced] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search frame name or layout format..."
+                value={frameSearch}
+                onChange={(e) => setFrameSearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[#f8f6fc] text-xs font-mono rounded-xl border border-[#e2dced] focus:border-[#7226FF] outline-none text-[#010030]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 bg-[#f8f6fc] p-1 rounded-xl border border-[#e2dced]">
+                <span className="text-[10px] font-mono text-[#625b82] px-2 font-bold uppercase">Layout:</span>
+                {[
+                  { id: "all", label: "All" },
+                  { id: "3-grid", label: "3-Grid" },
+                  { id: "4-grid", label: "4-Grid" },
+                  { id: "2x2", label: "2x2" },
+                  { id: "2x3", label: "2x3" }
+                ].map((ly) => (
+                  <button
+                    key={ly.id}
+                    onClick={() => setFrameLayoutFilter(ly.id)}
+                    className={`admin-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                      frameLayoutFilter === ly.id ? "bg-[#7226FF] text-white" : "text-[#010030] hover:bg-[#e2dced]"
+                    }`}
+                  >
+                    {ly.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#f8f6fc] p-1 rounded-xl border border-[#e2dced]">
+                <span className="text-[10px] font-mono text-[#625b82] px-2 font-bold uppercase">Sort:</span>
+                {[
+                  { id: "usage", label: "Usage" },
+                  { id: "prints", label: "Prints" },
+                  { id: "conversion", label: "Conversion" }
+                ].map((so) => (
+                  <button
+                    key={so.id}
+                    onClick={() => setFrameSort(so.id)}
+                    className={`admin-btn px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors cursor-pointer ${
+                      frameSort === so.id ? "bg-[#010030] text-white" : "text-[#010030] hover:bg-[#e2dced]"
+                    }`}
+                  >
+                    {so.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Frames Table & Performance Cards */}
+          <div className="bg-white rounded-2xl border border-[#e2dced] shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[#e2dced] text-[#625b82] font-mono text-[10px] uppercase bg-[#f8f6fc]">
+                    <th className="py-3 px-4">Frame & Swatch</th>
+                    <th className="py-3 px-4">Layout Format</th>
+                    <th className="py-3 px-4">Canvas Standard</th>
+                    <th className="py-3 px-4">Usage Count</th>
+                    <th className="py-3 px-4">Share %</th>
+                    <th className="py-3 px-4">Prints Exported</th>
+                    <th className="py-3 px-4">Conversion</th>
+                    <th className="py-3 px-4 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e2dced]/60">
+                  {filteredFrames.map((frm) => (
+                    <tr key={frm.id} className="hover:bg-[#f8f6fc] transition-colors">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-8 h-8 rounded-lg border shadow-xs shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
+                            style={{ 
+                              backgroundColor: frm.bgColor || "#0e0048",
+                              borderColor: frm.borderColor || "#2e109d"
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: frm.borderColor || "#F042FF" }} />
+                          </div>
+                          <div>
+                            <span className="font-bold text-[#010030] block">{frm.name}</span>
+                            <span className="text-[10px] font-mono text-[#625b82] uppercase">{frm.type} frame</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-[#7226FF]">
+                        {frm.layout === "3-grid" ? "Vertical 3-Strip" :
+                         frm.layout === "4-grid" ? "Classic 4-Strip" :
+                         frm.layout === "2x2" ? "2x2 Square" :
+                         frm.layout === "2x3" ? "2x3 Postcard" : "All Layouts"}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-[#625b82]">
+                        {frm.resolution} <span className="text-emerald-600 font-bold">({frm.dpi} DPI)</span>
+                      </td>
+                      <td className="py-3 px-4 font-bold text-[#010030]">
+                        {frm.usageCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-[#f0ecf8] rounded-full overflow-hidden">
+                            <div className="h-full bg-[#7226FF] rounded-full" style={{ width: `${frm.sharePercentage * 3}%` }} />
+                          </div>
+                          <span className="font-mono text-[11px] font-bold text-[#7226FF]">{frm.sharePercentage}%</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-bold text-emerald-600">
+                        {frm.printCount.toLocaleString()}
+                      </td>
+                      <td className="py-3 px-4 font-black text-[#F042FF]">
+                        {frm.conversionRate}%
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono uppercase font-bold ${
+                          frm.active ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-zinc-100 text-zinc-600"
+                        }`}>
+                          {frm.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {filteredFrames.length === 0 && (
+            <div className="bg-white p-8 rounded-2xl border border-[#e2dced] text-center text-xs text-[#625b82]">
+              No frames match your search or layout filter.
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* SUB-TAB 4: LAYOUTS, FILTERS & DECORATION USAGE */}
       {activeSubTab === "distribution" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
@@ -456,7 +902,7 @@ const AnalyticsManager = () => {
         </div>
       )}
 
-      {/* SUB-TAB 3: ENGINE HEALTH & LATENCY BENCH (PHASE 9C) */}
+      {/* SUB-TAB 5: ENGINE HEALTH & LATENCY BENCH */}
       {activeSubTab === "health" && (
         <div className="space-y-6">
           
@@ -571,28 +1017,5 @@ const AnalyticsManager = () => {
     </div>
   );
 };
-
-// Helper Icon
-function UsersIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
 
 export default AnalyticsManager;

@@ -93,20 +93,20 @@ const FooterSection = () => {
         {/* NAVIGATION ACTIONS */}
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link 
-            to="/welcome" 
-            className="btn-studio-primary font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 shadow-[0_4px_16px_rgba(22,0,120,0.25)]"
+            to="/setup" 
+            className="btn-studio-primary text-xs py-2.5 px-5"
           >
             ✦ LAUNCH PHOTOBOOTH ✦
           </Link>
           <Link 
             to="/privacy-policy" 
-            className="btn-studio-secondary font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5"
+            className="btn-studio-secondary text-xs py-2.5 px-4"
           >
             Privacy Policy
           </Link>
           <Link 
             to="/contact" 
-            className="btn-studio-secondary font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5"
+            className="btn-studio-secondary text-xs py-2.5 px-4"
           >
             Contact Support
           </Link>
