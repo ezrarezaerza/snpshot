@@ -6,7 +6,6 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
-import { createServer as createViteServer } from "vite";
 import { 
   isBlobConfigured, 
   getStorageStatus, 
@@ -3593,6 +3592,7 @@ app.use((err, req, res, next) => {
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     try {
+      const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
