@@ -434,6 +434,23 @@ const PhotoPreview = ({ capturedImages = [] }) => {
   
   const navigate = useNavigate();
   const activeDedicatedFrame = dedicatedFrame || artist?.dedicatedFrame || null;
+  const activeFrameOverlayUrl = activeDedicatedFrame?.overlayUrl || activeDedicatedFrame?.frameOverlayUrl || activeDedicatedFrame?.imageSrc || artist?.frameOverlayUrl || null;
+  const artistCollabFrameId = activeDedicatedFrame?.id || `artist-collab-${artist?.id || 'frame'}`;
+
+  // Register dedicated frame overlay PNG for artist collab into frames engine if present
+  if (category === "artist" && activeFrameOverlayUrl) {
+    frames[artistCollabFrameId] = {
+      id: artistCollabFrameId,
+      name: activeDedicatedFrame?.name || `${artist?.name || 'Artist'} Official Frame`,
+      type: "png",
+      badge: "COLLAB",
+      imageSrc: activeFrameOverlayUrl,
+      layout: layout || "3-grid",
+      draw: async (ctx, w, h) => {
+        await drawThemedFrame(artistCollabFrameId, layout, photoCount, ctx, w, h, activeFrameOverlayUrl);
+      }
+    };
+  }
 
   const handleStartNewSession = () => {
     playClickSound();
@@ -610,7 +627,7 @@ const PhotoPreview = ({ capturedImages = [] }) => {
   const stripCanvasRef = useRef(null);
   const [stripColor, setStripColor] = useState(initialStripColor);
   const [selectedFrame, setSelectedFrame] = useState(
-    category === "artist" && activeDedicatedFrame?.imageSrc ? activeDedicatedFrame.id : "none"
+    category === "artist" && activeFrameOverlayUrl ? artistCollabFrameId : "none"
   );
 
   const availableFrames = useMemo(() => {
@@ -1089,37 +1106,43 @@ const PhotoPreview = ({ capturedImages = [] }) => {
 
     if (category === "artist" && artist) {
       const activeFrame = dedicatedFrame || artist.dedicatedFrame;
-      const accentColor = activeFrame?.borderColor || artist.color || "#F042FF";
-      const outerBorderWidth = (activeFrame?.borderWidth || 10) * scale;
+      const hasDedicatedOverlayPng = Boolean(activeFrameOverlayUrl);
 
       ctx.save();
-      // Outer structural border
-      ctx.strokeStyle = accentColor;
-      ctx.lineWidth = outerBorderWidth;
-      ctx.strokeRect(outerBorderWidth / 2, outerBorderWidth / 2, canvasWidth - outerBorderWidth, canvasHeight - outerBorderWidth);
+      // If no dedicated transparent PNG overlay is uploaded, render official legacy structural vector border
+      if (!hasDedicatedOverlayPng) {
+        const accentColor = activeFrame?.borderColor || artist.color || "#F042FF";
+        const outerBorderWidth = (activeFrame?.borderWidth || 10) * scale;
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = outerBorderWidth;
+        ctx.strokeRect(outerBorderWidth / 2, outerBorderWidth / 2, canvasWidth - outerBorderWidth, canvasHeight - outerBorderWidth);
 
-      // Top Collab Header Badge
-      ctx.fillStyle = accentColor;
-      ctx.font = `bold ${12 * scale}px "Space Grotesk", sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(
-        `✦ ${artist.groupName ? artist.groupName.toUpperCase() + ' // ' : ''}${artist.name.toUpperCase()} EXCLUSIVE COLLAB ✦`,
-        canvasWidth / 2,
-        Math.max(28 * scale, config.padding * scale * 0.7)
-      );
+        // Top Collab Header Badge
+        ctx.fillStyle = accentColor;
+        ctx.font = `bold ${12 * scale}px "Space Grotesk", sans-serif`;
+        ctx.textAlign = "center";
+        ctx.fillText(
+          `✦ ${artist.groupName ? artist.groupName.toUpperCase() + ' // ' : ''}${artist.name.toUpperCase()} EXCLUSIVE COLLAB ✦`,
+          canvasWidth / 2,
+          Math.max(28 * scale, config.padding * scale * 0.7)
+        );
+      }
 
-      // Official Event Watermark at bottom
-      const watermark = activeFrame?.watermarkText || `${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`;
-      ctx.fillStyle = "#FFFFFF";
-      ctx.font = `bold ${14 * scale}px "Space Grotesk", sans-serif`;
-      ctx.shadowColor = accentColor;
-      ctx.shadowBlur = 10 * scale;
-      ctx.textAlign = "center";
-      ctx.fillText(watermark, canvasWidth / 2, canvasHeight - (config.padding * 0.75) * scale);
+      // Official Event Watermark at bottom (always cleanly displayed unless transparent overlay already contains it)
+      if (!hasDedicatedOverlayPng) {
+        const watermark = activeFrame?.watermarkText || `${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`;
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = `bold ${14 * scale}px "Space Grotesk", sans-serif`;
+        ctx.shadowColor = activeFrame?.borderColor || artist.color || "#F042FF";
+        ctx.shadowBlur = 10 * scale;
+        ctx.textAlign = "center";
+        ctx.fillText(watermark, canvasWidth / 2, canvasHeight - (config.padding * 0.75) * scale);
+      }
 
       ctx.shadowBlur = 0;
       ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
       ctx.font = `${10 * scale}px "Space Grotesk", monospace`;
+      ctx.textAlign = "center";
       const artistBottomLine = datestampStr ? `SNPSHOT STUDIO • ${datestampStr}` : `SNPSHOT STUDIO`;
       ctx.fillText(artistBottomLine, canvasWidth / 2, canvasHeight - (config.padding * 0.28) * scale);
       ctx.restore();
@@ -2087,19 +2110,45 @@ const PhotoPreview = ({ capturedImages = [] }) => {
                       </div>
 
                       {category === "artist" ? (
-                        <div className="p-3 bg-zinc-950/70 rounded-xl border border-purple-500/30 flex flex-col gap-1.5">
+                        <div className="p-3.5 bg-gradient-to-br from-[#120230] to-zinc-950/90 rounded-xl border border-purple-500/40 flex flex-col gap-2.5 shadow-lg">
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-xs text-purple-200 font-bold uppercase flex items-center gap-1.5">
                               <span>🔒</span>
-                              <span>OFFICIAL COLLAB FRAME</span>
+                              <span>OFFICIAL DEDICATED COLLAB FRAME</span>
                             </span>
                             <span className="px-2 py-0.5 rounded bg-[#F042FF]/20 text-[#F042FF] border border-[#F042FF]/40 text-[9px] font-mono font-bold">
                               CAMPAIGN EXCLUSIVE
                             </span>
                           </div>
-                          <p className="font-sans text-[10.5px] text-purple-300/80 leading-relaxed">
-                            {artist?.name} exclusive artist collaboration uses dedicated official event framing and branding.
-                          </p>
+
+                          {activeFrameOverlayUrl ? (
+                            <div className="flex items-center gap-3 p-2 bg-black/50 border border-purple-500/30 rounded-lg">
+                              <div className="w-12 h-16 rounded bg-zinc-900 border border-white/10 overflow-hidden flex items-center justify-center shrink-0 bg-[radial-gradient(#2e109d_1px,transparent_1px)] [background-size:6px_6px]">
+                                <img
+                                  src={normalizeMediaUrl(activeFrameOverlayUrl)}
+                                  alt="Collab Overlay"
+                                  className="w-full h-full object-contain filter drop-shadow"
+                                  onError={(e) => { e.target.style.display = 'none'; }}
+                                />
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="font-mono text-[11px] font-bold text-white uppercase truncate">
+                                  {activeDedicatedFrame?.name || `${artist?.name || 'Artist'} Collab Frame`}
+                                </span>
+                                <span className="font-sans text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  Active Dedicated PNG Overlay Applied
+                                </span>
+                                <span className="font-mono text-[9px] text-zinc-400 mt-0.5">
+                                  Format: High-DPI Transparent PNG Overlay
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="font-sans text-[10.5px] text-purple-300/80 leading-relaxed">
+                              {artist?.name} exclusive artist collaboration with official studio typography and campaign styling.
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 flex-1 min-h-0 max-h-[360px] sm:max-h-[400px] lg:max-h-[440px] xl:max-h-[480px] overflow-y-auto pr-1.5 custom-scrollbar">

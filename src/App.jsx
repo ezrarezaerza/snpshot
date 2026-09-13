@@ -9,6 +9,8 @@ import PhotoPreview from "./components/PhotoPreview";
 import PrivacyPolicy from './components/PrivacyPolicy';
 import Contact from "./components/Contact";
 import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminLogin from "./components/admin/AdminLogin";
+import AdminRouteGuard from "./components/admin/AdminRouteGuard";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
@@ -44,6 +46,10 @@ function App() {
       "/contact": {
         title: "Contact & Studio Bookings | SNPSHOT Studio",
         description: "Get in touch with SNPSHOT Studio for event photo booth rentals, artist collaborations, high-res print support, and press inquiries."
+      },
+      "/admin/login": {
+        title: "Admin Authentication | SNPSHOT Studio OS",
+        description: "Sign in to SNPSHOT Studio OS using administrator credentials."
       },
       "/admin": {
         title: "Studio Operating System | SNPSHOT Studio Admin",
@@ -111,7 +117,16 @@ function App() {
           <Route path="/preview" element={<PhotoPreview capturedImages={capturedImages} />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/login" element={<Navigate to="/admin/login" replace />} />
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRouteGuard>
+                <AdminDashboard />
+              </AdminRouteGuard>
+            } 
+          />
         </Routes>
       </ErrorBoundary>
     </div>

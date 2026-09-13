@@ -204,14 +204,11 @@ const PosesManager = () => {
         id: "custom-event-frame",
         name: "Official Idol Event Frame",
         layout: "3-grid",
-        bgColor: "#0e0048",
-        bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-        borderColor: "#F042FF",
-        watermarkText: "SNPSHOT ✦ OFFICIAL ARTIST EVENT",
-        padding: 16,
-        innerGap: 12,
-        borderRadius: 8
+        overlayUrl: "",
+        watermarkText: "SNPSHOT ✦ OFFICIAL ARTIST EVENT"
       },
+      frameOverlayFile: null,
+      frameOverlayPreview: "",
       finalPreviewFile: null,
       finalPreviewPreview: "",
       deckSize: 4,
@@ -234,17 +231,14 @@ const PosesManager = () => {
     setIsCustomAgency(!isAgencyKnown);
     setIsCustomGroup(!isGroupKnown);
 
+    const existingOverlay = normalizeMediaUrl(artist.dedicatedFrame?.overlayUrl || artist.frameOverlayUrl || "");
+
     const initialDedicatedFrame = artist.dedicatedFrame || {
       id: artist.dedicatedFrameId || "custom-event-frame",
       name: `${artist.name} Official Event Frame`,
       layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: artist.color || "#F042FF",
-      watermarkText: `${(artist.groupName || "").toUpperCase()} ${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`,
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
+      overlayUrl: existingOverlay,
+      watermarkText: `${(artist.groupName || "").toUpperCase()} ${artist.name.toUpperCase()} ✦ OFFICIAL EVENT`
     };
 
     const existingFinalPreview = normalizeMediaUrl(artist.finalPreviewImage || artist.avatar || existingPoses[0] || "");
@@ -267,7 +261,12 @@ const PosesManager = () => {
       showcaseBadge: artist.showcaseBadge || "★ OFFICIAL EVENT",
       showcaseTagline: artist.showcaseTagline || "Official idol collab deck & exclusive collector frame",
       dedicatedFrameId: artist.dedicatedFrameId || initialDedicatedFrame.id || "custom-event-frame",
-      dedicatedFrame: initialDedicatedFrame,
+      dedicatedFrame: {
+        ...initialDedicatedFrame,
+        overlayUrl: existingOverlay
+      },
+      frameOverlayFile: null,
+      frameOverlayPreview: existingOverlay,
       finalPreviewFile: null,
       finalPreviewPreview: existingFinalPreview,
       deckSize: existingPoses.length,
@@ -350,53 +349,36 @@ const PosesManager = () => {
       dedicatedFrame: {
         ...prev.dedicatedFrame,
         name: `${member.name} Dedicated Event Frame`,
-        borderColor: member.color || prev.color,
         watermarkText: watermark
       }
     }));
   };
 
-  // Dedicated Frame Selection Handler in Modal
-  const handleDedicatedFrameTemplateSelect = (frameId) => {
-    if (frameId === "custom-event-frame") {
-      setFormData(prev => ({
-        ...prev,
-        dedicatedFrameId: "custom-event-frame",
-        dedicatedFrame: {
-          id: "custom-event-frame",
-          name: `${prev.name || "Artist"} Custom Event Frame`,
-          layout: "3-grid",
-          bgColor: "#0e0048",
-          bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-          borderColor: prev.color || "#F042FF",
-          watermarkText: `${(prev.groupName || "").toUpperCase()} ${(prev.name || "").toUpperCase()} ✦ OFFICIAL EVENT`,
-          padding: 16,
-          innerGap: 12,
-          borderRadius: 8
-        }
-      }));
-      return;
-    }
+  const handleFrameOverlayFileChange = (file) => {
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setFormData(prev => ({
+      ...prev,
+      frameOverlayFile: file,
+      frameOverlayPreview: previewUrl,
+      dedicatedFrame: {
+        ...prev.dedicatedFrame,
+        overlayUrl: previewUrl
+      }
+    }));
+  };
 
-    const selectedCatalogFrame = catalogFrames.find(f => f.id === frameId);
-    if (selectedCatalogFrame) {
-      setFormData(prev => ({
-        ...prev,
-        dedicatedFrameId: selectedCatalogFrame.id,
-        dedicatedFrame: {
-          id: selectedCatalogFrame.id,
-          name: selectedCatalogFrame.name,
-          layout: selectedCatalogFrame.layout || "3-grid",
-          bgColor: selectedCatalogFrame.bgColor || "#0e0048",
-          bgGradient: selectedCatalogFrame.bgGradient || "",
-          borderColor: selectedCatalogFrame.borderColor || prev.color || "#F042FF",
-          watermarkText: `${(prev.groupName || "").toUpperCase()} ${(prev.name || "").toUpperCase()} ✦ OFFICIAL EVENT`,
-          padding: selectedCatalogFrame.padding || 16,
-          innerGap: selectedCatalogFrame.innerGap || 12,
-          borderRadius: selectedCatalogFrame.borderRadius || 8
-        }
-      }));
-    }
+  const handleClearFrameOverlay = (e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setFormData(prev => ({
+      ...prev,
+      frameOverlayFile: null,
+      frameOverlayPreview: "",
+      dedicatedFrame: {
+        ...prev.dedicatedFrame,
+        overlayUrl: ""
+      }
+    }));
   };
 
   const handleDeckSizeChange = (newSize) => {
@@ -476,8 +458,21 @@ const PosesManager = () => {
       data.append("showcaseBadge", formData.showcaseBadge);
       data.append("showcaseTagline", formData.showcaseTagline);
       data.append("dedicatedFrameId", formData.dedicatedFrameId);
-      data.append("dedicatedFrame", JSON.stringify(formData.dedicatedFrame));
+      const dedicatedFramePayload = {
+        ...(formData.dedicatedFrame || {}),
+        overlayUrl: formData.frameOverlayPreview || (formData.dedicatedFrame && formData.dedicatedFrame.overlayUrl) || "",
+        frameOverlayUrl: formData.frameOverlayPreview || (formData.dedicatedFrame && formData.dedicatedFrame.frameOverlayUrl) || ""
+      };
+      data.append("dedicatedFrame", JSON.stringify(dedicatedFramePayload));
       data.append("posesGuidance", JSON.stringify(formData.posesGuidance));
+
+      // Append frame overlay image file if uploaded
+      if (formData.frameOverlayFile) {
+        data.append("frameOverlayImage", formData.frameOverlayFile);
+        data.append("frameOverlayFile", formData.frameOverlayFile);
+      } else if (formData.frameOverlayPreview) {
+        data.append("frameOverlayUrl", formData.frameOverlayPreview);
+      }
 
       // Append final preview image file if uploaded
       if (formData.finalPreviewFile) {
@@ -950,18 +945,25 @@ const PosesManager = () => {
                   />
                 </div>
 
-                {/* DEDICATED EVENT FRAME BINDING & FINAL PHOTOSTRIP PREVIEW */}
+                {/* DEDICATED EVENT FRAME OVERLAY & SHOWCASE STRIP PREVIEW */}
                 <div className="bg-[#f0ecf8]/60 border border-[#e2dced] rounded-2xl p-3 mb-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-[#7226FF]" />
                       <span className="text-[10px] font-bold text-[#010030] uppercase tracking-wider">
-                        Dedicated Exclusive Frame & Showcase Strip
+                        Dedicated Frame Overlay & Showcase Strip
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono font-bold bg-white text-[#7226FF] border border-[#7226FF]/20 px-2 py-0.5 rounded-md uppercase">
-                      {dedicatedFrame?.layout || "3-grid"}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {(artist.frameOverlayUrl || dedicatedFrame?.overlayUrl) && (
+                        <span className="text-[8px] font-mono font-bold bg-purple-100 text-[#7226FF] px-1.5 py-0.5 rounded uppercase">
+                          PNG Overlay
+                        </span>
+                      )}
+                      <span className="text-[9px] font-mono font-bold bg-white text-[#7226FF] border border-[#7226FF]/20 px-2 py-0.5 rounded-md uppercase">
+                        {dedicatedFrame?.layout || "3-grid"}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-3 bg-white p-2.5 rounded-xl border border-[#e2dced]">
@@ -971,18 +973,17 @@ const PosesManager = () => {
                         style={{ backgroundImage: `url(${normalizeMediaUrl(artist.finalPreviewImage)})` }}
                         title="Final Photostrip Preview Render"
                       />
+                    ) : (artist.frameOverlayUrl || dedicatedFrame?.overlayUrl) ? (
+                      <div 
+                        className="w-9 h-12 rounded-lg shrink-0 border border-[#e2dced] bg-contain bg-center bg-no-repeat shadow-xs"
+                        style={{ backgroundImage: `url(${normalizeMediaUrl(artist.frameOverlayUrl || dedicatedFrame?.overlayUrl)})` }}
+                        title="Dedicated Frame Overlay PNG"
+                      />
                     ) : (
                       <div 
-                        className="w-8 h-10 rounded-lg shrink-0 border flex flex-col items-center justify-between p-1 shadow-inner relative overflow-hidden"
-                        style={{ 
-                          backgroundColor: dedicatedFrame?.bgColor || "#0e0048",
-                          backgroundImage: dedicatedFrame?.bgGradient || undefined,
-                          borderColor: dedicatedFrame?.borderColor || artist.color || "#F042FF"
-                        }}
+                        className="w-8 h-10 rounded-lg shrink-0 border border-dashed border-[#7226FF]/40 flex flex-col items-center justify-center p-1 bg-purple-50/50"
                       >
-                        <div className="w-full h-1.5 bg-white/40 rounded-xs" />
-                        <div className="w-full h-1.5 bg-white/40 rounded-xs" />
-                        <div className="w-full h-1 bg-white/60 rounded-xs" />
+                        <Layers className="w-4 h-4 text-[#7226FF]/60" />
                       </div>
                     )}
 
@@ -993,6 +994,15 @@ const PosesManager = () => {
                       <p className="text-[10px] text-[#625b82] font-mono truncate">
                         {dedicatedFrame?.watermarkText || `${artist.groupName} ${artist.name} ✦ OFFICIAL EVENT`}
                       </p>
+                      {(artist.frameOverlayUrl || dedicatedFrame?.overlayUrl) ? (
+                        <span className="text-[9px] font-mono text-emerald-600 font-bold flex items-center gap-0.5 mt-0.5">
+                          <Check className="w-2.5 h-2.5 stroke-[3]" /> Frame Overlay PNG Ready
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-mono text-amber-600 font-medium flex items-center gap-0.5 mt-0.5">
+                          <Clock className="w-2.5 h-2.5" /> Clean Viewfinder Frame
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1441,123 +1451,146 @@ const PosesManager = () => {
                 </div>
               </div>
 
-              {/* 3. DEDICATED EXCLUSIVE EVENT FRAME BINDING & SHOWCASE CONTROLS */}
-              <div className="bg-[#f8f7fc] border border-[#7226FF]/30 p-4 rounded-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-[#e2dced] pb-2">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-[#7226FF]" />
-                    <span className="text-[11px] font-bold text-[#7226FF] uppercase tracking-wider">
-                      3. Dedicated Event Frame & Showcase Binding (Exclusive)
+              {/* 3. DEDICATED FRAME OVERLAY PNG (EXCLUSIVE SNPSHOT COLLAB) */}
+              <div className="bg-purple-50/80 border-2 border-[#7226FF]/50 rounded-2xl p-4 space-y-3 shadow-xs">
+                {/* Header Row */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-purple-200/80 pb-2.5">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#7226FF] animate-pulse" />
+                      <span className="font-bold text-xs sm:text-sm text-[#010030] uppercase tracking-wide">
+                        ✦ Dedicated Frame Overlay PNG (Transparent Cutouts)
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-[#4d2892] block">
+                      Upload the exclusive high-resolution frame PNG with transparent photo cutouts. In SNPSHOT Collab mode, this graphic is automatically composited over the user's shots.
                     </span>
                   </div>
-                  <span className="text-[10px] bg-purple-100 text-[#7226FF] px-2 py-0.5 rounded-full font-bold">
-                    Auto-Locked for Users
-                  </span>
-                </div>
-
-                {/* Frame Template Selector */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Select Base Frame Template</label>
-                    <select
-                      value={formData.dedicatedFrameId}
-                      onChange={(e) => handleDedicatedFrameTemplateSelect(e.target.value)}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-medium"
-                    >
-                      <option value="custom-event-frame">✦ Custom Exclusive Event Frame</option>
-                      {catalogFrames.map((frame) => (
-                        <option key={frame.id} value={frame.id}>
-                          {frame.name} ({frame.layout})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Locked Layout Format</label>
-                    <select
-                      value={formData.dedicatedFrame?.layout || "3-grid"}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dedicatedFrame: { ...prev.dedicatedFrame, layout: e.target.value }
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030] font-medium"
-                    >
-                      <option value="3-grid">3-Grid Vertical Photostrip</option>
-                      <option value="4-grid">Classic 4-Cut Vertical Strip</option>
-                      <option value="2x2">2x2 Square Grid</option>
-                      <option value="2x3">2x3 Postcard Grid</option>
-                    </select>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className="text-[10px] font-mono font-bold bg-[#7226FF] text-white px-2 py-0.5 rounded uppercase tracking-wider shadow-2xs">
+                      Folder: /frames/
+                    </span>
+                    <span className="text-[10px] font-mono font-bold bg-white text-[#7226FF] border border-purple-300 px-2 py-0.5 rounded uppercase">
+                      PNG Transparency
+                    </span>
+                    <span className="text-[10px] bg-purple-100 text-[#7226FF] px-2 py-0.5 rounded-full font-bold">
+                      Auto-Locked
+                    </span>
                   </div>
                 </div>
 
-                {/* Frame Color & Watermark Customization */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Frame Canvas Color</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="color" 
-                        value={formData.dedicatedFrame?.bgColor || "#0e0048"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, bgColor: e.target.value }
-                        }))}
-                        className="w-8 h-8 rounded-lg cursor-pointer border border-[#e2dced]"
-                      />
-                      <input 
-                        type="text" 
-                        value={formData.dedicatedFrame?.bgColor || "#0e0048"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, bgColor: e.target.value }
-                        }))}
-                        className="admin-ui flex-1 bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
-                      />
+                {/* Visual Preview / Upload Card */}
+                <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/90 p-3 rounded-xl border border-purple-200">
+                  {/* Visual Preview / Upload Box with transparency checkerboard */}
+                  <label className="cursor-pointer shrink-0 block group">
+                    <div 
+                      className="w-28 h-40 border-2 border-dashed border-[#7226FF]/60 hover:border-[#7226FF] rounded-xl flex flex-col items-center justify-center relative overflow-hidden text-center p-1.5 transition-all shadow-xs group-hover:shadow-md"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(45deg, #f0f0f4 25%, transparent 25%), 
+                          linear-gradient(-45deg, #f0f0f4 25%, transparent 25%), 
+                          linear-gradient(45deg, transparent 75%, #f0f0f4 75%), 
+                          linear-gradient(-45deg, transparent 75%, #f0f0f4 75%)
+                        `,
+                        backgroundSize: "16px 16px",
+                        backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+                        backgroundColor: "#ffffff"
+                      }}
+                    >
+                      {formData.frameOverlayPreview ? (
+                        <div className="w-full h-full relative group/img">
+                          <img 
+                            src={formData.frameOverlayPreview} 
+                            alt="Dedicated Frame Overlay" 
+                            className="w-full h-full object-contain rounded-lg drop-shadow-xs"
+                          />
+                          <div className="absolute inset-0 bg-[#010030]/80 opacity-0 group-hover/img:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 text-white p-1 backdrop-blur-[1px]">
+                            <Upload className="w-5 h-5 text-purple-300" />
+                            <span className="text-[9px] font-bold uppercase tracking-wider">Replace PNG</span>
+                            <span className="text-[7px] text-purple-200">to /frames/</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-2 text-center">
+                          <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center mb-1 text-[#7226FF]">
+                            <Layers className="w-4 h-4" />
+                          </div>
+                          <span className="text-[10px] font-bold text-[#010030] leading-tight">Upload Frame PNG</span>
+                          <span className="text-[8px] text-[#7226FF] font-mono mt-0.5">Transparent PNG</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">Border Accent Color</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="color" 
-                        value={formData.dedicatedFrame?.borderColor || formData.color || "#F042FF"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, borderColor: e.target.value }
-                        }))}
-                        className="w-8 h-8 rounded-lg cursor-pointer border border-[#e2dced]"
-                      />
-                      <input 
-                        type="text" 
-                        value={formData.dedicatedFrame?.borderColor || formData.color || "#F042FF"}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          dedicatedFrame: { ...prev.dedicatedFrame, borderColor: e.target.value }
-                        }))}
-                        className="admin-ui flex-1 bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[#010030] mb-1">CSS Gradient Overlay</label>
                     <input 
-                      type="text" 
-                      placeholder="e.g. linear-gradient(135deg, #7226FF 0%, #F042FF 100%)"
-                      value={formData.dedicatedFrame?.bgGradient || ""}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        dedicatedFrame: { ...prev.dedicatedFrame, bgGradient: e.target.value }
-                      }))}
-                      className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-2.5 py-1.5 text-[11px] text-[#010030] font-mono"
+                      type="file" 
+                      accept="image/png"
+                      onChange={(e) => handleFrameOverlayFileChange(e.target.files[0])}
+                      className="hidden"
                     />
+                  </label>
+
+                  {/* Format controls & Specs */}
+                  <div className="space-y-2 text-xs text-[#010030] flex-1 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#010030] mb-1">
+                          Locked Layout Format
+                        </label>
+                        <select
+                          value={formData.dedicatedFrame?.layout || "3-grid"}
+                          onChange={(e) => setFormData(prev => ({
+                            ...prev,
+                            dedicatedFrame: { ...prev.dedicatedFrame, layout: e.target.value }
+                          }))}
+                          className="admin-ui bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs text-[#010030] font-medium"
+                        >
+                          <option value="3-grid">3-Grid Vertical Photostrip (1:3)</option>
+                          <option value="4-grid">Classic 4-Cut Vertical Strip (1:4)</option>
+                          <option value="2x2">2x2 Square Grid (1:1)</option>
+                          <option value="2x3">2x3 Postcard Grid (2:3)</option>
+                        </select>
+                      </div>
+
+                      <div className="sm:text-right">
+                        <span className="text-[10px] text-[#7226FF] font-mono font-bold bg-purple-100 px-2 py-0.5 rounded inline-block">
+                          {formData.dedicatedFrame?.layout === "3-grid" ? "Recommended: 1200 × 3600 px (300 DPI)" : 
+                           formData.dedicatedFrame?.layout === "4-grid" ? "Recommended: 1200 × 4800 px (300 DPI)" : 
+                           formData.dedicatedFrame?.layout === "2x2" ? "Recommended: 2400 × 2400 px (300 DPI)" : 
+                           "Recommended: 2400 × 3600 px (300 DPI)"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-[#4d2892] leading-relaxed">
+                      The <strong>SNPSHOT Studio</strong> engine will automatically lock the user's photostrip to this custom PNG. User portraits will sit behind the transparent cutouts, preserving all idol signatures, agency branding, and decorative elements.
+                    </p>
+
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      {formData.frameOverlayPreview ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-600 stroke-[3]" />
+                            Frame Overlay PNG Ready
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleClearFrameOverlay}
+                            className="text-[10px] text-red-600 hover:text-red-700 hover:underline font-mono"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          Awaiting PNG Upload (Defaults to clean border)
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {/* Watermark and Showcase Badges */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
                     <label className="block font-bold text-[#010030] mb-1">Official Frame Watermark Text</label>
                     <input 
@@ -1601,6 +1634,7 @@ const PosesManager = () => {
                     className="admin-ui w-full bg-white border border-[#e2dced] rounded-xl px-3 py-2 text-[#010030]"
                   />
                 </div>
+              </div>
 
                 {/* Live Frame Preview Box & Final Showcase Preview Image Uploader (GREEN AREA - SHOWCASE STORAGE) */}
                 <div className="bg-emerald-50/70 border-2 border-emerald-500/50 rounded-2xl p-4 space-y-3 shadow-xs">
@@ -1693,9 +1727,8 @@ const PosesManager = () => {
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 4. Dynamic Pose Deck Editor & Guidance Captions (BLUE AREA - POSES STORAGE) */}
+                {/* 4. Dynamic Pose Deck Editor & Guidance Captions (BLUE AREA - POSES STORAGE) */}
               <div className="bg-sky-50/70 border-2 border-sky-500/50 rounded-2xl p-4 space-y-3 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-sky-200/80 pb-2.5">
                   <div>

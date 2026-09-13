@@ -20,180 +20,6 @@ import { normalizeMediaUrl } from "../utils/blobClient";
 // Register ScrollTrigger
 gsap.registerPlugin(ScrollTrigger);
 
-const DEFAULT_SHOWCASE_ITEMS = [
-  {
-    id: "ive-wonyoung-collab",
-    type: "collab",
-    name: "IVE Wonyoung",
-    rawName: "Wonyoung",
-    role: "Vocalist / Center",
-    agencyName: "Starship Ent.",
-    groupName: "IVE",
-    groupLogo: "✨",
-    color: "#F042FF",
-    desc: "Celebrate with exclusive 4-pose idol deck & dedicated birthday collector frame.",
-    badge: "★ BIRTHDAY SPECIAL",
-    image: "/img/poses/Wonyoung1.png",
-    caption: "Wonyoung Official Strip ✦",
-    layout: "3-grid",
-    watermarkText: "IVE WONYOUNG ✦ OFFICIAL BIRTHDAY EVENT",
-    posesGuidance: ["Bunny Ears Pose", "Double Peace Sign", "Cute Head Tilt", "Bubble Pop Cheek"],
-    artistId: "ive-wonyoung-collab",
-    dedicatedFrame: {
-      id: "ive-wonyoung-birthday-frame",
-      name: "IVE Wonyoung Birthday Edition",
-      layout: "3-grid",
-      bgColor: "#0e0048",
-      bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-      borderColor: "#F042FF",
-      watermarkText: "IVE WONYOUNG ✦ OFFICIAL BIRTHDAY EVENT",
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    isCollab: true,
-    isFeatured: true
-  },
-  {
-    id: "classic-studio",
-    type: "theme",
-    name: "Classic Studio",
-    color: "#F042FF",
-    desc: "High-contrast photostrip frames with solid borders and nostalgic digital stamps.",
-    bg: "linear-gradient(135deg, #020617, #0F3AE2)",
-    badge: "CLASSIC_POP",
-    image: "/img/poses/Wonyoung1.png",
-    caption: "Studio Frame ✦",
-    layout: "4-grid",
-    watermarkText: "SNPSHOT STUDIO // CLASSIC STUDIO",
-    isCollab: false
-  },
-  {
-    id: "pastel-bloom",
-    type: "theme",
-    name: "Pastel Bloom",
-    color: "#FF00FF",
-    desc: "Soft flower power stamps with pastel gradients and refined hand-drawn borders.",
-    bg: "linear-gradient(135deg, #18001e, #2e083c)",
-    badge: "SOFT_PASTEL",
-    image: "/img/poses/Wonyoung2.png",
-    caption: "Soft Floral Frame",
-    layout: "2x2",
-    watermarkText: "SNPSHOT STUDIO // PASTEL BLOOM",
-    isCollab: false
-  },
-  {
-    id: "cinematic-film",
-    type: "theme",
-    name: "Cinematic Film",
-    color: "#F59E0B",
-    desc: "Warm cinematic film grain with retro date stamps and nostalgic lighting.",
-    bg: "linear-gradient(135deg, #1a0f00, #2b1800)",
-    badge: "VINTAGE_FILM",
-    image: "/img/poses/Wonyoung3.png",
-    caption: "Cinema Strip 35mm",
-    layout: "4-grid",
-    watermarkText: "SNPSHOT STUDIO // CINEMATIC FILM",
-    isCollab: false
-  },
-  {
-    id: "cyberpunk-neon",
-    type: "theme",
-    name: "Cyberpunk Neon",
-    color: "#06B6D4",
-    desc: "Electric cyan and magenta glow accents with futuristic holographic stamps.",
-    bg: "linear-gradient(135deg, #020617, #083344)",
-    badge: "CYBER_Y2K",
-    image: "/img/poses/Wonyoung4.png",
-    caption: "Cyber Frame ✦",
-    layout: "2x3",
-    watermarkText: "SNPSHOT STUDIO // CYBERPUNK NEON",
-    isCollab: false
-  },
-  {
-    id: "aespa-karina-collab",
-    type: "collab",
-    name: "aespa Karina",
-    rawName: "Karina",
-    role: "Leader / Main Dancer",
-    agencyName: "SM Entertainment",
-    groupName: "aespa",
-    groupLogo: "🦋",
-    color: "#3f51b5",
-    desc: "Synk into the digital realm with official cyber aesthetic 2x3 postcard frame.",
-    badge: "🔥 LIMITED DROP",
-    image: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&q=80&w=600",
-    caption: "Karina Synk Strip ✦",
-    layout: "2x3",
-    watermarkText: "AESPA KARINA 🦋 SYNK KWANGYA DROP",
-    posesGuidance: ["Cyber Katana Pose", "Neon Eye Wink", "Alien Antenna Paws", "Hologram Crown"],
-    artistId: "aespa-karina-collab",
-    dedicatedFrame: {
-      id: "aespa-karina-cyber-frame",
-      name: "aespa Karina Synk Cyber Frame",
-      layout: "2x3",
-      bgColor: "#03001e",
-      bgGradient: "linear-gradient(135deg, #1f1c2c 0%, #928dab 100%)",
-      borderColor: "#7226FF",
-      watermarkText: "AESPA KARINA 🦋 SYNK KWANGYA DROP",
-      padding: 18,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    isCollab: true,
-    isFeatured: true
-  },
-  {
-    id: "bts-jungkook-collab",
-    type: "collab",
-    name: "BTS Jungkook",
-    rawName: "Jungkook",
-    role: "Main Vocalist / Center",
-    agencyName: "HYBE",
-    groupName: "BTS",
-    groupLogo: "💜",
-    color: "#9c27b0",
-    desc: "Golden Era tribute photoshoot with sleek studio monochrome borders.",
-    badge: "💜 GOLDEN STUDIO",
-    image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600",
-    caption: "Jungkook Golden ✦",
-    layout: "2x2",
-    watermarkText: "BTS JUNGKOOK 💜 GOLDEN SPECIAL",
-    posesGuidance: ["Heart Hands", "Thumbs Up Smile", "Cool Model Pose", "Signature V-Sign"],
-    artistId: "bts-jungkook-collab",
-    dedicatedFrame: {
-      id: "bts-jungkook-golden-frame",
-      name: "BTS Jungkook Golden Frame",
-      layout: "2x2",
-      bgColor: "#160024",
-      bgGradient: "linear-gradient(135deg, #4a0072 0%, #9c27b0 100%)",
-      borderColor: "#9c27b0",
-      watermarkText: "BTS JUNGKOOK 💜 GOLDEN SPECIAL",
-      padding: 16,
-      innerGap: 12,
-      borderRadius: 8
-    },
-    isCollab: true,
-    isFeatured: false
-  },
-  {
-    id: "default-community-top",
-    type: "top_pick",
-    name: "Cherry Blossom Date Vibes",
-    creator: "@sa.kura",
-    color: "#F042FF",
-    desc: "Created by @sa.kura. High-resolution 300 DPI verified studio composite.",
-    badge: "STAFF PICK",
-    image: "/img/poses/Wonyoung3.png",
-    caption: "Cherry blossom date vibes",
-    layout: "3-grid",
-    watermarkText: "SNPSHOT STUDIO // @SA.KURA",
-    likes: 1420,
-    isCollab: false,
-    isTopPick: true
-  }
-];
-
 const ShowcaseSection = ({ tunerConfig }) => {
   const navigate = useNavigate();
   const showcaseParentRef = useRef(null);
@@ -209,8 +35,8 @@ const ShowcaseSection = ({ tunerConfig }) => {
   const stickerLeft2Ref = useRef(null);
   const stickerRight2Ref = useRef(null);
 
-  // Dynamic state populated with resilient fallback presets
-  const [allItems, setAllItems] = useState(DEFAULT_SHOWCASE_ITEMS);
+  // Dynamic state strictly populated from backend database/API
+  const [allItems, setAllItems] = useState([]);
   const [activeZoomItem, setActiveZoomItem] = useState(null);
   const [originRect, setOriginRect] = useState(null);
   const [isClosingModal, setIsClosingModal] = useState(false);
@@ -302,14 +128,9 @@ const ShowcaseSection = ({ tunerConfig }) => {
             });
         }
 
-        if (unifiedItems.length > 0) {
-          setAllItems(unifiedItems);
-        } else {
-          setAllItems(DEFAULT_SHOWCASE_ITEMS);
-        }
+        setAllItems(unifiedItems);
       } catch (err) {
-        console.warn("Failed to fetch dynamic showcase data, keeping curated default presets:", err.message);
-        setAllItems(DEFAULT_SHOWCASE_ITEMS);
+        console.error("Error fetching dynamic showcase data:", err);
       } finally {
         setIsLoading(false);
       }

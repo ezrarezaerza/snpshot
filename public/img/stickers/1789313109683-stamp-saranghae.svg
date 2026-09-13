@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" width="150" height="150">
+  <defs>
+    <path id="circlePath" d="M 75, 75 m -52, 0 a 52,52 0 1,1 104,0 a 52,52 0 1,1 -104,0" />
+  </defs>
+  <!-- Circular border -->
+  <circle cx="75" cy="75" r="66" fill="none" stroke="#F042FF" stroke-width="3" />
+  <circle cx="75" cy="75" r="58" fill="#7226FF" fill-opacity="0.18" stroke="#F042FF" stroke-width="1.5" stroke-dasharray="4 2" />
+  <!-- Heart Icon -->
+  <path d="M75 52 C70 42 55 42 55 56 C55 70 75 88 75 88 C75 88 95 70 95 56 C95 42 80 42 75 52 Z" fill="#F042FF" stroke="#FFFFFF" stroke-width="2" />
+  <!-- Korean Word: 사랑해 -->
+  <text x="75" y="112" font-family="'Noto Sans KR', sans-serif" font-weight="900" font-size="22" fill="#FFFFFF" text-anchor="middle">사랑해</text>
+  <text x="75" y="128" font-family="monospace" font-weight="700" font-size="9" fill="#FFE5F1" text-anchor="middle" letter-spacing="1">FOREVER LOVE</text>
+</svg>

@@ -31,13 +31,13 @@
         "innerGap": 12,
         "borderRadius": 8
       },
-      "avatar": "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung1.png",
+      "avatar": "/img/poses/1789313102535-Wonyoung1.png",
       "finalPreviewImage": "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fshowcase%2FIVE-Wonyoung_Birthday-Photostrip-1.png",
       "poses": [
-        "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung1.png",
-        "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung2.png",
-        "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung3.png",
-        "/api/blob/proxy?url=https%3A%2F%2F4gjcgshhaspf84hn.private.blob.vercel-storage.com%2Fposes%2FWonyoung4.png"
+        "/img/poses/1789313102535-Wonyoung1.png",
+        "/img/poses/1789313103495-Wonyoung2.png",
+        "/img/poses/1789313104689-Wonyoung3.png",
+        "/img/poses/1789313105435-Wonyoung4.png"
       ],
       "posesGuidance": [
         "Finger Heart Pose",

@@ -53,6 +53,7 @@ const SystemSettingsManager = () => {
   // Storage Engine State
   const [storageStatus, setStorageStatus] = useState(null);
   const [storageLoading, setStorageLoading] = useState(false);
+  const [dbStatus, setDbStatus] = useState(null);
   const [probeResult, setProbeResult] = useState(null);
   const [probeLoading, setProbeLoading] = useState(false);
   const [storedBlobs, setStoredBlobs] = useState([]);
@@ -221,6 +222,12 @@ const SystemSettingsManager = () => {
   const fetchStorageInfo = async () => {
     setStorageLoading(true);
     try {
+      // Fetch Postgres database status
+      fetch("/api/db/status")
+        .then(res => res.json())
+        .then(data => setDbStatus(data))
+        .catch(err => setDbStatus({ connected: false, error: err.message }));
+
       const status = await checkStorageStatus();
       setStorageStatus(status);
       const listData = await listStoredAssets(selectedFolder === 'all' ? '' : selectedFolder);
@@ -859,14 +866,38 @@ const SystemSettingsManager = () => {
             </button>
           </div>
 
-          {/* Storage Engine Status Dashboard Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Storage & Database Engine Status Dashboard Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
+            {/* Postgres Database Card */}
+            <div className="p-4 rounded-xl border border-[#e2dced] bg-[#f8f6fc] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Vercel Postgres DB</span>
+                <Database className="w-4 h-4 text-[#7226FF]" />
+              </div>
+              <div className="text-sm font-black text-[#010030]">
+                {dbStatus?.connected ? (
+                  <span className="text-emerald-700 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Postgres Edge Live
+                  </span>
+                ) : (
+                  <span className="text-amber-700 flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    Checking Status...
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#625b82] font-mono">
+                {dbStatus?.tables?.length ? `${dbStatus.tables.length} schemas verified • ${dbStatus.adminUserCount || 1} admin` : "Connecting to Postgres..."}
+              </p>
+            </div>
+
             {/* Active Provider Card */}
             <div className="p-4 rounded-xl border border-[#e2dced] bg-[#f8f6fc] space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Active Storage Engine</span>
-                <Database className="w-4 h-4 text-[#7226FF]" />
+                <span className="text-[11px] font-bold uppercase text-[#625b82] tracking-wider">Active Blob Engine</span>
+                <Cloud className="w-4 h-4 text-[#7226FF]" />
               </div>
               <div className="text-sm font-black text-[#010030]">
                 {storageStatus?.provider === 'vercel-blob' ? (

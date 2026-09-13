@@ -6,6 +6,7 @@ import fs from "fs";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
+import { createServer as createViteServer } from "vite";
 import { 
   isBlobConfigured, 
   getStorageStatus, 
@@ -17,6 +18,19 @@ import {
   resolveBlobUrl,
   deepResolveBlobUrls
 } from "./server/blobStorage.js";
+import { 
+  initDb, 
+  isDbConnected, 
+  getDbError, 
+  query as dbQuery,
+  getStudioDataFromDb,
+  saveStudioDataToDb
+} from "./server/db.js";
+import {
+  authenticateAdmin,
+  verifyToken,
+  requireAdminAuth
+} from "./server/auth.js";
 
 dotenv.config();
 
@@ -26,15 +40,14 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const isVercel = Boolean(process.env.VERCEL);
-const emailsDir = isVercel ? path.join("/tmp", "saved_emails") : path.join(__dirname, "saved_emails");
+const emailsDir = path.join(__dirname, "saved_emails");
 try {
   if (!fs.existsSync(emailsDir)) {
     fs.mkdirSync(emailsDir, { recursive: true });
     console.log("Saved emails directory created");
   }
 } catch (e) {
-  console.warn("Could not create emails directory:", e.message);
+  console.log("[Storage] Serverless read-only filesystem detected, saved emails directory bypassed");
 }
 
 app.use(express.json({ limit: '50mb' }));
@@ -49,14 +62,14 @@ app.options("*", cors());
 
 app.use("/uploads", express.static("uploads"));
 
-const uploadDir = isVercel ? path.join("/tmp", "uploads") : path.join(__dirname, "uploads");
+const uploadDir = path.join(__dirname, "uploads");
 try {
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
     console.log("Uploads directory created");
   }
 } catch (e) {
-  console.warn("Could not create uploads directory:", e.message);
+  console.log("[Storage] Serverless read-only filesystem detected, uploads directory bypassed");
 }
 
 const storage = multer.diskStorage({
@@ -83,6 +96,70 @@ app.get("/api/blob/status", (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Postgres Database Diagnostic & Health Check Endpoint
+app.get("/api/db/status", async (req, res) => {
+  try {
+    const connected = isDbConnected();
+    if (!connected) {
+      return res.json({
+        success: false,
+        connected: false,
+        error: getDbError() || "Database not connected or connection string missing"
+      });
+    }
+
+    const testRes = await dbQuery("SELECT current_database() as database, NOW() as current_time");
+    const tablesRes = await dbQuery("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name");
+    const userCount = await dbQuery("SELECT COUNT(*) as count FROM admin_users");
+
+    res.json({
+      success: true,
+      connected: true,
+      database: testRes.rows[0]?.database,
+      serverTime: testRes.rows[0]?.current_time,
+      tables: tablesRes.rows.map(r => r.table_name),
+      adminUserCount: parseInt(userCount.rows[0]?.count || 0, 10)
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      connected: false,
+      error: err.message
+    });
+  }
+});
+
+// --- Phase 3: Admin Authentication Routes ---
+app.post("/api/admin/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await authenticateAdmin(email, password);
+    if (!result.success) {
+      return res.status(401).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get("/api/admin/auth/verify", (req, res) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : req.query?.token;
+  if (!token) {
+    return res.status(401).json({ success: false, message: "No token provided" });
+  }
+  const payload = verifyToken(token);
+  if (!payload) {
+    return res.status(401).json({ success: false, message: "Invalid or expired session" });
+  }
+  res.json({ success: true, user: payload });
+});
+
+app.post("/api/admin/auth/logout", (req, res) => {
+  res.json({ success: true, message: "Logged out successfully" });
 });
 
 app.post("/api/blob/upload", memoryUpload.single("file"), async (req, res) => {
@@ -235,24 +312,20 @@ app.get("/api/images", (req, res) => {
 // --- Phase 4: Studio Database and APIs ---
 const posesDir = path.join(__dirname, "public", "img", "poses");
 const themesDir = path.join(__dirname, "public", "img", "themes");
+const framesDir = path.join(__dirname, "public", "img", "frames");
 const stickersDir = path.join(__dirname, "public", "img", "stickers");
 const galleryDir = path.join(__dirname, "public", "img", "gallery");
 const showcaseDir = path.join(__dirname, "public", "img", "showcase");
 
-if (!fs.existsSync(posesDir)) {
-  fs.mkdirSync(posesDir, { recursive: true });
-}
-if (!fs.existsSync(themesDir)) {
-  fs.mkdirSync(themesDir, { recursive: true });
-}
-if (!fs.existsSync(stickersDir)) {
-  fs.mkdirSync(stickersDir, { recursive: true });
-}
-if (!fs.existsSync(galleryDir)) {
-  fs.mkdirSync(galleryDir, { recursive: true });
-}
-if (!fs.existsSync(showcaseDir)) {
-  fs.mkdirSync(showcaseDir, { recursive: true });
+try {
+  if (!fs.existsSync(posesDir)) fs.mkdirSync(posesDir, { recursive: true });
+  if (!fs.existsSync(themesDir)) fs.mkdirSync(themesDir, { recursive: true });
+  if (!fs.existsSync(framesDir)) fs.mkdirSync(framesDir, { recursive: true });
+  if (!fs.existsSync(stickersDir)) fs.mkdirSync(stickersDir, { recursive: true });
+  if (!fs.existsSync(galleryDir)) fs.mkdirSync(galleryDir, { recursive: true });
+  if (!fs.existsSync(showcaseDir)) fs.mkdirSync(showcaseDir, { recursive: true });
+} catch (e) {
+  // Ignored in read-only serverless environment
 }
 
 // Phase 5 // Performance, Security & Edge Delivery: High-Performance Cache-Control Headers for Static Assets
@@ -268,6 +341,7 @@ const staticCacheOptions = {
 // Serve uploaded assets statically with Edge Delivery caching
 app.use("/img/poses", express.static(posesDir, staticCacheOptions));
 app.use("/img/themes", express.static(themesDir, staticCacheOptions));
+app.use("/img/frames", express.static(framesDir, staticCacheOptions));
 app.use("/img/stickers", express.static(stickersDir, staticCacheOptions));
 app.use("/img/gallery", express.static(galleryDir, staticCacheOptions));
 app.use("/img/showcase", express.static(showcaseDir, staticCacheOptions));
@@ -295,8 +369,6 @@ const uploadArtistFiles = handleArtistUpload;
 
 const studioDataPath = path.join(uploadDir, "studio_data.json");
 const creatorDataPath = path.join(uploadDir, "creator_data.json");
-const repoStudioDataPath = path.join(__dirname, "uploads", "studio_data.json");
-const repoCreatorDataPath = path.join(__dirname, "uploads", "creator_data.json");
 
 const defaultShowcaseThemes = [
   {
@@ -1244,20 +1316,16 @@ const defaultPlatformSettings = {
   }
 };
 
+let cachedStudioData = null;
+
 const getStudioData = () => {
-  let activePath = null;
-  if (fs.existsSync(studioDataPath)) {
-    activePath = studioDataPath;
-  } else if (fs.existsSync(creatorDataPath)) {
-    activePath = creatorDataPath;
-  } else if (fs.existsSync(repoStudioDataPath)) {
-    activePath = repoStudioDataPath;
-  } else if (fs.existsSync(repoCreatorDataPath)) {
-    activePath = repoCreatorDataPath;
+  if (cachedStudioData) {
+    return deepResolveBlobUrls(cachedStudioData);
   }
 
-  if (!activePath) {
-    return { 
+  const activePath = fs.existsSync(studioDataPath) ? studioDataPath : creatorDataPath;
+  if (!fs.existsSync(activePath)) {
+    cachedStudioData = { 
       artists: defaultArtists, 
       frames: defaultFrames, 
       stickers: defaultStickers, 
@@ -1273,6 +1341,7 @@ const getStudioData = () => {
       analytics: defaultAnalytics,
       settings: defaultPlatformSettings
     };
+    return deepResolveBlobUrls(cachedStudioData);
   }
   try {
     const data = JSON.parse(fs.readFileSync(activePath, "utf-8"));
@@ -1282,7 +1351,6 @@ const getStudioData = () => {
     if (!data.galleryItems || data.galleryItems.length === 0) {
       data.galleryItems = defaultGalleryItems;
     } else {
-      // Normalize origin and badge on existing items
       data.galleryItems = data.galleryItems.map(item => {
         const isEditorial = item.origin === "editorial" || item.creator?.toLowerCase().includes("editorial") || item.creator?.toLowerCase().includes("studio");
         return {
@@ -1313,6 +1381,7 @@ const getStudioData = () => {
     if (!data.subjectCategories || data.subjectCategories.length === 0) data.subjectCategories = defaultSubjectCategories;
     if (!data.analytics) data.analytics = defaultAnalytics;
     if (!data.settings) data.settings = defaultPlatformSettings;
+    cachedStudioData = data;
     return deepResolveBlobUrls(data);
   } catch (err) {
     console.error("Error reading studio data:", err);
@@ -1336,22 +1405,26 @@ const getStudioData = () => {
 };
 
 const saveStudioData = (data) => {
+  // 1. Immediately update in-memory state
+  cachedStudioData = data;
+
+  // 2. Persist to Postgres database asynchronously
+  saveStudioDataToDb(data).catch(err => {
+    console.warn("[DB] Failed to persist data to Postgres:", err.message);
+  });
+
+  // 3. Fallback to local files with read-only safety guard
   try {
-    const parentDir = path.dirname(studioDataPath);
-    if (!fs.existsSync(parentDir)) {
-      fs.mkdirSync(parentDir, { recursive: true });
-    }
     const raw = JSON.stringify(data, null, 2);
-    fs.writeFileSync(studioDataPath, raw, "utf-8");
-    if (creatorDataPath && creatorDataPath !== studioDataPath) {
-      const creatorParent = path.dirname(creatorDataPath);
-      if (!fs.existsSync(creatorParent)) {
-        fs.mkdirSync(creatorParent, { recursive: true });
-      }
+    if (fs.existsSync(path.dirname(studioDataPath))) {
+      fs.writeFileSync(studioDataPath, raw, "utf-8");
+    }
+    if (creatorDataPath && creatorDataPath !== studioDataPath && fs.existsSync(path.dirname(creatorDataPath))) {
       fs.writeFileSync(creatorDataPath, raw, "utf-8");
     }
   } catch (err) {
-    console.error("Error writing studio data:", err);
+    // Non-fatal warning on read-only serverless filesystems (e.g. Vercel)
+    console.log("[Storage] Local filesystem write bypassed (Postgres is primary storage):", err.message);
   }
 };
 
@@ -1368,7 +1441,7 @@ app.get("/api/creator/data", (req, res) => {
 });
 
 // GET /api/admin/artists - List all artist collaboration campaigns
-app.get(["/api/admin/artists", "/api/studio/artists", "/api/creator/artists"], (req, res) => {
+app.get(["/api/admin/artists", "/api/studio/artists", "/api/creator/artists", "/api/artists"], (req, res) => {
   const data = getStudioData();
   const { status, agencyId, featured } = req.query;
   let artists = data.artists || [];
@@ -1388,7 +1461,7 @@ app.get(["/api/admin/artists", "/api/studio/artists", "/api/creator/artists"], (
 });
 
 // GET /api/admin/stickers - List all digital stamps and stickers
-app.get(["/api/admin/stickers", "/api/studio/stickers", "/api/creator/stickers"], (req, res) => {
+app.get(["/api/admin/stickers", "/api/studio/stickers", "/api/creator/stickers", "/api/stickers"], (req, res) => {
   const data = getStudioData();
   const { packId, type, active } = req.query;
   let stickers = data.stickers || [];
@@ -1422,7 +1495,7 @@ const handleFrameUpload = (req, res, next) => {
 };
 
 // GET /api/admin/frames - List all frame layouts and border overlays
-app.get(["/api/admin/frames", "/api/studio/frames"], (req, res) => {
+app.get(["/api/admin/frames", "/api/studio/frames", "/api/frames"], (req, res) => {
   const data = getStudioData();
   const { layout, active } = req.query;
   let frames = data.frames || [];
@@ -1596,6 +1669,27 @@ app.post(["/api/creator/artist", "/api/creator/artists", "/api/admin/artists", "
       finalPreviewImage = finalPreviewImageUrl;
     }
 
+    // 1b. Identify and upload frameOverlayImage to "frames" folder
+    let frameOverlayFile = null;
+    if (Array.isArray(req.files)) {
+      frameOverlayFile = req.files.find(f => f.fieldname === "frameOverlayImage" || f.fieldname === "frameOverlayFile");
+    } else if (req.files && (req.files.frameOverlayImage || req.files.frameOverlayFile)) {
+      frameOverlayFile = (req.files.frameOverlayImage && req.files.frameOverlayImage[0]) || (req.files.frameOverlayFile && req.files.frameOverlayFile[0]);
+    }
+
+    let frameOverlayUrl = null;
+    if (frameOverlayFile) {
+      const blobResult = await uploadBlob({
+        body: frameOverlayFile.buffer,
+        folder: "frames",
+        filename: frameOverlayFile.originalname || `frame-overlay-${Date.now()}.png`,
+        contentType: frameOverlayFile.mimetype || "image/png"
+      });
+      frameOverlayUrl = blobResult.url;
+    } else if (req.body?.frameOverlayUrl) {
+      frameOverlayUrl = req.body.frameOverlayUrl;
+    }
+
     // 2. Identify and upload pose files to "poses" folder
     let poses = [];
     if (existingPoses) {
@@ -1669,6 +1763,22 @@ app.post(["/api/creator/artist", "/api/creator/artists", "/api/admin/artists", "
       }
     }
 
+    if (parsedDedicatedFrame) {
+      if (frameOverlayUrl) {
+        parsedDedicatedFrame.overlayUrl = frameOverlayUrl;
+        parsedDedicatedFrame.frameOverlayUrl = frameOverlayUrl;
+      }
+    } else {
+      parsedDedicatedFrame = {
+        id: dedicatedFrameId || "custom-event-frame",
+        name: `${name} Official Collab Frame`,
+        layout: "3-grid",
+        overlayUrl: frameOverlayUrl || "",
+        frameOverlayUrl: frameOverlayUrl || "",
+        watermarkText: `${(groupName || "").toUpperCase()} ${name.toUpperCase()} ✦ OFFICIAL EVENT`
+      };
+    }
+
     const avatar = poses[0]; // First pose is main selection avatar
 
     const data = getCreatorData();
@@ -1691,18 +1801,8 @@ app.post(["/api/creator/artist", "/api/creator/artists", "/api/admin/artists", "
       showcaseBadge: showcaseBadge || "★ OFFICIAL EVENT",
       showcaseTagline: showcaseTagline || "Official idol collab deck & exclusive collector frame",
       dedicatedFrameId: dedicatedFrameId || (parsedDedicatedFrame?.id || "custom-event-frame"),
-      dedicatedFrame: parsedDedicatedFrame || {
-        id: "custom-event-frame",
-        name: `${name} Official Collab Frame`,
-        layout: "3-grid",
-        bgColor: "#0e0048",
-        bgGradient: "linear-gradient(135deg, #7226FF 0%, #F042FF 100%)",
-        borderColor: color || "#F042FF",
-        watermarkText: `${(groupName || "").toUpperCase()} ${name.toUpperCase()} ✦ OFFICIAL EVENT`,
-        padding: 16,
-        innerGap: 12,
-        borderRadius: 8
-      },
+      dedicatedFrame: parsedDedicatedFrame,
+      frameOverlayUrl: frameOverlayUrl || (parsedDedicatedFrame && parsedDedicatedFrame.overlayUrl) || "",
       posesGuidance: parsedGuidance,
       avatar,
       finalPreviewImage: finalPreviewImage || avatar,
@@ -1756,6 +1856,27 @@ app.put(["/api/creator/artist/:id", "/api/creator/artists/:id", "/api/admin/arti
       finalPreviewImage = blobResult.url;
     } else if (finalPreviewImageUrl !== undefined && finalPreviewImageUrl !== "") {
       finalPreviewImage = finalPreviewImageUrl;
+    }
+
+    // 1b. Identify and upload frameOverlayImage to "frames" folder
+    let frameOverlayFile = null;
+    if (Array.isArray(req.files)) {
+      frameOverlayFile = req.files.find(f => f.fieldname === "frameOverlayImage" || f.fieldname === "frameOverlayFile");
+    } else if (req.files && (req.files.frameOverlayImage || req.files.frameOverlayFile)) {
+      frameOverlayFile = (req.files.frameOverlayImage && req.files.frameOverlayImage[0]) || (req.files.frameOverlayFile && req.files.frameOverlayFile[0]);
+    }
+
+    let frameOverlayUrl = existingArtist.frameOverlayUrl || (existingArtist.dedicatedFrame && existingArtist.dedicatedFrame.overlayUrl) || null;
+    if (frameOverlayFile) {
+      const blobResult = await uploadBlob({
+        body: frameOverlayFile.buffer,
+        folder: "frames",
+        filename: frameOverlayFile.originalname || `frame-overlay-${Date.now()}.png`,
+        contentType: frameOverlayFile.mimetype || "image/png"
+      });
+      frameOverlayUrl = blobResult.url;
+    } else if (req.body?.frameOverlayUrl !== undefined) {
+      frameOverlayUrl = req.body.frameOverlayUrl;
     }
 
     // 2. Identify and upload pose files to "poses" folder
@@ -1823,6 +1944,13 @@ app.put(["/api/creator/artist/:id", "/api/creator/artists/:id", "/api/admin/arti
       }
     }
 
+    if (parsedDedicatedFrame) {
+      if (frameOverlayUrl !== undefined) {
+        parsedDedicatedFrame.overlayUrl = frameOverlayUrl;
+        parsedDedicatedFrame.frameOverlayUrl = frameOverlayUrl;
+      }
+    }
+
     const updatedArtist = {
       ...existingArtist,
       name: name || existingArtist.name,
@@ -1843,6 +1971,7 @@ app.put(["/api/creator/artist/:id", "/api/creator/artists/:id", "/api/admin/arti
       showcaseTagline: showcaseTagline !== undefined ? showcaseTagline : (existingArtist.showcaseTagline || "Official idol collab deck & exclusive collector frame"),
       dedicatedFrameId: dedicatedFrameId !== undefined ? dedicatedFrameId : (existingArtist.dedicatedFrameId || "custom-event-frame"),
       dedicatedFrame: parsedDedicatedFrame || existingArtist.dedicatedFrame,
+      frameOverlayUrl: (frameOverlayUrl !== null && frameOverlayUrl !== undefined) ? frameOverlayUrl : (existingArtist.frameOverlayUrl || (parsedDedicatedFrame && parsedDedicatedFrame.overlayUrl) || ""),
       posesGuidance: parsedGuidance,
       poses,
       avatar: poses[0] || existingArtist.avatar,
@@ -2481,6 +2610,24 @@ app.delete("/api/creator/theme-presets/:id", (req, res) => {
 });
 
 // --- Gallery Moderation & Print Queue Endpoints (Module 5A, 5B, 5C) ---
+app.get(["/api/gallery", "/api/creator/gallery", "/api/admin/gallery"], (req, res) => {
+  const data = getCreatorData();
+  const { status, origin, layout } = req.query;
+  let items = data.galleryItems || [];
+
+  if (status && status !== "all") {
+    items = items.filter(i => (i.status || "approved") === status);
+  }
+  if (origin && origin !== "all") {
+    items = items.filter(i => (i.origin || "community") === origin);
+  }
+  if (layout && layout !== "all") {
+    items = items.filter(i => i.layout === layout);
+  }
+
+  res.json({ success: true, galleryItems: items });
+});
+
 app.patch("/api/creator/gallery/:id/moderation", (req, res) => {
   const { id } = req.params;
   const { 
@@ -2891,7 +3038,7 @@ app.put("/api/creator/website-content", (req, res) => {
 });
 
 // --- Module 8: Contact & Inquiry Management Endpoints ---
-app.get("/api/creator/inquiries", (req, res) => {
+app.get(["/api/creator/inquiries", "/api/admin/inquiries", "/api/inquiries"], (req, res) => {
   const data = getCreatorData();
   const inquiries = data.inquiries || defaultInquiries;
   const subjectCategories = data.subjectCategories || defaultSubjectCategories;
@@ -3473,7 +3620,7 @@ app.post("/send-message", async (req, res) => {
   }
 });
 
-app.post("/send-photo-strip", async (req, res) => {
+app.post(["/send-photo-strip", "/api/send-photo-strip"], async (req, res) => {
   const { recipientEmail, imageData } = req.body;
 
   if (!recipientEmail || !imageData) {
@@ -3481,22 +3628,30 @@ app.post("/send-photo-strip", async (req, res) => {
   }
 
   try {
-    // 1. Decode and save the high-res image locally inside the uploads directory
+    // 1. Decode and save the high-res image locally inside the uploads directory (if writable)
     const base64Data = imageData.replace(/^data:image\/\w+;base64,/, "");
     const filename = `photostrip-${Date.now()}.png`;
     const imagePath = path.join(uploadDir, filename);
-    fs.writeFileSync(imagePath, Buffer.from(base64Data, 'base64'));
-    console.log("Photo strip image saved locally:", imagePath);
+    try {
+      fs.writeFileSync(imagePath, Buffer.from(base64Data, 'base64'));
+      console.log("Photo strip image saved locally:", imagePath);
+    } catch (diskErr) {
+      console.log("[Storage] Local disk write bypassed for photo strip (serverless read-only filesystem)");
+    }
 
-    // 2. Save metadata JSON in the saved_emails directory for history/gallery retrieval
+    // 2. Save metadata JSON in the saved_emails directory for history/gallery retrieval (if writable)
     const emailRecord = {
       to: recipientEmail,
       date: new Date().toISOString(),
       filename: filename
     };
     const jsonPath = path.join(emailsDir, `email-${Date.now()}.json`);
-    fs.writeFileSync(jsonPath, JSON.stringify(emailRecord, null, 2));
-    console.log("Email metadata record saved locally:", jsonPath);
+    try {
+      fs.writeFileSync(jsonPath, JSON.stringify(emailRecord, null, 2));
+      console.log("Email metadata record saved locally:", jsonPath);
+    } catch (diskErr) {
+      console.log("[Storage] Local disk write bypassed for email record (serverless read-only filesystem)");
+    }
 
     // 3. Attempt to send real email via Nodemailer if SMTP credentials are fully set
     const emailUser = process.env.EMAIL;
@@ -3559,20 +3714,28 @@ app.post("/send-photo-strip", async (req, res) => {
 });
 
 app.get("/api/saved-emails", (req, res) => {
+  if (!fs.existsSync(emailsDir)) {
+    return res.json([]);
+  }
   fs.readdir(emailsDir, (err, files) => {
     if (err) {
-      return res.status(500).json({ message: "Error reading saved emails" });
+      return res.json([]);
     }
     const emails = files
       .filter(file => file.endsWith('.json'))
       .map(file => {
-        const data = JSON.parse(fs.readFileSync(path.join(emailsDir, file)));
-        return {
-          filename: file,
-          to: data.to,
-          date: data.date
-        };
-      });
+        try {
+          const data = JSON.parse(fs.readFileSync(path.join(emailsDir, file)));
+          return {
+            filename: file,
+            to: data.to,
+            date: data.date
+          };
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter(Boolean);
     res.json(emails);
   });
 });
@@ -3590,9 +3753,19 @@ app.use((err, req, res, next) => {
 });
 
 async function startServer() {
+  // Initialize Postgres database schemas and seed admin user
+  try {
+    await initDb();
+    const dbData = await getStudioDataFromDb();
+    if (dbData && (dbData.frames?.length > 0 || dbData.artists?.length > 0)) {
+      cachedStudioData = dbData;
+      console.log("[Server] Studio OS data state loaded directly from Postgres database.");
+    }
+  } catch (dbInitErr) {
+    console.warn("[Server] Database initialization failed on startup (server will continue running):", dbInitErr.message);
+  }
   if (process.env.NODE_ENV !== "production") {
     try {
-      const { createServer: createViteServer } = await import("vite");
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa",
@@ -3634,9 +3807,38 @@ async function startServer() {
   });
 }
 
-if (!process.env.VERCEL) {
+let serverlessInitPromise = null;
+
+export async function initServerless() {
+  if (!serverlessInitPromise) {
+    serverlessInitPromise = (async () => {
+      try {
+        await initDb();
+        const dbData = await getStudioDataFromDb();
+        if (dbData && (dbData.frames?.length > 0 || dbData.artists?.length > 0)) {
+          cachedStudioData = dbData;
+          console.log("[Serverless] Studio OS data state loaded from Postgres.");
+        }
+      } catch (dbInitErr) {
+        console.warn("[Serverless] Database init warning:", dbInitErr.message);
+      }
+    })();
+  }
+  return serverlessInitPromise;
+}
+
+// Determine if running as standalone server (e.g. node server.js in local/container dev)
+const isDirectRun = Boolean(
+  process.argv[1] && (
+    fileURLToPath(import.meta.url) === path.resolve(process.argv[1]) ||
+    process.argv[1].endsWith("server.js") ||
+    process.argv[1].endsWith("server.cjs")
+  )
+);
+
+if (isDirectRun && !process.env.VERCEL) {
   startServer();
 }
 
+export { app, startServer };
 export default app;
-export { app };
