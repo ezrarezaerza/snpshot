@@ -27,10 +27,15 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const emailsDir = path.join(__dirname, "saved_emails");
-if (!fs.existsSync(emailsDir)) {
-  fs.mkdirSync(emailsDir);
-  console.log("Saved emails directory created");
+const isVercel = Boolean(process.env.VERCEL);
+const emailsDir = isVercel ? path.join("/tmp", "saved_emails") : path.join(__dirname, "saved_emails");
+try {
+  if (!fs.existsSync(emailsDir)) {
+    fs.mkdirSync(emailsDir, { recursive: true });
+    console.log("Saved emails directory created");
+  }
+} catch (e) {
+  console.warn("Could not create emails directory:", e.message);
 }
 
 app.use(express.json({ limit: '50mb' }));
@@ -45,10 +50,14 @@ app.options("*", cors());
 
 app.use("/uploads", express.static("uploads"));
 
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("Uploads directory created");
+const uploadDir = isVercel ? path.join("/tmp", "uploads") : path.join(__dirname, "uploads");
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log("Uploads directory created");
+  }
+} catch (e) {
+  console.warn("Could not create uploads directory:", e.message);
 }
 
 const storage = multer.diskStorage({
@@ -287,6 +296,8 @@ const uploadArtistFiles = handleArtistUpload;
 
 const studioDataPath = path.join(uploadDir, "studio_data.json");
 const creatorDataPath = path.join(uploadDir, "creator_data.json");
+const repoStudioDataPath = path.join(__dirname, "uploads", "studio_data.json");
+const repoCreatorDataPath = path.join(__dirname, "uploads", "creator_data.json");
 
 const defaultShowcaseThemes = [
   {
@@ -1235,8 +1246,18 @@ const defaultPlatformSettings = {
 };
 
 const getStudioData = () => {
-  const activePath = fs.existsSync(studioDataPath) ? studioDataPath : creatorDataPath;
-  if (!fs.existsSync(activePath)) {
+  let activePath = null;
+  if (fs.existsSync(studioDataPath)) {
+    activePath = studioDataPath;
+  } else if (fs.existsSync(creatorDataPath)) {
+    activePath = creatorDataPath;
+  } else if (fs.existsSync(repoStudioDataPath)) {
+    activePath = repoStudioDataPath;
+  } else if (fs.existsSync(repoCreatorDataPath)) {
+    activePath = repoCreatorDataPath;
+  }
+
+  if (!activePath) {
     return { 
       artists: defaultArtists, 
       frames: defaultFrames, 
@@ -1317,9 +1338,17 @@ const getStudioData = () => {
 
 const saveStudioData = (data) => {
   try {
+    const parentDir = path.dirname(studioDataPath);
+    if (!fs.existsSync(parentDir)) {
+      fs.mkdirSync(parentDir, { recursive: true });
+    }
     const raw = JSON.stringify(data, null, 2);
     fs.writeFileSync(studioDataPath, raw, "utf-8");
     if (creatorDataPath && creatorDataPath !== studioDataPath) {
+      const creatorParent = path.dirname(creatorDataPath);
+      if (!fs.existsSync(creatorParent)) {
+        fs.mkdirSync(creatorParent, { recursive: true });
+      }
       fs.writeFileSync(creatorDataPath, raw, "utf-8");
     }
   } catch (err) {
@@ -3605,4 +3634,9 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
+export { app };
